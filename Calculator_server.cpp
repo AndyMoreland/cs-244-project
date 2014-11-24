@@ -36,11 +36,28 @@ class CalculatorHandler : virtual public CalculatorIf {
   int32_t add(const int32_t num1, const int32_t num2) {
     // Your implementation goes here
     printf("add\n");
+
+		return num1 + num2;
   }
 
   int32_t calculate(const int32_t logid, const Work& w) {
     // Your implementation goes here
     printf("calculate\n");
+
+		switch (w.op) {
+		case Operation::ADD: return w.num1 + w.num2;
+		case Operation::SUBTRACT: return w.num1 - w.num2;
+		case Operation::MULTIPLY: return w.num1 * w.num2;
+		case Operation::DIVIDE:
+			if (w.num2 == 0) {
+				InvalidOperation io;
+				io.what = w.op;
+				io.why = "Cannot divide by 0";
+				throw io;
+			}
+
+			return w.num1 / w.num2;
+		}
   }
 
   /**
