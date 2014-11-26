@@ -22,8 +22,8 @@ Calculator_client: Calculator_client.o $(GEN_OBJ)
 	$(CXX) $^ -o $@ -L/usr/local/lib $(LIBS)
 
 thrift:
-	thrift -r --gen cpp shared.thrift ;
-	thrift -r --gen cpp tutorial.thrift
+	thrift -r --gen java shared.thrift ;
+	thrift -r --gen java tutorial.thrift
 
 clean:
 	$(RM) *.o server client
