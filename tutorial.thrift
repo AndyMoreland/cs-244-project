@@ -67,7 +67,6 @@ namespace d tutorial
 namespace java tutorial
 namespace php tutorial
 namespace perl tutorial
-namespace haxe tutorial
 
 /**
  * Thrift lets you do typedefs to get pretty names for your types. Standard
