@@ -10,20 +10,8 @@ INC := -I$(THRIFT_DIR) -I$(BOOST_DIR) -I$(GEN_INC)
 
 .PHONY: all clean
 
-all: Calculator_server Calculator_client
-
-%.o: %.cpp
-	$(CXX) -Wall -std=c++11 -DHAVE_INTTYPES_H -DHAVE_NETINET_IN_H $(INC) -c $< -o $@
-
-Calculator_server: Calculator_server.o $(GEN_OBJ)
-	$(CXX) $^ -o $@ -L/usr/local/lib $(LIBS)
-
-Calculator_client: Calculator_client.o $(GEN_OBJ)
-	$(CXX) $^ -o $@ -L/usr/local/lib $(LIBS)
-
 thrift:
-	thrift -r --gen java shared.thrift ;
-	thrift -r --gen java tutorial.thrift
+	thrift -r --gen java commit_server.thrift ;
 
 clean:
 	$(RM) *.o server client
