@@ -13,5 +13,11 @@ INC := -I$(THRIFT_DIR) -I$(BOOST_DIR) -I$(GEN_INC)
 thrift:
 	thrift -r --gen java commit_server.thrift ;
 
+tex:
+	pdflatex project_writeup.tex ;
+	bibtex project_writeup ;
+	pdflatex project_writeup.tex ;
+	pdflatex project_writeup.tex
+
 clean:
 	$(RM) *.o server client
