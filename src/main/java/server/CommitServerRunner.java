@@ -11,7 +11,7 @@ import static org.apache.thrift.server.TServer.Args;
 /**
  * Created by andrew on 11/25/14.
  */
-public class CommitServerWrapper {
+public class CommitServerRunner {
 
     public static CalculatorHandler handler;
 
