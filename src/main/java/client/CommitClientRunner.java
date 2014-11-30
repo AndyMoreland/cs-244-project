@@ -1,10 +1,13 @@
 package client;
 
+import TwoPhaseCommit.CommitClient;
+import com.google.common.collect.Sets;
+import config.GroupConfigProvider;
+import config.GroupMember;
+import config.StaticGroupConfigProvider;
 import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.TSocket;
-import org.apache.thrift.transport.TTransport;
 import tutorial.Calculator;
 
 /**
@@ -13,13 +16,17 @@ import tutorial.Calculator;
 public class CommitClientRunner {
     public static void main(String [] args) {
 
+        CommitClientHandler handler;
+
+        CommitClient.Processor processor;
+        
+        GroupConfigProvider configProvider = new StaticGroupConfigProvider(leader, Sets.<GroupMember>newHashSet());
+
         try {
-            TTransport transport;
-            transport = new TSocket("localhost", 9090);
-            transport.open();
+            handler = new CommitClientHandler();
+            processor = new CommitClient.Processor(handler);
 
             TProtocol protocol = new TBinaryProtocol(transport);
-            Calculator.Client client = new Calculator.Client(protocol);
 
             perform(client);
 

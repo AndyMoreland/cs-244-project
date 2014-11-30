@@ -1,10 +1,14 @@
 package server;
 
+import TwoPhaseCommit.CommitServer;
+import com.google.common.collect.Sets;
+import config.GroupConfigProvider;
+import config.GroupMember;
+import config.StaticGroupConfigProvider;
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TSimpleServer;
 import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TServerTransport;
-import tutorial.Calculator;
 
 import static org.apache.thrift.server.TServer.Args;
 
@@ -13,14 +17,16 @@ import static org.apache.thrift.server.TServer.Args;
  */
 public class CommitServerRunner {
 
-    public static CalculatorHandler handler;
+    public static CommitServerHandler handler;
 
-    public static Calculator.Processor processor;
+    public static CommitServer.Processor processor;
+
+    private static GroupConfigProvider configProvider = new StaticGroupConfigProvider(null, Sets.<GroupMember>newHashSet());
 
     public static void main(String [] args) {
         try {
-            handler = new CalculatorHandler();
-            processor = new Calculator.Processor(handler);
+            handler = new CommitServerHandler(configProvider);
+            processor = new CommitServer.Processor(handler);
 
             Runnable simple = new Runnable() {
                 public void run() {
@@ -34,7 +40,7 @@ public class CommitServerRunner {
         }
     }
 
-    public static void simple(Calculator.Processor processor) {
+    public static void simple(CommitServer.Processor processor) {
         try {
             TServerTransport serverTransport = new TServerSocket(9090);
             TServer server = new TSimpleServer(new Args(serverTransport).processor(processor));
