@@ -50,12 +50,14 @@
  * Thrift files can namespace, package, or prefix their output in various
  * target languages.
  */
-namespace java TwoPhaseCommit
+namespace java PBFT
 
 /**
  * You can define enums, which are just 32 bit integers. Values are optional
  * and start at 1 if not supplied, C style again.
  */
+
+typedef string Signature
 
 enum Vote {
     COMMIT = 1,
@@ -70,30 +72,63 @@ enum ChineseCheckersOperation {
 
 exception InvalidOperation {
     1: i32 errorType,
-    2: string errorMessage;
+    2: string errorMessage,
+    3: Signature signature;
 }
 
 struct Operation {
     1: i32 operationId,
     2: i32 operationType, // an ENUM with service-defined semantics
-    3: map<string, binary> arguments; // the string corresponds to the argument name and the binary to the argument value
+    3: string arguments, // JSON formatted or something
+    4: Signature signature;
 }
 
 struct Transaction {
     1: i32 transactionId,
-    2: Operation operation;
+    2: Operation operation,
+    3: Signature signature,
+    4: double timestamp,
+    5: i32 replicaId,
+    6: i32 viewId;
+}
+
+struct PrePrepareMessage {
+    1:i32 sequenceNumber,
+    2:i32 viewId,
+    3:Signature transactionDigest,
+    4:Signature messageSignature;
+}
+
+struct PrepareMessage {
+    1:i32 sequenceNumber,
+    2:i32 viewId,
+    3:Signature transactionDigest,
+    4:i32 replicaId,
+    5:Signature messageSignature;
+}
+
+struct CommitMessage {
+    1:i32 sequenceNumber,
+    2:Signature checkpointDigest,
+    3:i32 replicaId,
+    4:Signature messageSignature;
+}
+
+struct CheckpointMessage {
+    1:i32 sequenceNumber,
+    2:i32 viewId,
+    3:Signature transactionDigest,
+    4:i32 replicaId;
 }
 
 /**
  * Ahh, now onto the cool part, defining a service. Services just need a name
  * and can optionally inherit from another service using the extends keyword.
  */
-service CommitServer {
-   i32 requestMessage(1:i32 index, 2:i32 value),
-   Vote requestOutcome(1:i32 index)
-}
 
-service CommitClient {
-   Vote prepare(1:i32 index, 2:i32 value),
-   void acceptOutcome(1:i32 index, 2:Vote outcome)
+service PBFTCohort {
+    void prePrepare(1:PrePrepareMessage message, 2:Transaction transaction),
+    void prepare(1:PrepareMessage message),
+    void commit(1:CommitMessage message),
+    void checkpoint(1:CheckpointMessage message);
 }

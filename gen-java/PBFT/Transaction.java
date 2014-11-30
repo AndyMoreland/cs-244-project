@@ -4,7 +4,7 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  *  @generated
  */
-package TwoPhaseCommit;
+package PBFT;
 
 import org.apache.thrift.scheme.IScheme;
 import org.apache.thrift.scheme.SchemeFactory;
@@ -40,6 +40,10 @@ public class Transaction implements org.apache.thrift.TBase<Transaction, Transac
 
   private static final org.apache.thrift.protocol.TField TRANSACTION_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("transactionId", org.apache.thrift.protocol.TType.I32, (short)1);
   private static final org.apache.thrift.protocol.TField OPERATION_FIELD_DESC = new org.apache.thrift.protocol.TField("operation", org.apache.thrift.protocol.TType.STRUCT, (short)2);
+  private static final org.apache.thrift.protocol.TField SIGNATURE_FIELD_DESC = new org.apache.thrift.protocol.TField("signature", org.apache.thrift.protocol.TType.STRING, (short)3);
+  private static final org.apache.thrift.protocol.TField TIMESTAMP_FIELD_DESC = new org.apache.thrift.protocol.TField("timestamp", org.apache.thrift.protocol.TType.DOUBLE, (short)4);
+  private static final org.apache.thrift.protocol.TField REPLICA_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("replicaId", org.apache.thrift.protocol.TType.I32, (short)5);
+  private static final org.apache.thrift.protocol.TField VIEW_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("viewId", org.apache.thrift.protocol.TType.I32, (short)6);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -49,11 +53,19 @@ public class Transaction implements org.apache.thrift.TBase<Transaction, Transac
 
   public int transactionId; // required
   public Operation operation; // required
+  public String signature; // required
+  public double timestamp; // required
+  public int replicaId; // required
+  public int viewId; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
     TRANSACTION_ID((short)1, "transactionId"),
-    OPERATION((short)2, "operation");
+    OPERATION((short)2, "operation"),
+    SIGNATURE((short)3, "signature"),
+    TIMESTAMP((short)4, "timestamp"),
+    REPLICA_ID((short)5, "replicaId"),
+    VIEW_ID((short)6, "viewId");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -72,6 +84,14 @@ public class Transaction implements org.apache.thrift.TBase<Transaction, Transac
           return TRANSACTION_ID;
         case 2: // OPERATION
           return OPERATION;
+        case 3: // SIGNATURE
+          return SIGNATURE;
+        case 4: // TIMESTAMP
+          return TIMESTAMP;
+        case 5: // REPLICA_ID
+          return REPLICA_ID;
+        case 6: // VIEW_ID
+          return VIEW_ID;
         default:
           return null;
       }
@@ -113,6 +133,9 @@ public class Transaction implements org.apache.thrift.TBase<Transaction, Transac
 
   // isset id assignments
   private static final int __TRANSACTIONID_ISSET_ID = 0;
+  private static final int __TIMESTAMP_ISSET_ID = 1;
+  private static final int __REPLICAID_ISSET_ID = 2;
+  private static final int __VIEWID_ISSET_ID = 3;
   private byte __isset_bitfield = 0;
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
@@ -121,6 +144,14 @@ public class Transaction implements org.apache.thrift.TBase<Transaction, Transac
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
     tmpMap.put(_Fields.OPERATION, new org.apache.thrift.meta_data.FieldMetaData("operation", org.apache.thrift.TFieldRequirementType.DEFAULT, 
         new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Operation.class)));
+    tmpMap.put(_Fields.SIGNATURE, new org.apache.thrift.meta_data.FieldMetaData("signature", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING        , "Signature")));
+    tmpMap.put(_Fields.TIMESTAMP, new org.apache.thrift.meta_data.FieldMetaData("timestamp", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.DOUBLE)));
+    tmpMap.put(_Fields.REPLICA_ID, new org.apache.thrift.meta_data.FieldMetaData("replicaId", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
+    tmpMap.put(_Fields.VIEW_ID, new org.apache.thrift.meta_data.FieldMetaData("viewId", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(Transaction.class, metaDataMap);
   }
@@ -130,12 +161,23 @@ public class Transaction implements org.apache.thrift.TBase<Transaction, Transac
 
   public Transaction(
     int transactionId,
-    Operation operation)
+    Operation operation,
+    String signature,
+    double timestamp,
+    int replicaId,
+    int viewId)
   {
     this();
     this.transactionId = transactionId;
     setTransactionIdIsSet(true);
     this.operation = operation;
+    this.signature = signature;
+    this.timestamp = timestamp;
+    setTimestampIsSet(true);
+    this.replicaId = replicaId;
+    setReplicaIdIsSet(true);
+    this.viewId = viewId;
+    setViewIdIsSet(true);
   }
 
   /**
@@ -147,6 +189,12 @@ public class Transaction implements org.apache.thrift.TBase<Transaction, Transac
     if (other.isSetOperation()) {
       this.operation = new Operation(other.operation);
     }
+    if (other.isSetSignature()) {
+      this.signature = other.signature;
+    }
+    this.timestamp = other.timestamp;
+    this.replicaId = other.replicaId;
+    this.viewId = other.viewId;
   }
 
   public Transaction deepCopy() {
@@ -158,6 +206,13 @@ public class Transaction implements org.apache.thrift.TBase<Transaction, Transac
     setTransactionIdIsSet(false);
     this.transactionId = 0;
     this.operation = null;
+    this.signature = null;
+    setTimestampIsSet(false);
+    this.timestamp = 0.0;
+    setReplicaIdIsSet(false);
+    this.replicaId = 0;
+    setViewIdIsSet(false);
+    this.viewId = 0;
   }
 
   public int getTransactionId() {
@@ -207,6 +262,99 @@ public class Transaction implements org.apache.thrift.TBase<Transaction, Transac
     }
   }
 
+  public String getSignature() {
+    return this.signature;
+  }
+
+  public Transaction setSignature(String signature) {
+    this.signature = signature;
+    return this;
+  }
+
+  public void unsetSignature() {
+    this.signature = null;
+  }
+
+  /** Returns true if field signature is set (has been assigned a value) and false otherwise */
+  public boolean isSetSignature() {
+    return this.signature != null;
+  }
+
+  public void setSignatureIsSet(boolean value) {
+    if (!value) {
+      this.signature = null;
+    }
+  }
+
+  public double getTimestamp() {
+    return this.timestamp;
+  }
+
+  public Transaction setTimestamp(double timestamp) {
+    this.timestamp = timestamp;
+    setTimestampIsSet(true);
+    return this;
+  }
+
+  public void unsetTimestamp() {
+    __isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __TIMESTAMP_ISSET_ID);
+  }
+
+  /** Returns true if field timestamp is set (has been assigned a value) and false otherwise */
+  public boolean isSetTimestamp() {
+    return EncodingUtils.testBit(__isset_bitfield, __TIMESTAMP_ISSET_ID);
+  }
+
+  public void setTimestampIsSet(boolean value) {
+    __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __TIMESTAMP_ISSET_ID, value);
+  }
+
+  public int getReplicaId() {
+    return this.replicaId;
+  }
+
+  public Transaction setReplicaId(int replicaId) {
+    this.replicaId = replicaId;
+    setReplicaIdIsSet(true);
+    return this;
+  }
+
+  public void unsetReplicaId() {
+    __isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __REPLICAID_ISSET_ID);
+  }
+
+  /** Returns true if field replicaId is set (has been assigned a value) and false otherwise */
+  public boolean isSetReplicaId() {
+    return EncodingUtils.testBit(__isset_bitfield, __REPLICAID_ISSET_ID);
+  }
+
+  public void setReplicaIdIsSet(boolean value) {
+    __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __REPLICAID_ISSET_ID, value);
+  }
+
+  public int getViewId() {
+    return this.viewId;
+  }
+
+  public Transaction setViewId(int viewId) {
+    this.viewId = viewId;
+    setViewIdIsSet(true);
+    return this;
+  }
+
+  public void unsetViewId() {
+    __isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __VIEWID_ISSET_ID);
+  }
+
+  /** Returns true if field viewId is set (has been assigned a value) and false otherwise */
+  public boolean isSetViewId() {
+    return EncodingUtils.testBit(__isset_bitfield, __VIEWID_ISSET_ID);
+  }
+
+  public void setViewIdIsSet(boolean value) {
+    __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __VIEWID_ISSET_ID, value);
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case TRANSACTION_ID:
@@ -225,6 +373,38 @@ public class Transaction implements org.apache.thrift.TBase<Transaction, Transac
       }
       break;
 
+    case SIGNATURE:
+      if (value == null) {
+        unsetSignature();
+      } else {
+        setSignature((String)value);
+      }
+      break;
+
+    case TIMESTAMP:
+      if (value == null) {
+        unsetTimestamp();
+      } else {
+        setTimestamp((Double)value);
+      }
+      break;
+
+    case REPLICA_ID:
+      if (value == null) {
+        unsetReplicaId();
+      } else {
+        setReplicaId((Integer)value);
+      }
+      break;
+
+    case VIEW_ID:
+      if (value == null) {
+        unsetViewId();
+      } else {
+        setViewId((Integer)value);
+      }
+      break;
+
     }
   }
 
@@ -235,6 +415,18 @@ public class Transaction implements org.apache.thrift.TBase<Transaction, Transac
 
     case OPERATION:
       return getOperation();
+
+    case SIGNATURE:
+      return getSignature();
+
+    case TIMESTAMP:
+      return Double.valueOf(getTimestamp());
+
+    case REPLICA_ID:
+      return Integer.valueOf(getReplicaId());
+
+    case VIEW_ID:
+      return Integer.valueOf(getViewId());
 
     }
     throw new IllegalStateException();
@@ -251,6 +443,14 @@ public class Transaction implements org.apache.thrift.TBase<Transaction, Transac
       return isSetTransactionId();
     case OPERATION:
       return isSetOperation();
+    case SIGNATURE:
+      return isSetSignature();
+    case TIMESTAMP:
+      return isSetTimestamp();
+    case REPLICA_ID:
+      return isSetReplicaId();
+    case VIEW_ID:
+      return isSetViewId();
     }
     throw new IllegalStateException();
   }
@@ -286,6 +486,42 @@ public class Transaction implements org.apache.thrift.TBase<Transaction, Transac
         return false;
     }
 
+    boolean this_present_signature = true && this.isSetSignature();
+    boolean that_present_signature = true && that.isSetSignature();
+    if (this_present_signature || that_present_signature) {
+      if (!(this_present_signature && that_present_signature))
+        return false;
+      if (!this.signature.equals(that.signature))
+        return false;
+    }
+
+    boolean this_present_timestamp = true;
+    boolean that_present_timestamp = true;
+    if (this_present_timestamp || that_present_timestamp) {
+      if (!(this_present_timestamp && that_present_timestamp))
+        return false;
+      if (this.timestamp != that.timestamp)
+        return false;
+    }
+
+    boolean this_present_replicaId = true;
+    boolean that_present_replicaId = true;
+    if (this_present_replicaId || that_present_replicaId) {
+      if (!(this_present_replicaId && that_present_replicaId))
+        return false;
+      if (this.replicaId != that.replicaId)
+        return false;
+    }
+
+    boolean this_present_viewId = true;
+    boolean that_present_viewId = true;
+    if (this_present_viewId || that_present_viewId) {
+      if (!(this_present_viewId && that_present_viewId))
+        return false;
+      if (this.viewId != that.viewId)
+        return false;
+    }
+
     return true;
   }
 
@@ -302,6 +538,26 @@ public class Transaction implements org.apache.thrift.TBase<Transaction, Transac
     list.add(present_operation);
     if (present_operation)
       list.add(operation);
+
+    boolean present_signature = true && (isSetSignature());
+    list.add(present_signature);
+    if (present_signature)
+      list.add(signature);
+
+    boolean present_timestamp = true;
+    list.add(present_timestamp);
+    if (present_timestamp)
+      list.add(timestamp);
+
+    boolean present_replicaId = true;
+    list.add(present_replicaId);
+    if (present_replicaId)
+      list.add(replicaId);
+
+    boolean present_viewId = true;
+    list.add(present_viewId);
+    if (present_viewId)
+      list.add(viewId);
 
     return list.hashCode();
   }
@@ -330,6 +586,46 @@ public class Transaction implements org.apache.thrift.TBase<Transaction, Transac
     }
     if (isSetOperation()) {
       lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.operation, other.operation);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(isSetSignature()).compareTo(other.isSetSignature());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (isSetSignature()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.signature, other.signature);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(isSetTimestamp()).compareTo(other.isSetTimestamp());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (isSetTimestamp()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.timestamp, other.timestamp);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(isSetReplicaId()).compareTo(other.isSetReplicaId());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (isSetReplicaId()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.replicaId, other.replicaId);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(isSetViewId()).compareTo(other.isSetViewId());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (isSetViewId()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.viewId, other.viewId);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -364,6 +660,26 @@ public class Transaction implements org.apache.thrift.TBase<Transaction, Transac
     } else {
       sb.append(this.operation);
     }
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("signature:");
+    if (this.signature == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.signature);
+    }
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("timestamp:");
+    sb.append(this.timestamp);
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("replicaId:");
+    sb.append(this.replicaId);
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("viewId:");
+    sb.append(this.viewId);
     first = false;
     sb.append(")");
     return sb.toString();
@@ -430,6 +746,38 @@ public class Transaction implements org.apache.thrift.TBase<Transaction, Transac
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
+          case 3: // SIGNATURE
+            if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
+              struct.signature = iprot.readString();
+              struct.setSignatureIsSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
+          case 4: // TIMESTAMP
+            if (schemeField.type == org.apache.thrift.protocol.TType.DOUBLE) {
+              struct.timestamp = iprot.readDouble();
+              struct.setTimestampIsSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
+          case 5: // REPLICA_ID
+            if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
+              struct.replicaId = iprot.readI32();
+              struct.setReplicaIdIsSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
+          case 6: // VIEW_ID
+            if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
+              struct.viewId = iprot.readI32();
+              struct.setViewIdIsSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
           default:
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
         }
@@ -453,6 +801,20 @@ public class Transaction implements org.apache.thrift.TBase<Transaction, Transac
         struct.operation.write(oprot);
         oprot.writeFieldEnd();
       }
+      if (struct.signature != null) {
+        oprot.writeFieldBegin(SIGNATURE_FIELD_DESC);
+        oprot.writeString(struct.signature);
+        oprot.writeFieldEnd();
+      }
+      oprot.writeFieldBegin(TIMESTAMP_FIELD_DESC);
+      oprot.writeDouble(struct.timestamp);
+      oprot.writeFieldEnd();
+      oprot.writeFieldBegin(REPLICA_ID_FIELD_DESC);
+      oprot.writeI32(struct.replicaId);
+      oprot.writeFieldEnd();
+      oprot.writeFieldBegin(VIEW_ID_FIELD_DESC);
+      oprot.writeI32(struct.viewId);
+      oprot.writeFieldEnd();
       oprot.writeFieldStop();
       oprot.writeStructEnd();
     }
@@ -477,19 +839,43 @@ public class Transaction implements org.apache.thrift.TBase<Transaction, Transac
       if (struct.isSetOperation()) {
         optionals.set(1);
       }
-      oprot.writeBitSet(optionals, 2);
+      if (struct.isSetSignature()) {
+        optionals.set(2);
+      }
+      if (struct.isSetTimestamp()) {
+        optionals.set(3);
+      }
+      if (struct.isSetReplicaId()) {
+        optionals.set(4);
+      }
+      if (struct.isSetViewId()) {
+        optionals.set(5);
+      }
+      oprot.writeBitSet(optionals, 6);
       if (struct.isSetTransactionId()) {
         oprot.writeI32(struct.transactionId);
       }
       if (struct.isSetOperation()) {
         struct.operation.write(oprot);
       }
+      if (struct.isSetSignature()) {
+        oprot.writeString(struct.signature);
+      }
+      if (struct.isSetTimestamp()) {
+        oprot.writeDouble(struct.timestamp);
+      }
+      if (struct.isSetReplicaId()) {
+        oprot.writeI32(struct.replicaId);
+      }
+      if (struct.isSetViewId()) {
+        oprot.writeI32(struct.viewId);
+      }
     }
 
     @Override
     public void read(org.apache.thrift.protocol.TProtocol prot, Transaction struct) throws org.apache.thrift.TException {
       TTupleProtocol iprot = (TTupleProtocol) prot;
-      BitSet incoming = iprot.readBitSet(2);
+      BitSet incoming = iprot.readBitSet(6);
       if (incoming.get(0)) {
         struct.transactionId = iprot.readI32();
         struct.setTransactionIdIsSet(true);
@@ -498,6 +884,22 @@ public class Transaction implements org.apache.thrift.TBase<Transaction, Transac
         struct.operation = new Operation();
         struct.operation.read(iprot);
         struct.setOperationIsSet(true);
+      }
+      if (incoming.get(2)) {
+        struct.signature = iprot.readString();
+        struct.setSignatureIsSet(true);
+      }
+      if (incoming.get(3)) {
+        struct.timestamp = iprot.readDouble();
+        struct.setTimestampIsSet(true);
+      }
+      if (incoming.get(4)) {
+        struct.replicaId = iprot.readI32();
+        struct.setReplicaIdIsSet(true);
+      }
+      if (incoming.get(5)) {
+        struct.viewId = iprot.readI32();
+        struct.setViewIdIsSet(true);
       }
     }
   }

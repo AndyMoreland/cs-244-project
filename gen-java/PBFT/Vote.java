@@ -4,17 +4,13 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  *  @generated
  */
-package TwoPhaseCommit;
+package PBFT;
 
 
 import java.util.Map;
 import java.util.HashMap;
 import org.apache.thrift.TEnum;
 
-/**
- * You can define enums, which are just 32 bit integers. Values are optional
- * and start at 1 if not supplied, C style again.
- */
 public enum Vote implements org.apache.thrift.TEnum {
   COMMIT(1),
   ABBORT(2);

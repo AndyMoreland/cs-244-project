@@ -6,5 +6,5 @@ package statemachine;
 public interface Operation<T> {
     void apply(T state);
 
-    TOperation serialize();
+    TwoPhaseCommit.Operation serialize();
 }

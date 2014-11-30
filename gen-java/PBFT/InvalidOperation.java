@@ -4,7 +4,7 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  *  @generated
  */
-package TwoPhaseCommit;
+package PBFT;
 
 import org.apache.thrift.scheme.IScheme;
 import org.apache.thrift.scheme.SchemeFactory;
@@ -40,6 +40,7 @@ public class InvalidOperation extends TException implements org.apache.thrift.TB
 
   private static final org.apache.thrift.protocol.TField ERROR_TYPE_FIELD_DESC = new org.apache.thrift.protocol.TField("errorType", org.apache.thrift.protocol.TType.I32, (short)1);
   private static final org.apache.thrift.protocol.TField ERROR_MESSAGE_FIELD_DESC = new org.apache.thrift.protocol.TField("errorMessage", org.apache.thrift.protocol.TType.STRING, (short)2);
+  private static final org.apache.thrift.protocol.TField SIGNATURE_FIELD_DESC = new org.apache.thrift.protocol.TField("signature", org.apache.thrift.protocol.TType.STRING, (short)3);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -49,11 +50,13 @@ public class InvalidOperation extends TException implements org.apache.thrift.TB
 
   public int errorType; // required
   public String errorMessage; // required
+  public String signature; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
     ERROR_TYPE((short)1, "errorType"),
-    ERROR_MESSAGE((short)2, "errorMessage");
+    ERROR_MESSAGE((short)2, "errorMessage"),
+    SIGNATURE((short)3, "signature");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -72,6 +75,8 @@ public class InvalidOperation extends TException implements org.apache.thrift.TB
           return ERROR_TYPE;
         case 2: // ERROR_MESSAGE
           return ERROR_MESSAGE;
+        case 3: // SIGNATURE
+          return SIGNATURE;
         default:
           return null;
       }
@@ -121,6 +126,8 @@ public class InvalidOperation extends TException implements org.apache.thrift.TB
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
     tmpMap.put(_Fields.ERROR_MESSAGE, new org.apache.thrift.meta_data.FieldMetaData("errorMessage", org.apache.thrift.TFieldRequirementType.DEFAULT, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
+    tmpMap.put(_Fields.SIGNATURE, new org.apache.thrift.meta_data.FieldMetaData("signature", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING        , "Signature")));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(InvalidOperation.class, metaDataMap);
   }
@@ -130,12 +137,14 @@ public class InvalidOperation extends TException implements org.apache.thrift.TB
 
   public InvalidOperation(
     int errorType,
-    String errorMessage)
+    String errorMessage,
+    String signature)
   {
     this();
     this.errorType = errorType;
     setErrorTypeIsSet(true);
     this.errorMessage = errorMessage;
+    this.signature = signature;
   }
 
   /**
@@ -146,6 +155,9 @@ public class InvalidOperation extends TException implements org.apache.thrift.TB
     this.errorType = other.errorType;
     if (other.isSetErrorMessage()) {
       this.errorMessage = other.errorMessage;
+    }
+    if (other.isSetSignature()) {
+      this.signature = other.signature;
     }
   }
 
@@ -158,6 +170,7 @@ public class InvalidOperation extends TException implements org.apache.thrift.TB
     setErrorTypeIsSet(false);
     this.errorType = 0;
     this.errorMessage = null;
+    this.signature = null;
   }
 
   public int getErrorType() {
@@ -207,6 +220,30 @@ public class InvalidOperation extends TException implements org.apache.thrift.TB
     }
   }
 
+  public String getSignature() {
+    return this.signature;
+  }
+
+  public InvalidOperation setSignature(String signature) {
+    this.signature = signature;
+    return this;
+  }
+
+  public void unsetSignature() {
+    this.signature = null;
+  }
+
+  /** Returns true if field signature is set (has been assigned a value) and false otherwise */
+  public boolean isSetSignature() {
+    return this.signature != null;
+  }
+
+  public void setSignatureIsSet(boolean value) {
+    if (!value) {
+      this.signature = null;
+    }
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case ERROR_TYPE:
@@ -225,6 +262,14 @@ public class InvalidOperation extends TException implements org.apache.thrift.TB
       }
       break;
 
+    case SIGNATURE:
+      if (value == null) {
+        unsetSignature();
+      } else {
+        setSignature((String)value);
+      }
+      break;
+
     }
   }
 
@@ -235,6 +280,9 @@ public class InvalidOperation extends TException implements org.apache.thrift.TB
 
     case ERROR_MESSAGE:
       return getErrorMessage();
+
+    case SIGNATURE:
+      return getSignature();
 
     }
     throw new IllegalStateException();
@@ -251,6 +299,8 @@ public class InvalidOperation extends TException implements org.apache.thrift.TB
       return isSetErrorType();
     case ERROR_MESSAGE:
       return isSetErrorMessage();
+    case SIGNATURE:
+      return isSetSignature();
     }
     throw new IllegalStateException();
   }
@@ -286,6 +336,15 @@ public class InvalidOperation extends TException implements org.apache.thrift.TB
         return false;
     }
 
+    boolean this_present_signature = true && this.isSetSignature();
+    boolean that_present_signature = true && that.isSetSignature();
+    if (this_present_signature || that_present_signature) {
+      if (!(this_present_signature && that_present_signature))
+        return false;
+      if (!this.signature.equals(that.signature))
+        return false;
+    }
+
     return true;
   }
 
@@ -302,6 +361,11 @@ public class InvalidOperation extends TException implements org.apache.thrift.TB
     list.add(present_errorMessage);
     if (present_errorMessage)
       list.add(errorMessage);
+
+    boolean present_signature = true && (isSetSignature());
+    list.add(present_signature);
+    if (present_signature)
+      list.add(signature);
 
     return list.hashCode();
   }
@@ -330,6 +394,16 @@ public class InvalidOperation extends TException implements org.apache.thrift.TB
     }
     if (isSetErrorMessage()) {
       lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.errorMessage, other.errorMessage);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(isSetSignature()).compareTo(other.isSetSignature());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (isSetSignature()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.signature, other.signature);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -363,6 +437,14 @@ public class InvalidOperation extends TException implements org.apache.thrift.TB
       sb.append("null");
     } else {
       sb.append(this.errorMessage);
+    }
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("signature:");
+    if (this.signature == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.signature);
     }
     first = false;
     sb.append(")");
@@ -426,6 +508,14 @@ public class InvalidOperation extends TException implements org.apache.thrift.TB
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
+          case 3: // SIGNATURE
+            if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
+              struct.signature = iprot.readString();
+              struct.setSignatureIsSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
           default:
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
         }
@@ -447,6 +537,11 @@ public class InvalidOperation extends TException implements org.apache.thrift.TB
       if (struct.errorMessage != null) {
         oprot.writeFieldBegin(ERROR_MESSAGE_FIELD_DESC);
         oprot.writeString(struct.errorMessage);
+        oprot.writeFieldEnd();
+      }
+      if (struct.signature != null) {
+        oprot.writeFieldBegin(SIGNATURE_FIELD_DESC);
+        oprot.writeString(struct.signature);
         oprot.writeFieldEnd();
       }
       oprot.writeFieldStop();
@@ -473,19 +568,25 @@ public class InvalidOperation extends TException implements org.apache.thrift.TB
       if (struct.isSetErrorMessage()) {
         optionals.set(1);
       }
-      oprot.writeBitSet(optionals, 2);
+      if (struct.isSetSignature()) {
+        optionals.set(2);
+      }
+      oprot.writeBitSet(optionals, 3);
       if (struct.isSetErrorType()) {
         oprot.writeI32(struct.errorType);
       }
       if (struct.isSetErrorMessage()) {
         oprot.writeString(struct.errorMessage);
       }
+      if (struct.isSetSignature()) {
+        oprot.writeString(struct.signature);
+      }
     }
 
     @Override
     public void read(org.apache.thrift.protocol.TProtocol prot, InvalidOperation struct) throws org.apache.thrift.TException {
       TTupleProtocol iprot = (TTupleProtocol) prot;
-      BitSet incoming = iprot.readBitSet(2);
+      BitSet incoming = iprot.readBitSet(3);
       if (incoming.get(0)) {
         struct.errorType = iprot.readI32();
         struct.setErrorTypeIsSet(true);
@@ -493,6 +594,10 @@ public class InvalidOperation extends TException implements org.apache.thrift.TB
       if (incoming.get(1)) {
         struct.errorMessage = iprot.readString();
         struct.setErrorMessageIsSet(true);
+      }
+      if (incoming.get(2)) {
+        struct.signature = iprot.readString();
+        struct.setSignatureIsSet(true);
       }
     }
   }
