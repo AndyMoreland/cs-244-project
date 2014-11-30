@@ -58,30 +58,31 @@ namespace java TwoPhaseCommit
  */
 
 enum Vote {
-  COMMIT = 1,
-  ABBORT = 2
+    COMMIT = 1,
+    ABBORT = 2
 }
 
-/**
- * Structs are the basic complex data structures. They are comprised of fields
- * which each have an integer identifier, a type, a symbolic name, and an
- * optional default value.
- *
- * Fields can be declared "optional", which ensures they will not be included
- * in the serialized output if they aren't set.  Note that this requires some
- * manual management in some languages.
- */
-//struct Work {
-//  1: i32 num1 = 0,
-//  2: i32 num2,
-//  3: Vote op,
-//  4: optional string comment,
-//}
+enum ChineseCheckersOperation {
+    MOVE_PIECE = 1,
+    KICK_PLAYER = 2,
+    ADD_PLAYER = 3;
+}
 
-//exception InvalidOperation {
-//  1: i32 what,
-//  2: string why
-//}
+exception InvalidOperation {
+    1: i32 errorType,
+    2: string errorMessage;
+}
+
+struct Operation {
+    1: i32 operationId,
+    2: i32 operationType, // an ENUM with service-defined semantics
+    3: map<string, binary> arguments; // the string corresponds to the argument name and the binary to the argument value
+}
+
+struct Transaction {
+    1: i32 transactionId,
+    2: Operation operation;
+}
 
 /**
  * Ahh, now onto the cool part, defining a service. Services just need a name
