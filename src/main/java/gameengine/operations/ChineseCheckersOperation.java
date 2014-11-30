@@ -1,5 +1,6 @@
-package gameengine;
+package gameengine.operations;
 
+import gameengine.ChineseCheckersState;
 import statemachine.Operation;
 
 /**

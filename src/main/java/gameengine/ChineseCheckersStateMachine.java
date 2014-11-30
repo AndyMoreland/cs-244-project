@@ -1,5 +1,6 @@
 package gameengine;
 
+import gameengine.operations.ChineseCheckersOperation;
 import statemachine.InvalidStateMachineOperationException;
 import statemachine.StateMachine;
 
