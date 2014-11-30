@@ -21,11 +21,13 @@ public class PBFTCohortRunner {
 
     public static PBFTCohort.Processor processor;
 
-    private static GroupConfigProvider configProvider = new StaticGroupConfigProvider(null, Sets.<GroupMember>newHashSet());
+    private static GroupConfigProvider configProvider = new StaticGroupConfigProvider(null, Sets.<GroupMember>newHashSet(), 0);
+
+    private static final int REPLICA_ID_ARG_POS = 2;
 
     public static void main(String [] args) {
         try {
-            handler = new PBFTCohortHandler(configProvider);
+            handler = new PBFTCohortHandler(configProvider, Integer.parseInt(args[REPLICA_ID_ARG_POS]));
             processor = new PBFTCohort.Processor(handler);
 
             Runnable simple = new Runnable() {
