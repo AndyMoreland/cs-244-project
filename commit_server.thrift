@@ -57,7 +57,7 @@ namespace java PBFT
  * and start at 1 if not supplied, C style again.
  */
 
-typedef string Signature
+typedef binary Signature
 
 enum Vote {
     COMMIT = 1,
