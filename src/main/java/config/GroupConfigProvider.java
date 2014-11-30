@@ -5,10 +5,10 @@ import java.util.Set;
 /**
  * Created by andrew on 11/27/14.
  */
-public interface GroupConfigProvider {
-    Set<GroupMember> getGroupMembers();
+public interface GroupConfigProvider<T extends org.apache.thrift.TServiceClient> {
+    Set<GroupMember<T>> getGroupMembers();
 
-    GroupMember getLeader();
+    GroupMember<T> getLeader();
 
-    void setLeader(GroupMember leader);
+    void setLeader(GroupMember<T> leader);
 }
