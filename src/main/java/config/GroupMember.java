@@ -31,6 +31,10 @@ public class GroupMember<T extends org.apache.thrift.TServiceClient> {
         this.address = address;
     }
 
+    public int getReplicaID() {
+        return id;
+    }
+
     public T getThriftConnection() throws IllegalAccessException, InvocationTargetException, InstantiationException, TTransportException {
         TSocket transport = new TSocket(address.getHostName(), address.getPort());
         transport.open();
