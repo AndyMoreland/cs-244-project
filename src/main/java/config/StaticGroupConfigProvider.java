@@ -1,5 +1,8 @@
 package config;
 
+import com.sun.istack.internal.Nullable;
+
+import java.security.acl.Group;
 import java.util.Set;
 
 /**
@@ -38,6 +41,17 @@ public class StaticGroupConfigProvider implements GroupConfigProvider {
     @Override
     public Set<GroupMember> getGroupMembers() {
         return members;
+    }
+
+    @Override
+    @Nullable
+    public GroupMember getGroupMember(int replicaID) {
+        for (GroupMember member : members) {
+            if (member.getReplicaID() == replicaID) {
+                return member;
+            }
+        }
+        return null;
     }
 
     @Override
