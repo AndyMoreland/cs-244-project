@@ -31,6 +31,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     private static final int LAST_CHECKPOINT = 0; // set to 0 for now; no checkpointing
     private static final int MIN_SEQ_NO = 0;
     private static final int MIN_VIEW_ID = 0;
+    private static final ObjectMapper mapper;
 
     public PBFTCohortHandler(GroupConfigProvider<PBFTCohort.Client> configProvider, int replicaID) {
         this.configProvider = configProvider;
@@ -54,6 +55,27 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
             log.addEntry(logTransaction);
         } catch (IllegalLogEntryException e) {
             e.printStackTrace();
+        }
+
+        for (final GroupMember<PBFTCohort.Client> member : configProvider.getGroupMembers()) {
+            if (member.getReplicaID() != this.replicaID) {
+                final PrepareMessage prepareMessage = new PrepareMessage();
+                prepareMessage.viewstamp = transaction.viewstamp;
+                prepareMessage.replicaId = member.getReplicaID();
+                prepareMessage.transactionDigest = UNIMPLEMENTED;
+                prepareMessage.messageSignature = UNIMPLEMENTED;
+
+                pool.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            member.getThriftConnection().prepare(prepareMessage);
+                        } catch (TException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+            }
         }
     }
 
@@ -165,8 +187,8 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
         // send prepares for everything in script O
 
         // clear old entries for old views out from viewChangeMessages
-        for(Iterator<Map.Entry<Integer, Set<ViewChangeMessage>>> it
-                    = viewChangeMessages.entrySet().iterator(); it.hasNext();) {
+        for (Iterator<Map.Entry<Integer, Set<ViewChangeMessage>>> it
+                     = viewChangeMessages.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry<Integer, Set<ViewChangeMessage>> entry = it.next();
             if (entry.getKey().compareTo(configProvider.getViewID()) <= 0) {
                 it.remove();
