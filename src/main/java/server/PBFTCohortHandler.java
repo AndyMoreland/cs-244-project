@@ -120,12 +120,8 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
                 }
 
                 // if primary, check if you have enough to send NewViewMessage
-<<<<<<< HEAD
                 if (configProvider.getLeader().getReplicaID() == replicaID
                         && viewChangeMessages.get(newViewID).size() > configProvider.getQuorumSize()) {
-=======
-                if (configProvider.getLeader().getReplicaID() == replicaID && viewChangeMessages.get(newViewID).size() > configProvider.getQuorumSize()) {
->>>>>>> 9b6930dac1e5389d8b4516bcba3ec013ab65a86b
                     // multicast NEW-VIEW message
                     Set<GroupMember<PBFTCohort.Client>> groupMembers = configProvider.getGroupMembers();
                     for (final GroupMember<PBFTCohort.Client> groupMember : groupMembers)
