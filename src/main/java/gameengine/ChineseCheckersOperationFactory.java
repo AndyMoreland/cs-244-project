@@ -14,11 +14,12 @@ public class ChineseCheckersOperationFactory {
 
         switch (type) {
             case MOVE_PIECE:
-                return new MovePiece();
+                return new MovePiece(1,1,1,1);
             case KICK_PLAYER:
                 return new KickPlayer();
             case ADD_PLAYER:
                 return new AddPlayer();
         }
+        return null;
     }
 }

@@ -13,13 +13,9 @@ public class ChineseCheckersStateMachine implements StateMachine<ChineseCheckers
 
     @Override
     public void applyOperation(ChineseCheckersOperation op) throws InvalidStateMachineOperationException {
-        if (operationIsIllegal(op)) { throw new InvalidStateMachineOperationException(); }
+        if (!op.isValid(this.getState())) { throw new InvalidStateMachineOperationException(); }
 
         op.apply(this.getState());
-    }
-
-    public boolean operationIsIllegal(ChineseCheckersOperation op) {
-        return false;
     }
 
     public ChineseCheckersState getState() {
