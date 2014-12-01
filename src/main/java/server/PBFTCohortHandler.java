@@ -28,7 +28,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     private final Log<Operation<ChineseCheckersState>> log;
     private GroupConfigProvider configProvider;
     private final GroupMember<PBFTCohort.Client> thisCohort;
-    private final Signature signature = null;
+    private Signature signature;
     private Map<Integer, Set<ViewChangeMessage>> viewChangeMessages; // this should include your own messages
     private int replicaID;
     private static final int POOL_SIZE = 10;
@@ -36,6 +36,10 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     private static final int LAST_CHECKPOINT = 0; // set to 0 for now; no checkpointing
     private static final int MIN_SEQ_NO = 0;
     private static final int MIN_VIEW_ID = 0;
+    private static final Transaction NO_OP_TRANSACTION = new Transaction()
+            .setOperation(new PBFT.Operation()
+                    .setOperationType(ChineseCheckersOperation.NO_OP.getValue()));
+    private static final byte[] NO_OP_TRANSACTION_DIGEST = CryptoUtil.computeTransactionDigest(NO_OP_TRANSACTION);
 
 
     public PBFTCohortHandler(GroupConfigProvider<PBFTCohort.Client> configProvider, int replicaID, GroupMember<PBFTCohort.Client> thisCohort) {
@@ -125,11 +129,13 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
 
         for (int n = LAST_CHECKPOINT; n < lastCheckpointInViewChangeMessages; ++n) {
             int highestViewID = MIN_VIEW_ID - 1;
+            byte[] digest = null;
             for (ViewChangeMessage viewChangeMessage : viewChangeMessages) {
                 for (PrePrepareMessage prePrepareMessage : viewChangeMessage.getPreparedGreaterThanSequenceNumber()) {
                     if (prePrepareMessage.getViewstamp().getSequenceNumber() == n) {
                         if (highestViewID < prePrepareMessage.getViewstamp().getViewId()) {
                             highestViewID = prePrepareMessage.getViewstamp().getViewId();
+                            digest = prePrepareMessage.getTransactionDigest();
                         }
                     }
                 }
@@ -139,11 +145,11 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
             prePrepareMessage.getViewstamp().setViewId(newViewID);
             prePrepareMessage.getViewstamp().setSequenceNumber(n);
             if (highestViewID >= MIN_VIEW_ID) {
-                prePrepareMessage.setMessageSignature(CryptoUtil.computeMessageSignature(prePrepareMessage, this.signature));
+                prePrepareMessage.setTransactionDigest(digest);
             } else {
-                // TODO    prePrepareMessage.setMessageSignature( /* TODO set as noop */);
+                prePrepareMessage.setTransactionDigest(NO_OP_TRANSACTION_DIGEST);
             }
-            // TODO prePrepareMessage.setTransactionDigest( /* TODO */ );
+            prePrepareMessage.setMessageSignature(CryptoUtil.computeMessageSignature(prePrepareMessage, this.signature));
             prePrepareMessages.add(prePrepareMessage);
         }
         return prePrepareMessages;

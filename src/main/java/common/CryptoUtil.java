@@ -39,7 +39,7 @@ public final class CryptoUtil {
         }
     }
 
-    public static byte[] computeTransactionDigest(Transaction transaction) {
+    public static byte[] computeTransactionDigest(PBFT.Transaction transaction) {
         try {
             ObjectWriter writer = mapper.writer();
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
