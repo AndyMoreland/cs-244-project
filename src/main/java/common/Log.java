@@ -1,5 +1,7 @@
 package common;
 
+import PBFT.CommitMessage;
+import PBFT.PrepareMessage;
 import PBFT.Viewstamp;
 import com.google.common.base.Optional;
 import com.google.common.collect.Maps;
@@ -15,9 +17,12 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * Created by andrew on 11/27/14.
  */
 public class Log<T> {
+    // {SequenceNumber => { ViewStamp => Transaction }}
     Map<Integer, Map<Viewstamp, Transaction<T>>> tentativeLogEntries = Maps.newHashMap();
     Map<Integer, Transaction<T>> committedLogEntries = Maps.newHashMap();
-    Map<Viewstamp, Transaction<T>> transactions = Maps.newHashMap();
+    Map<Viewstamp, Transaction<T>> transactions = Maps.newConcurrentMap();
+    Map<Viewstamp, CommitMessage> commitMessages = Maps.newConcurrentMap();
+    Map<Viewstamp, PrepareMessage> prepareMessages = Maps.newConcurrentMap();
     ReadWriteLock logLock = new ReentrantReadWriteLock();
 
     public void addEntry(Transaction<T> value) throws IllegalLogEntryException {
@@ -43,7 +48,12 @@ public class Log<T> {
     }
 
     public Transaction<T> getTransaction(Viewstamp viewstamp) {
-        return transactions.get(viewstamp);
+        Lock readLock = logLock.readLock();
+        readLock.lock();
+        Transaction<T> t = transactions.get(viewstamp);
+        readLock.unlock();
+
+        return t;
     }
 
     public Collection<Transaction<T>> getTentativeEntries(int index) {
@@ -79,5 +89,27 @@ public class Log<T> {
         committedLogEntries.put(entry.getViewstamp().getSequenceNumber(), entry);
 
         writeLock.unlock();
+    }
+
+    public void addPrepareMessage(PrepareMessage message) {
+        Lock writeLock = logLock.writeLock();
+        writeLock.lock();
+        prepareMessages.put(message.getViewstamp(), message);
+        writeLock.unlock();
+    }
+
+    public void addCommitMessage(CommitMessage message) {
+        Lock writeLock = logLock.writeLock();
+        writeLock.lock();
+        commitMessages.put(message.getViewstamp(), message);
+        writeLock.unlock();
+    }
+
+    public Map<Viewstamp, PrepareMessage> getPrepareMessages() {
+        return prepareMessages;
+    }
+
+    public Map<Viewstamp, CommitMessage> getCommitMessages() {
+        return commitMessages;
     }
 }

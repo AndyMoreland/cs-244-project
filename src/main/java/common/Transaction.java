@@ -1,11 +1,6 @@
 package common;
 
-import PBFT.CommitMessage;
-import PBFT.PrepareMessage;
 import PBFT.Viewstamp;
-import com.google.common.collect.Sets;
-
-import java.util.Set;
 
 /**
  * Created by andrew on 11/27/14.
@@ -16,8 +11,6 @@ public class Transaction<T> {
     private final T value;
     private boolean committed;
     private Viewstamp viewStamp;
-    private final Set<PrepareMessage> prepareMessages = Sets.newHashSet();
-    private final Set<CommitMessage> commitMessages = Sets.newHashSet();
 
     public Transaction(Viewstamp id, int targetIndex, T value) {
         this.id = id;
@@ -34,11 +27,4 @@ public class Transaction<T> {
         return id;
     }
 
-    public Set<CommitMessage> getCommitMessages() {
-        return commitMessages;
-    }
-
-    public Set<PrepareMessage> getPrepareMessages() {
-        return prepareMessages;
-    }
 }
