@@ -11,9 +11,11 @@ import config.GroupConfigProvider;
 import config.GroupMember;
 import gameengine.ChineseCheckersOperationFactory;
 import gameengine.ChineseCheckersState;
+import gameengine.operations.NoOp;
 import org.apache.thrift.TException;
 import statemachine.Operation;
 
+import java.nio.ByteBuffer;
 import java.security.*;
 import java.util.Iterator;
 import java.util.Map;
@@ -36,10 +38,8 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     private static final int LAST_CHECKPOINT = 0; // set to 0 for now; no checkpointing
     private static final int MIN_SEQ_NO = 0;
     private static final int MIN_VIEW_ID = 0;
-    private static final Transaction NO_OP_TRANSACTION = new Transaction()
-            .setOperation(new PBFT.Operation()
-                    .setOperationType(ChineseCheckersOperation.NO_OP.getValue()));
-    private static final byte[] NO_OP_TRANSACTION_DIGEST = CryptoUtil.computeTransactionDigest(NO_OP_TRANSACTION);
+    private static final byte[] NO_OP_TRANSACTION_DIGEST = CryptoUtil.computeTransactionDigest(
+            new common.Transaction(null,-1,new NoOp()));
 
 
     public PBFTCohortHandler(GroupConfigProvider<PBFTCohort.Client> configProvider, int replicaID, GroupMember<PBFTCohort.Client> thisCohort) {
@@ -155,12 +155,35 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
         return prePrepareMessages;
     }
 
+
+    private boolean prePrepareSetValid(Set<PrePrepareMessage> prePrepareMessages) {
+        Map<ByteBuffer, Integer> numPrepares = new Maps.newHashMap();
+        for (PrePrepareMessage prePrepareMessage: prePrepareMessages) {
+            ByteBuffer buf = ByteBuffer.wrap(prePrepareMessage.getTransactionDigest());
+            if (numPrepares.containsKey(buf)) {
+                numPrepares.put(buf, numPrepares.get(buf) +1);
+            } else {
+                numPrepares.put(buf, 1);
+            }
+        }
+
+        for (ByteBuffer buf :numPrepares.keySet()) {
+            if (numPrepares.get(buf) < configProvider.getQuorumSize())
+                return false;
+        }
+        return true;
+    }
+
     @Override
     public synchronized void startViewChange(ViewChangeMessage message) throws TException {
         if (message.isSetNewViewID()) {
             int newViewID = message.getNewViewID();
             if (newViewID > configProvider.getViewID()) { // can only move to a higher view
-                // TODO: verify validity
+                // TODO: verify of checkpoint messages
+                if (!prePrepareSetValid(message.getPreparedGreaterThanSequenceNumber())) {
+                    return;
+                }
+
                 if (viewChangeMessages.containsKey(newViewID)) {
                     viewChangeMessages.get(newViewID).add(message);
                 } else {
@@ -199,6 +222,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     @Override
     public synchronized void approveViewChange(NewViewMessage message) throws TException {
         // verify contents of message
+
         // change to new view
         configProvider.setViewID(message.getNewViewID());
 
