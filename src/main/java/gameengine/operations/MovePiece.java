@@ -1,10 +1,7 @@
 package gameengine.operations;
 
 import PBFT.Operation;
-import gameengine.ChineseCheckersSpot;
-import gameengine.ChineseCheckersState;
-import gameengine.HexDirection;
-import gameengine.HexPoint;
+import gameengine.*;
 
 /**
  * Created by andrew on 11/30/14.
@@ -13,13 +10,16 @@ public class MovePiece implements ChineseCheckersOperation {
 
     private final HexPoint start;
     private final HexPoint end;
+    private final int replicaID;
 
-    public MovePiece(HexPoint start, HexPoint end) {
+    public MovePiece(int replicaID, HexPoint start, HexPoint end) {
+        this.replicaID = replicaID;
         this.start = start;
         this.end = end;
     }
 
-    public MovePiece(int q1, int r1, int q2, int r2) {
+    public MovePiece(int replicaID, int q1, int r1, int q2, int r2) {
+        this.replicaID = replicaID;
         this.start = new HexPoint(q1, r1);
         this.end = new HexPoint(q2, r2);
     }
@@ -32,20 +32,26 @@ public class MovePiece implements ChineseCheckersOperation {
     }
 
     @Override
+    public void undo(ChineseCheckersState state) {
+        boolean lastMove = start.equals(end) || start.isNeighbor(end);
+        state.getSpot(end).moveOccupantTo(state.getSpot(start));
+        if(lastMove) state.prevActivePlayer();
+    }
+
+    @Override
     public boolean isValid(ChineseCheckersState state) {
         ChineseCheckersSpot startSpot = state.getSpot(start);
         ChineseCheckersSpot endSpot = state.getSpot(end);
 
-        if(startSpot == null || endSpot == null) return false;  // Both spots must be within board bounds
-        if(startSpot.getOccupant() == null) return false;       // Must move from full spot
+        if(startSpot == null || endSpot == null) return false;     // Both spots must be within board bounds
+        if(startSpot.getOccupant() == null) return false;          // Must move from full spot
 
-        if(state.getCurrentPlayer() != startSpot.getOccupant()) return false; // Current player must move own piece
-        // TODO: ensure server issuing message owns piece being moved
-
-
+        Player current = state.getCurrentPlayer();
+        if(this.replicaID != current.getReplicaId()) return false; // Only current player may request a move
+        if(startSpot.getOccupant() != current) return false;       // And player can only move own piece
 
         HexPoint moveDelta = end.subtract(start);
-        if (moveDelta.isZero()) return true;                    // Player passes
+        if (moveDelta.isZero()) return true;                       // Player passes
 
         // If not passing must move to empty spot
         if(endSpot.getOccupant() != null) return false;
@@ -65,11 +71,6 @@ public class MovePiece implements ChineseCheckersOperation {
         }
 
         return false;
-    }
-
-    @Override
-    public void undo(ChineseCheckersState state) {
-        
     }
 
     @Override

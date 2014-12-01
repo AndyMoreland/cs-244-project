@@ -33,7 +33,12 @@ public class ChineseCheckersBoard {
 
     // Reflect points across the origin
     private static int[][] reflect(int[][] source){
+        // Deep copy!
         int[][] result = source.clone();
+        for(int i = 0; i < result.length; i++){
+            result[i] = source[i].clone();
+        }
+
         for(int[] pt : result){
             pt[0] = -pt[0];
             pt[1] = -pt[1];

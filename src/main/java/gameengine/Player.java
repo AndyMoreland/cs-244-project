@@ -17,6 +17,7 @@ public class Player {
     public String getName() {
         return name;
     }
+    public int getReplicaId() { return id; }
     public boolean isActive() { return active; }
 
     public void activate(String name){

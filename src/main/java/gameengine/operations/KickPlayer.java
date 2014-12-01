@@ -13,6 +13,11 @@ public class KickPlayer implements ChineseCheckersOperation {
     }
 
     @Override
+    public boolean isValid(ChineseCheckersState state) {
+        return false;
+    }
+
+    @Override
     public void undo(ChineseCheckersState state) {
 
     }

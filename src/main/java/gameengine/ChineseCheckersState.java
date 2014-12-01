@@ -47,4 +47,11 @@ public class ChineseCheckersState {
             this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.size();
         } while(!this.players.get(this.currentPlayerIndex).isActive());
     }
+
+    public void prevActivePlayer() {
+        // Will infinite loop if all players inactive
+        do {
+            this.currentPlayerIndex = (this.currentPlayerIndex - 1) % this.players.size();
+        } while(!this.players.get(this.currentPlayerIndex).isActive());
+    }
 }
