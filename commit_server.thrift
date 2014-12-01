@@ -140,6 +140,11 @@ struct NewViewMessage {
     5:Signature messageSignature;
 }
 
+struct AskForTransaction {
+    1:Viewstamp viewstamp,
+    2:i32 replicaID;
+}
+
 /**
  * Ahh, now onto the cool part, defining a service. Services just need a name
  * and can optionally inherit from another service using the extends keyword.
@@ -151,5 +156,6 @@ service PBFTCohort {
     void commit(1:CommitMessage message),
     void checkpoint(1:CheckpointMessage message),
     void startViewChange(1:ViewChangeMessage message),
-    void approveViewChange(1:NewViewMessage message);
+    void approveViewChange(1:NewViewMessage message),
+    Transaction getTransaction(1:AskForTransaction message);
 }

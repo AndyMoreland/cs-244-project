@@ -273,6 +273,17 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
             Viewstamp viewstamp = new Viewstamp(
                     prePrepareMessage.getViewstamp().getSequenceNumber(), configProvider.getViewID());
             multicastPrepare(ByteBuffer.wrap(transactionDigest), viewstamp);
+            if (log.getTransaction(viewstamp) == null ) {
+                // if we don't have this in our log already, we need to ask someone else for it
+                GroupMember<PBFTCohort.Client> target = getReplicaThatPreparedSeqno(viewstamp.getSequenceNumber());
+                common.Transaction<Operation<ChineseCheckersState>> logTransaction = getTransactionForPBFTTransaction(
+                        target.getThriftConnection().getTransaction(new AskForTransaction().setReplicaID(replicaID).setViewstamp(viewstamp));
+                try {
+                    log.addEntry(logTransaction);
+                } catch (IllegalLogEntryException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
         // clear old entries for old views out from viewChangeMessages
@@ -283,6 +294,18 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
                 it.remove();
             }
         }
+    }
+
+    private static GroupMember<PBFTCohort.Client> getReplicaThatPreparedSeqno(int sequenceNumber) {
+        // look through V
+        // look through P,
+        // find preprepare with that seqno and look through corresponding prepares to find someone who sent one
+        return null;
+    }
+
+    @Override
+    public Transaction getTransaction(AskForTransaction message) throws TException {
+        return null;
     }
 
     private static common.Transaction<Operation<ChineseCheckersState>> getTransactionForPBFTTransaction(Transaction transaction) {
