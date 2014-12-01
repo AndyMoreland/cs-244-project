@@ -1,11 +1,10 @@
 package server;
 
 import PBFT.*;
+import PBFT.Transaction;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import common.CryptoUtil;
-import common.IllegalLogEntryException;
-import common.Log;
+import common.*;
 import config.GroupConfigProvider;
 import config.GroupMember;
 import gameengine.ChineseCheckersOperationFactory;
@@ -36,7 +35,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     private static final int MIN_SEQ_NO = 0;
     private static final int MIN_VIEW_ID = 0;
     private static final byte[] NO_OP_TRANSACTION_DIGEST = CryptoUtil.computeTransactionDigest(
-            new common.Transaction(null,-1,new NoOp()));
+            new common.Transaction(null, -1, new NoOp()));
 
 
     public PBFTCohortHandler(GroupConfigProvider<PBFTCohort.Client> configProvider, int replicaID, GroupMember<PBFTCohort.Client> thisCohort) {
@@ -52,11 +51,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     public void prePrepare(PrePrepareMessage message, Transaction transaction) throws TException {
         assert (configProvider.getLeader().getReplicaID() == this.replicaID);
 
-        common.Transaction<Operation<ChineseCheckersState>> logTransaction = new common.Transaction<Operation<ChineseCheckersState>>(
-                transaction.viewstamp,
-                transaction.viewstamp.getSequenceNumber(),
-                ChineseCheckersOperationFactory.hydrate(transaction.operation)
-        );
+        common.Transaction<Operation<ChineseCheckersState>> logTransaction = getTransactionForPBFTTransaction(transaction);
 
         try {
             log.addEntry(logTransaction);
@@ -68,7 +63,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
             final PrepareMessage prepareMessage = new PrepareMessage();
             prepareMessage.viewstamp = transaction.viewstamp;
             prepareMessage.replicaId = member.getReplicaID();
-            prepareMessage.transactionDigest = ByteBuffer.wrap(CryptoUtil.computeTransactionDigest(transaction));
+            prepareMessage.transactionDigest = ByteBuffer.wrap(CryptoUtil.computeTransactionDigest(logTransaction));
             prepareMessage.messageSignature = ByteBuffer.wrap(CryptoUtil.computeMessageSignature(prepareMessage, thisCohort.getPrivateKey()));
 
             pool.execute(new Runnable() {
@@ -142,7 +137,6 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
         return prePrepareMessages;
     }
 
-
     private boolean prePrepareSetValid(Set<PrePrepareMessage> prePrepareMessages) {
         Map<ByteBuffer, Integer> numPrepares = new Maps.newHashMap();
         for (PrePrepareMessage prePrepareMessage: prePrepareMessages) {
@@ -160,6 +154,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
         }
         return true;
     }
+
 
     @Override
     public synchronized void startViewChange(ViewChangeMessage message) throws TException {
@@ -223,5 +218,13 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
                 it.remove();
             }
         }
+    }
+
+    private static common.Transaction<Operation<ChineseCheckersState>> getTransactionForPBFTTransaction(Transaction transaction) {
+        return new common.Transaction<Operation<ChineseCheckersState>>(
+                transaction.viewstamp,
+                transaction.viewstamp.getSequenceNumber(),
+                ChineseCheckersOperationFactory.hydrate(transaction.operation)
+        );
     }
 }

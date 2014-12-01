@@ -24,15 +24,16 @@ public class PBFTCohortRunner {
     private static GroupConfigProvider configProvider = new StaticGroupConfigProvider(null, Sets.<GroupMember>newHashSet(), 0);
 
     private static final int REPLICA_ID_ARG_POS = 2;
+    private static final int PORT_ARG_POS = 3;
 
-    public static void main(String [] args) {
+    public static void main(final String [] args) {
         try {
             handler = new PBFTCohortHandler(configProvider, Integer.parseInt(args[REPLICA_ID_ARG_POS]));
             processor = new PBFTCohort.Processor(handler);
 
             Runnable simple = new Runnable() {
                 public void run() {
-                    simple(processor);
+                    simple(processor, Integer.parseInt(args[PORT_ARG_POS]));
                 }
             };
 
@@ -42,9 +43,9 @@ public class PBFTCohortRunner {
         }
     }
 
-    public static void simple(PBFTCohort.Processor processor) {
+    public static void simple(PBFTCohort.Processor processor, int port) {
         try {
-            TServerTransport serverTransport = new TServerSocket(9090);
+            TServerTransport serverTransport = new TServerSocket(port);
             TServer server = new TSimpleServer(new Args(serverTransport).processor(processor));
 
             // Use this for a multithreaded server
