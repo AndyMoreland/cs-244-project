@@ -61,24 +61,31 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
             e.printStackTrace();
         }
 
+        multicastPrepare(ByteBuffer.wrap(CryptoUtil.computeTransactionDigest(logTransaction)), transaction.viewstamp);
+    }
+
+    private void multicastPrepare(ByteBuffer transactionDigest, Viewstamp viewstamp) {
         for (final GroupMember<PBFTCohort.Client> member : configProvider.getGroupMembers()) {
             final PrepareMessage prepareMessage = new PrepareMessage();
-            prepareMessage.viewstamp = transaction.viewstamp;
+            prepareMessage.viewstamp = viewstamp;
             prepareMessage.replicaId = member.getReplicaID();
-            prepareMessage.transactionDigest = ByteBuffer.wrap(CryptoUtil.computeTransactionDigest(logTransaction));
+            prepareMessage.transactionDigest = transactionDigest;
             prepareMessage.messageSignature = ByteBuffer.wrap(CryptoUtil.computeMessageSignature(prepareMessage, thisCohort.getPrivateKey()));
-
-            pool.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        member.getThriftConnection().prepare(prepareMessage);
-                    } catch (TException e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
         }
+
+    }
+
+    private void sendPrepare(final PrepareMessage prepareMessage, final GroupMember<PBFTCohort.Client> target) {
+        pool.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    target.getThriftConnection().prepare(prepareMessage);
+                } catch (TException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     @Override
@@ -261,6 +268,12 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
         configProvider.setViewID(message.getNewViewID());
 
         // send prepares for everything in script O
+        for (PrePrepareMessage prePrepareMessage : message.getPrePrepareMessages()) {
+            byte[] transactionDigest = prePrepareMessage.getTransactionDigest();
+            Viewstamp viewstamp = new Viewstamp(
+                    prePrepareMessage.getViewstamp().getSequenceNumber(), configProvider.getViewID());
+            multicastPrepare(ByteBuffer.wrap(transactionDigest), viewstamp);
+        }
 
         // clear old entries for old views out from viewChangeMessages
         for (Iterator<Map.Entry<Integer, List<ViewChangeMessage>>> it
