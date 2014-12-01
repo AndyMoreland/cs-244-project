@@ -35,6 +35,8 @@ public class ChineseCheckersState {
 
     public ChineseCheckersSpot getSpot(HexPoint pt) { return this.board.getSpot(pt); }
 
+    // public List<MovePiece> getAvailableMovesForCurrentPlayer
+
     public Player getCurrentPlayer() {
         return players.get(currentPlayerIndex);
     }

@@ -19,6 +19,11 @@ public class MovePiece implements ChineseCheckersOperation {
         this.end = end;
     }
 
+    public MovePiece(int q1, int r1, int q2, int r2) {
+        this.start = new HexPoint(q1, r1);
+        this.end = new HexPoint(q2, r2);
+    }
+
     @Override
     public void apply(ChineseCheckersState state) {
         boolean lastMove = start.equals(end) || start.isNeighbor(end);
@@ -31,9 +36,13 @@ public class MovePiece implements ChineseCheckersOperation {
         ChineseCheckersSpot startSpot = state.getSpot(start);
         ChineseCheckersSpot endSpot = state.getSpot(end);
 
-
         if(startSpot == null || endSpot == null) return false;  // Both spots must be within board bounds
         if(startSpot.getOccupant() == null) return false;       // Must move from full spot
+
+        if(state.getCurrentPlayer() != startSpot.getOccupant()) return false; // Current player must move own piece
+        // TODO: ensure server issuing message owns piece being moved
+
+
 
         HexPoint moveDelta = end.subtract(start);
         if (moveDelta.isZero()) return true;                    // Player passes
