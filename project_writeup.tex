@@ -1,9 +1,69 @@
-\documentclass[11pt]{article}
+\documentclass[12pt]{article}
 \usepackage{cite}
+\usepackage{amsmath}
+% \usepackage{fullpage}
+\usepackage[top=1in, bottom=1in, left=0.8in, right=1in]{geometry}
+\usepackage{multicol}
+\usepackage{amsfonts}
+\usepackage{wrapfig}
+\usepackage{mathtools}
+\usepackage{parskip}
+\usepackage{fancyhdr}
+\usepackage{amssymb}
+\usepackage{titlesec}
+\usepackage[section]{placeins}
+\usepackage[font={small,it}]{caption}
+\usepackage{amsthm}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{float}
+\newfloat{algorithm}{t}{lop}
 
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+\DeclarePairedDelimiter{\floor}{\lfloor}{\rfloor}
+
+\newcommand{\overbar}[1]{\mkern 1.5mu\overline{\mkern-1.5mu#1\mkern-1.5mu}\mkern 1.5mu}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\F}{\mathbb{F}}
+\renewcommand{\P}{\mathcal{P}}
+\newcommand{\U}{\mathcal{U}}
+\newcommand{\V}{\mathcal{V}}
+\newcommand{\W}{\mathcal{W}}
+\renewcommand{\L}{\mathcal{L}}
+\newcommand{\la}{\langle}
+\newcommand{\ra}{\rangle}
+\newcommand{\pe}{^{\perp}}
+\newcommand{\ep}{\epsilon}
+\renewcommand{\lim}{\text{lim}}
+\newcommand{\inj}{\hookrightarrow}
+\newcommand{\aut}{\operatorname{Aut}}
+\newcommand{\Aut}{\operatorname{Aut}}
+\renewcommand{\split}{\operatorname{Split}}
+\newcommand{\characteristic}{\operatorname{Char}}
+\newcommand{\LCM}{\operatorname{LCM}}
+\newcommand{\ov}{\overline}
+\newcommand{\gal}{\operatorname{Gal}}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{proposition}[theorem]{Proposition}
+
+\setlength{\columnsep}{0.1pc}
+
+\title{Pythia: Cheating-Resistant Distributed Game Engines}
+\author{Leo Martel, Susan Tu, Andy Moreland \\ \tt{\{lmartel, susanctu, andymo\}@stanford.edu} \\ Department of Computer Science}
+\date{\today}
 \begin{document}
 
+\maketitle
+
 \section{Abstract}
+
+In this paper we present Pythia, a distributed multiplayer game engine that is resiliant to faults in a restricted Byzantine model. Pythia allows games to be written with little regard for problems like move replication, cheat detection and player list changes. Pythia is based on the \emph{Practical Byzantine Fault Tolerance} paper but weakens the Byzantine threat model as a result of specific constraints of semi-real-time video games. We seek to minimize latency throughout our design and demonstrate that Pythia is a practical underpinning for multiplayer games.
 
 \section{Introduction}
 
