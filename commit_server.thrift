@@ -111,7 +111,7 @@ struct PrepareMessage {
 
 struct CommitMessage {
     1:Viewstamp viewstamp,
-    2:Signature checkpointDigest,
+    2:Signature transactionDigest,
     3:i32 replicaId,
     4:Signature messageSignature;
 }

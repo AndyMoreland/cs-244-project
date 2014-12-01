@@ -9,6 +9,7 @@ public class Transaction<T> {
     private Viewstamp id;
     private final int targetIndex;
     private final T value;
+    private boolean prepared;
     private boolean committed;
     private Viewstamp viewStamp;
 
@@ -19,9 +20,13 @@ public class Transaction<T> {
         this.committed = false;
     }
 
+    public void prepare() { prepared = true; }
     public void commit() {
         committed = true;
     }
+
+    public boolean isPrepared() { return prepared; }
+    public boolean isCommitted() { return committed; }
 
     public Viewstamp getViewstamp() {
         return id;

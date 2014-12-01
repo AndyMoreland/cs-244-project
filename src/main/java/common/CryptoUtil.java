@@ -36,11 +36,11 @@ public final class CryptoUtil {
         }
     }
 
-    public static byte[] computeTransactionDigest(Transaction transaction) {
+    public static TransactionDigest computeTransactionDigest(Transaction transaction) {
         try {
             ObjectWriter writer = mapper.writer();
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
-            return digest.digest(writer.writeValueAsString(transaction).getBytes());
+            return new TransactionDigest(digest.digest(writer.writeValueAsString(transaction).getBytes()));
         } catch (JsonMappingException e) {
             e.printStackTrace();
         } catch (NoSuchAlgorithmException e) {
@@ -65,7 +65,7 @@ public final class CryptoUtil {
         return null;
     }
 
-    public static byte[] computeMessageSignature(Object message, PrivateKey privateKey) {
+    public static MessageSignature computeMessageSignature(Object message, PrivateKey privateKey) {
         Signature signature = null;
         try {
             signature = Signature.getInstance("SHA1withDSA", "SUN");
@@ -80,6 +80,6 @@ public final class CryptoUtil {
             e.printStackTrace();
         }
         ObjectWriter writer = mapper.writer(FIELD_FILTER);
-        return computeSignature(convertToJsonByteArray(message), signature);
+        return new MessageSignature(computeSignature(convertToJsonByteArray(message), signature));
     }
 }

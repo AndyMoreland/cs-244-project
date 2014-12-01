@@ -22,8 +22,8 @@ public class Log<T> {
     Map<Integer, Map<Viewstamp, Transaction<T>>> tentativeLogEntries = Maps.newHashMap();
     Map<Integer, Transaction<T>> committedLogEntries = Maps.newHashMap();
     Map<Viewstamp, Transaction<T>> transactions = Maps.newConcurrentMap();
-    Map<Viewstamp, Set<PrepareMessage>> prepareMessages = Maps.newConcurrentMap();
-    Map<Viewstamp, Set<CommitMessage>> commitMessages = Maps.newConcurrentMap();
+    Map<MultiKey<Viewstamp, TransactionDigest>, Set<PrepareMessage>> prepareMessages = Maps.newConcurrentMap();
+    Map<MultiKey<Viewstamp, TransactionDigest>, Set<CommitMessage>> commitMessages = Maps.newConcurrentMap();
     ReadWriteLock logLock = new ReentrantReadWriteLock();
     int lastCommited = -1;
 
@@ -89,6 +89,7 @@ public class Log<T> {
         Transaction<T> entry = transactions.get(id);
         tentativeLogEntries.remove(id.getSequenceNumber());
         committedLogEntries.put(entry.getViewstamp().getSequenceNumber(), entry);
+        entry.commit();
 
         if (id.getSequenceNumber() == lastCommited + 1) {
             lastCommited++;
@@ -100,35 +101,50 @@ public class Log<T> {
     public void addPrepareMessage(PrepareMessage message) {
         Lock writeLock = logLock.writeLock();
         writeLock.lock();
-        Viewstamp vs = message.getViewstamp();
-        if(!prepareMessages.containsKey(vs)) prepareMessages.put(vs, Sets.<PrepareMessage>newHashSet());
-        prepareMessages.get(vs).add(message);
+        MultiKey<Viewstamp, TransactionDigest> key = MultiKey.newKey(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()));
+        if(!prepareMessages.containsKey(key)) prepareMessages.put(key, Sets.<PrepareMessage>newHashSet());
+        prepareMessages.get(key).add(message);
         writeLock.unlock();
     }
 
     public void addCommitMessage(CommitMessage message) {
         Lock writeLock = logLock.writeLock();
         writeLock.lock();
-        Viewstamp vs = message.getViewstamp();
-        if(!commitMessages.containsKey(vs)) commitMessages.put(vs, Sets.<CommitMessage>newHashSet());
-        commitMessages.get(vs).add(message);
+        MultiKey<Viewstamp, TransactionDigest> key = MultiKey.newKey(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()));
+        if(!commitMessages.containsKey(key)) commitMessages.put(key, Sets.<CommitMessage>newHashSet());
+        commitMessages.get(key).add(message);
         writeLock.unlock();
     }
 
-    public Map<Viewstamp, Set<PrepareMessage>> getPrepareMessages() {
-        return prepareMessages;
+    public void markAsPrepared(Viewstamp id){
+        transactions.get(id).prepare();
     }
 
-    public Map<Viewstamp, Set<CommitMessage>> getCommitMessages() {
-        return commitMessages;
-    }
-
-    public boolean isPrepared(PrepareMessage message){
-        // TODO: boolean prepared, boolean committed in Transaction. check transactions map before processing
-        // TODO: prepare, commit maps from (viewstamp, digest) => set<message>
+    public boolean readyToPrepare(PrepareMessage message, int quorumSize){
+        Lock readLock = logLock.readLock();
+        readLock.lock();
         Transaction<T> transaction = transactions.get(message.getViewstamp());
-        return transaction != null
-            && CryptoUtil.computeTransactionDigest(transaction).equals(message.getTransactionDigest())
-            && false; // # prepares with this viewstamp and digest >= 2N
+        TransactionDigest mtd = new TransactionDigest(message.getTransactionDigest());
+        boolean quorum;
+
+        // Haven't seen this viewstamp, or have already processed, or haven't prepared this request
+        if(transaction == null || transaction.isPrepared() || !CryptoUtil.computeTransactionDigest(transaction).equals(mtd)){
+            quorum = false;
+        } else {
+            quorum = prepareMessages.get(MultiKey.newKey(message.getViewstamp(), mtd)).size() >= quorumSize - 1; // -1 for own log entry
+        }
+        readLock.unlock();
+        return quorum;
+    }
+
+    public boolean readyToCommit(CommitMessage message, int quorumSize) {
+        Lock readLock = logLock.readLock();
+        readLock.lock();
+        Transaction<T> transaction = transactions.get(message.getViewstamp());
+        if(!transaction.isPrepared() || transaction.isCommitted()) return false; // Not prepared yet or already committed => ignore
+
+        boolean quorum = commitMessages.get(MultiKey.newKey(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()))).size() >= quorumSize - 1;
+        readLock.unlock();
+        return quorum;
     }
 }

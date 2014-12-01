@@ -6,37 +6,21 @@
  */
 package PBFT;
 
+import org.apache.thrift.EncodingUtils;
+import org.apache.thrift.protocol.TTupleProtocol;
 import org.apache.thrift.scheme.IScheme;
 import org.apache.thrift.scheme.SchemeFactory;
 import org.apache.thrift.scheme.StandardScheme;
-
 import org.apache.thrift.scheme.TupleScheme;
-import org.apache.thrift.protocol.TTupleProtocol;
-import org.apache.thrift.protocol.TProtocolException;
-import org.apache.thrift.EncodingUtils;
-import org.apache.thrift.TException;
-import org.apache.thrift.async.AsyncMethodCallback;
-import org.apache.thrift.server.AbstractNonblockingServer.*;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.EnumMap;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.EnumSet;
-import java.util.Collections;
-import java.util.BitSet;
+
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.*;
 
 public class CommitMessage implements org.apache.thrift.TBase<CommitMessage, CommitMessage._Fields>, java.io.Serializable, Cloneable, Comparable<CommitMessage> {
   private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("CommitMessage");
 
   private static final org.apache.thrift.protocol.TField VIEWSTAMP_FIELD_DESC = new org.apache.thrift.protocol.TField("viewstamp", org.apache.thrift.protocol.TType.STRUCT, (short)1);
-  private static final org.apache.thrift.protocol.TField CHECKPOINT_DIGEST_FIELD_DESC = new org.apache.thrift.protocol.TField("checkpointDigest", org.apache.thrift.protocol.TType.STRING, (short)2);
+  private static final org.apache.thrift.protocol.TField TRANSACTION_DIGEST_FIELD_DESC = new org.apache.thrift.protocol.TField("transactionDigest", org.apache.thrift.protocol.TType.STRING, (short)2);
   private static final org.apache.thrift.protocol.TField REPLICA_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("replicaId", org.apache.thrift.protocol.TType.I32, (short)3);
   private static final org.apache.thrift.protocol.TField MESSAGE_SIGNATURE_FIELD_DESC = new org.apache.thrift.protocol.TField("messageSignature", org.apache.thrift.protocol.TType.STRING, (short)4);
 
@@ -47,14 +31,14 @@ public class CommitMessage implements org.apache.thrift.TBase<CommitMessage, Com
   }
 
   public Viewstamp viewstamp; // required
-  public ByteBuffer checkpointDigest; // required
+  public ByteBuffer transactionDigest; // required
   public int replicaId; // required
   public ByteBuffer messageSignature; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
     VIEWSTAMP((short)1, "viewstamp"),
-    CHECKPOINT_DIGEST((short)2, "checkpointDigest"),
+    TRANSACTION_DIGEST((short)2, "transactionDigest"),
     REPLICA_ID((short)3, "replicaId"),
     MESSAGE_SIGNATURE((short)4, "messageSignature");
 
@@ -73,8 +57,8 @@ public class CommitMessage implements org.apache.thrift.TBase<CommitMessage, Com
       switch(fieldId) {
         case 1: // VIEWSTAMP
           return VIEWSTAMP;
-        case 2: // CHECKPOINT_DIGEST
-          return CHECKPOINT_DIGEST;
+        case 2: // TRANSACTION_DIGEST
+          return TRANSACTION_DIGEST;
         case 3: // REPLICA_ID
           return REPLICA_ID;
         case 4: // MESSAGE_SIGNATURE
@@ -126,7 +110,7 @@ public class CommitMessage implements org.apache.thrift.TBase<CommitMessage, Com
     Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
     tmpMap.put(_Fields.VIEWSTAMP, new org.apache.thrift.meta_data.FieldMetaData("viewstamp", org.apache.thrift.TFieldRequirementType.DEFAULT, 
         new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Viewstamp.class)));
-    tmpMap.put(_Fields.CHECKPOINT_DIGEST, new org.apache.thrift.meta_data.FieldMetaData("checkpointDigest", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+    tmpMap.put(_Fields.TRANSACTION_DIGEST, new org.apache.thrift.meta_data.FieldMetaData("transactionDigest", org.apache.thrift.TFieldRequirementType.DEFAULT, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING        , "Signature")));
     tmpMap.put(_Fields.REPLICA_ID, new org.apache.thrift.meta_data.FieldMetaData("replicaId", org.apache.thrift.TFieldRequirementType.DEFAULT, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
@@ -141,13 +125,13 @@ public class CommitMessage implements org.apache.thrift.TBase<CommitMessage, Com
 
   public CommitMessage(
     Viewstamp viewstamp,
-    ByteBuffer checkpointDigest,
+    ByteBuffer transactionDigest,
     int replicaId,
     ByteBuffer messageSignature)
   {
     this();
     this.viewstamp = viewstamp;
-    this.checkpointDigest = checkpointDigest;
+    this.transactionDigest = transactionDigest;
     this.replicaId = replicaId;
     setReplicaIdIsSet(true);
     this.messageSignature = messageSignature;
@@ -161,8 +145,8 @@ public class CommitMessage implements org.apache.thrift.TBase<CommitMessage, Com
     if (other.isSetViewstamp()) {
       this.viewstamp = new Viewstamp(other.viewstamp);
     }
-    if (other.isSetCheckpointDigest()) {
-      this.checkpointDigest = other.checkpointDigest;
+    if (other.isSetTransactionDigest()) {
+      this.transactionDigest = other.transactionDigest;
     }
     this.replicaId = other.replicaId;
     if (other.isSetMessageSignature()) {
@@ -177,7 +161,7 @@ public class CommitMessage implements org.apache.thrift.TBase<CommitMessage, Com
   @Override
   public void clear() {
     this.viewstamp = null;
-    this.checkpointDigest = null;
+    this.transactionDigest = null;
     setReplicaIdIsSet(false);
     this.replicaId = 0;
     this.messageSignature = null;
@@ -207,37 +191,37 @@ public class CommitMessage implements org.apache.thrift.TBase<CommitMessage, Com
     }
   }
 
-  public byte[] getCheckpointDigest() {
-    setCheckpointDigest(org.apache.thrift.TBaseHelper.rightSize(checkpointDigest));
-    return checkpointDigest == null ? null : checkpointDigest.array();
+  public byte[] getTransactionDigest() {
+    setTransactionDigest(org.apache.thrift.TBaseHelper.rightSize(transactionDigest));
+    return transactionDigest == null ? null : transactionDigest.array();
   }
 
-  public ByteBuffer bufferForCheckpointDigest() {
-    return checkpointDigest;
+  public ByteBuffer bufferForTransactionDigest() {
+    return transactionDigest;
   }
 
-  public CommitMessage setCheckpointDigest(byte[] checkpointDigest) {
-    setCheckpointDigest(checkpointDigest == null ? (ByteBuffer)null : ByteBuffer.wrap(checkpointDigest));
+  public CommitMessage setTransactionDigest(byte[] transactionDigest) {
+    setTransactionDigest(transactionDigest == null ? (ByteBuffer)null : ByteBuffer.wrap(transactionDigest));
     return this;
   }
 
-  public CommitMessage setCheckpointDigest(ByteBuffer checkpointDigest) {
-    this.checkpointDigest = checkpointDigest;
+  public CommitMessage setTransactionDigest(ByteBuffer transactionDigest) {
+    this.transactionDigest = transactionDigest;
     return this;
   }
 
-  public void unsetCheckpointDigest() {
-    this.checkpointDigest = null;
+  public void unsetTransactionDigest() {
+    this.transactionDigest = null;
   }
 
-  /** Returns true if field checkpointDigest is set (has been assigned a value) and false otherwise */
-  public boolean isSetCheckpointDigest() {
-    return this.checkpointDigest != null;
+  /** Returns true if field transactionDigest is set (has been assigned a value) and false otherwise */
+  public boolean isSetTransactionDigest() {
+    return this.transactionDigest != null;
   }
 
-  public void setCheckpointDigestIsSet(boolean value) {
+  public void setTransactionDigestIsSet(boolean value) {
     if (!value) {
-      this.checkpointDigest = null;
+      this.transactionDigest = null;
     }
   }
 
@@ -308,11 +292,11 @@ public class CommitMessage implements org.apache.thrift.TBase<CommitMessage, Com
       }
       break;
 
-    case CHECKPOINT_DIGEST:
+    case TRANSACTION_DIGEST:
       if (value == null) {
-        unsetCheckpointDigest();
+        unsetTransactionDigest();
       } else {
-        setCheckpointDigest((ByteBuffer)value);
+        setTransactionDigest((ByteBuffer)value);
       }
       break;
 
@@ -340,8 +324,8 @@ public class CommitMessage implements org.apache.thrift.TBase<CommitMessage, Com
     case VIEWSTAMP:
       return getViewstamp();
 
-    case CHECKPOINT_DIGEST:
-      return getCheckpointDigest();
+    case TRANSACTION_DIGEST:
+      return getTransactionDigest();
 
     case REPLICA_ID:
       return Integer.valueOf(getReplicaId());
@@ -362,8 +346,8 @@ public class CommitMessage implements org.apache.thrift.TBase<CommitMessage, Com
     switch (field) {
     case VIEWSTAMP:
       return isSetViewstamp();
-    case CHECKPOINT_DIGEST:
-      return isSetCheckpointDigest();
+    case TRANSACTION_DIGEST:
+      return isSetTransactionDigest();
     case REPLICA_ID:
       return isSetReplicaId();
     case MESSAGE_SIGNATURE:
@@ -394,12 +378,12 @@ public class CommitMessage implements org.apache.thrift.TBase<CommitMessage, Com
         return false;
     }
 
-    boolean this_present_checkpointDigest = true && this.isSetCheckpointDigest();
-    boolean that_present_checkpointDigest = true && that.isSetCheckpointDigest();
-    if (this_present_checkpointDigest || that_present_checkpointDigest) {
-      if (!(this_present_checkpointDigest && that_present_checkpointDigest))
+    boolean this_present_transactionDigest = true && this.isSetTransactionDigest();
+    boolean that_present_transactionDigest = true && that.isSetTransactionDigest();
+    if (this_present_transactionDigest || that_present_transactionDigest) {
+      if (!(this_present_transactionDigest && that_present_transactionDigest))
         return false;
-      if (!this.checkpointDigest.equals(that.checkpointDigest))
+      if (!this.transactionDigest.equals(that.transactionDigest))
         return false;
     }
 
@@ -447,12 +431,12 @@ public class CommitMessage implements org.apache.thrift.TBase<CommitMessage, Com
         return lastComparison;
       }
     }
-    lastComparison = Boolean.valueOf(isSetCheckpointDigest()).compareTo(other.isSetCheckpointDigest());
+    lastComparison = Boolean.valueOf(isSetTransactionDigest()).compareTo(other.isSetTransactionDigest());
     if (lastComparison != 0) {
       return lastComparison;
     }
-    if (isSetCheckpointDigest()) {
-      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.checkpointDigest, other.checkpointDigest);
+    if (isSetTransactionDigest()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.transactionDigest, other.transactionDigest);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -505,11 +489,11 @@ public class CommitMessage implements org.apache.thrift.TBase<CommitMessage, Com
     }
     first = false;
     if (!first) sb.append(", ");
-    sb.append("checkpointDigest:");
-    if (this.checkpointDigest == null) {
+    sb.append("transactionDigest:");
+    if (this.transactionDigest == null) {
       sb.append("null");
     } else {
-      sb.append(this.checkpointDigest);
+      sb.append(this.transactionDigest);
     }
     first = false;
     if (!first) sb.append(", ");
@@ -581,10 +565,10 @@ public class CommitMessage implements org.apache.thrift.TBase<CommitMessage, Com
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
-          case 2: // CHECKPOINT_DIGEST
+          case 2: // TRANSACTION_DIGEST
             if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
-              struct.checkpointDigest = iprot.readBinary();
-              struct.setCheckpointDigestIsSet(true);
+              struct.transactionDigest = iprot.readBinary();
+              struct.setTransactionDigestIsSet(true);
             } else { 
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
@@ -625,9 +609,9 @@ public class CommitMessage implements org.apache.thrift.TBase<CommitMessage, Com
         struct.viewstamp.write(oprot);
         oprot.writeFieldEnd();
       }
-      if (struct.checkpointDigest != null) {
-        oprot.writeFieldBegin(CHECKPOINT_DIGEST_FIELD_DESC);
-        oprot.writeBinary(struct.checkpointDigest);
+      if (struct.transactionDigest != null) {
+        oprot.writeFieldBegin(TRANSACTION_DIGEST_FIELD_DESC);
+        oprot.writeBinary(struct.transactionDigest);
         oprot.writeFieldEnd();
       }
       oprot.writeFieldBegin(REPLICA_ID_FIELD_DESC);
@@ -659,7 +643,7 @@ public class CommitMessage implements org.apache.thrift.TBase<CommitMessage, Com
       if (struct.isSetViewstamp()) {
         optionals.set(0);
       }
-      if (struct.isSetCheckpointDigest()) {
+      if (struct.isSetTransactionDigest()) {
         optionals.set(1);
       }
       if (struct.isSetReplicaId()) {
@@ -672,8 +656,8 @@ public class CommitMessage implements org.apache.thrift.TBase<CommitMessage, Com
       if (struct.isSetViewstamp()) {
         struct.viewstamp.write(oprot);
       }
-      if (struct.isSetCheckpointDigest()) {
-        oprot.writeBinary(struct.checkpointDigest);
+      if (struct.isSetTransactionDigest()) {
+        oprot.writeBinary(struct.transactionDigest);
       }
       if (struct.isSetReplicaId()) {
         oprot.writeI32(struct.replicaId);
@@ -693,8 +677,8 @@ public class CommitMessage implements org.apache.thrift.TBase<CommitMessage, Com
         struct.setViewstampIsSet(true);
       }
       if (incoming.get(1)) {
-        struct.checkpointDigest = iprot.readBinary();
-        struct.setCheckpointDigestIsSet(true);
+        struct.transactionDigest = iprot.readBinary();
+        struct.setTransactionDigestIsSet(true);
       }
       if (incoming.get(2)) {
         struct.replicaId = iprot.readI32();
