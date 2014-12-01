@@ -12,6 +12,7 @@ import java.util.HashMap;
 import org.apache.thrift.TEnum;
 
 public enum ChineseCheckersOperation implements org.apache.thrift.TEnum {
+  NO_OP(0),
   MOVE_PIECE(1),
   KICK_PLAYER(2),
   ADD_PLAYER(3);
@@ -35,6 +36,8 @@ public enum ChineseCheckersOperation implements org.apache.thrift.TEnum {
    */
   public static ChineseCheckersOperation findByValue(int value) { 
     switch (value) {
+      case 0:
+        return NO_OP;
       case 1:
         return MOVE_PIECE;
       case 2:

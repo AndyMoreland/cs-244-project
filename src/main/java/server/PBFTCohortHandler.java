@@ -1,10 +1,10 @@
 package server;
 
 import PBFT.*;
-import PBFT.Transaction;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import common.*;
+import common.IllegalLogEntryException;
+import common.Log;
 import config.GroupConfigProvider;
 import config.GroupMember;
 import gameengine.ChineseCheckersOperationFactory;
@@ -12,7 +12,6 @@ import gameengine.ChineseCheckersState;
 import org.apache.thrift.TException;
 import statemachine.Operation;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -25,7 +24,7 @@ import java.util.concurrent.Executors;
 public class PBFTCohortHandler implements PBFTCohort.Iface {
     private final Log<Operation<ChineseCheckersState>> log;
     private GroupConfigProvider configProvider;
-    private Map<Integer,Set<ViewChangeMessage>> viewChangeMessages; // this should include your own messages
+    private Map<Integer, Set<ViewChangeMessage>> viewChangeMessages; // this should include your own messages
     private int replicaID;
     private static final int POOL_SIZE = 10;
     private final ExecutorService pool;
@@ -51,7 +50,11 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
                 ChineseCheckersOperationFactory.hydrate(transaction.operation)
         );
 
-        log.addEntry(logTransaction);
+        try {
+            log.addEntry(logTransaction);
+        } catch (IllegalLogEntryException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -72,8 +75,8 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     private Set<PrePrepareMessage> createPrePrepareForCurrentSeqno(int newViewID, Set<ViewChangeMessage> viewChangeMessages) {
         // this is computing script O in the pbft paper
         Set<PrePrepareMessage> prePrepareMessages = Sets.newHashSet();
-        int max_seqno = MIN_SEQ_NO-1;
-        int lastCheckpointInViewChangeMessages = MIN_SEQ_NO-1;
+        int max_seqno = MIN_SEQ_NO - 1;
+        int lastCheckpointInViewChangeMessages = MIN_SEQ_NO - 1;
         for (ViewChangeMessage viewChangeMessage : viewChangeMessages) {
             for (PrePrepareMessage prePrepareMessage : viewChangeMessage.getPreparedGreaterThanSequenceNumber()) {
                 if (max_seqno < prePrepareMessage.getViewstamp().getSequenceNumber())
@@ -84,7 +87,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
             }
         }
 
-        for (int n=LAST_CHECKPOINT; n<lastCheckpointInViewChangeMessages; ++n) {
+        for (int n = LAST_CHECKPOINT; n < lastCheckpointInViewChangeMessages; ++n) {
             int highestViewID = MIN_VIEW_ID - 1;
             for (ViewChangeMessage viewChangeMessage : viewChangeMessages) {
                 for (PrePrepareMessage prePrepareMessage : viewChangeMessage.getPreparedGreaterThanSequenceNumber()) {
@@ -100,9 +103,9 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
             prePrepareMessage.getViewstamp().setViewId(newViewID);
             prePrepareMessage.getViewstamp().setSequenceNumber(n);
             if (highestViewID >= MIN_VIEW_ID) {
-            // TODO    prePrepareMessage.setMessageSignature(/* TODO */);
+                // TODO    prePrepareMessage.setMessageSignature(/* TODO */);
             } else {
-            // TODO    prePrepareMessage.setMessageSignature( /* TODO set as noop */);
+                // TODO    prePrepareMessage.setMessageSignature( /* TODO set as noop */);
             }
             // TODO prePrepareMessage.setTransactionDigest( /* TODO */ );
             prePrepareMessages.add(prePrepareMessage);
@@ -140,14 +143,8 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
                                 public void run() {
                                     try {
                                         groupMember.getThriftConnection().approveViewChange(newViewMessage);
-                                    } catch (InvocationTargetException e) {
-                                        // ignore
                                     } catch (TException e) {
-                                        // ignore
-                                    } catch (InstantiationException e) {
-                                        // ignore
-                                    } catch (IllegalAccessException e) {
-                                        // ignore
+                                        e.printStackTrace();
                                     }
                                 }
                             });

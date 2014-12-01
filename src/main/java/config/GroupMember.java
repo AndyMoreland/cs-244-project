@@ -35,12 +35,21 @@ public class GroupMember<T extends org.apache.thrift.TServiceClient> {
         return id;
     }
 
-    public T getThriftConnection() throws IllegalAccessException, InvocationTargetException, InstantiationException, TTransportException {
+    public T getThriftConnection() throws TTransportException {
         TSocket transport = new TSocket(address.getHostName(), address.getPort());
         transport.open();
 
         TProtocol protocol = new TBinaryProtocol(transport);
-        T client = clientCtor.newInstance(protocol);
+        T client = null;
+        try {
+            client = clientCtor.newInstance(protocol);
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
 
         return client;
     }
