@@ -26,5 +26,4 @@ public class Transaction<T> {
     public Viewstamp getViewstamp() {
         return id;
     }
-
 }

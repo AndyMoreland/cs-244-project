@@ -9,10 +9,7 @@ import org.codehaus.jackson.map.ser.impl.SimpleBeanPropertyFilter;
 import org.codehaus.jackson.map.ser.impl.SimpleFilterProvider;
 
 import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.Signature;
-import java.security.SignatureException;
+import java.security.*;
 
 /**
  * Created by sctu on 11/30/14.
@@ -57,15 +54,23 @@ public final class CryptoUtil {
         return null;
     }
 
-    public static byte[] computeMessageSignature(Object message, Signature sig) {
+    public static byte[] computeMessageSignature(Object message, PrivateKey privateKey) {
         try {
+            Signature signature = Signature.getInstance("SHA1withDSA", "SUN");
+            signature.initSign(privateKey);
             ObjectWriter writer = mapper.writer(FIELD_FILTER);
-            return computeSignature(writer.writeValueAsString(message).getBytes(), sig);
+            return computeSignature(writer.writeValueAsString(message).getBytes(), signature);
         } catch (JsonMappingException e) {
             e.printStackTrace();
         } catch (JsonGenerationException e) {
             e.printStackTrace();
         } catch (IOException e) {
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (NoSuchProviderException e) {
             e.printStackTrace();
         }
 
