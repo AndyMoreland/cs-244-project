@@ -25,6 +25,7 @@ public class Log<T> {
     Map<Viewstamp, Set<PrepareMessage>> prepareMessages = Maps.newConcurrentMap();
     Map<Viewstamp, Set<CommitMessage>> commitMessages = Maps.newConcurrentMap();
     ReadWriteLock logLock = new ReentrantReadWriteLock();
+    int lastCommited = -1;
 
     public void addEntry(Transaction<T> value) throws IllegalLogEntryException {
         Lock writeLock = logLock.writeLock();
@@ -88,6 +89,10 @@ public class Log<T> {
         Transaction<T> entry = transactions.get(id);
         tentativeLogEntries.remove(id.getSequenceNumber());
         committedLogEntries.put(entry.getViewstamp().getSequenceNumber(), entry);
+
+        if (id.getSequenceNumber() == lastCommited + 1) {
+            lastCommited++;
+        }
 
         writeLock.unlock();
     }

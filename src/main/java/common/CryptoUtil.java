@@ -54,26 +54,32 @@ public final class CryptoUtil {
         return null;
     }
 
-    public static byte[] computeMessageSignature(Object message, PrivateKey privateKey) {
+
+    public static byte[] convertToJsonByteArray(Object message) {
+        ObjectWriter writer = mapper.writer(FIELD_FILTER);
         try {
-            Signature signature = Signature.getInstance("SHA1withDSA", "SUN");
-            signature.initSign(privateKey);
-            ObjectWriter writer = mapper.writer(FIELD_FILTER);
-            return computeSignature(writer.writeValueAsString(message).getBytes(), signature);
-        } catch (JsonMappingException e) {
-            e.printStackTrace();
-        } catch (JsonGenerationException e) {
-            e.printStackTrace();
+            return writer.writeValueAsString(message).getBytes();
         } catch (IOException e) {
             e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
+        }
+        return null;
+    }
+
+    public static byte[] computeMessageSignature(Object message, PrivateKey privateKey) {
+        Signature signature = null;
+        try {
+            signature = Signature.getInstance("SHA1withDSA", "SUN");
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (NoSuchProviderException e) {
             e.printStackTrace();
         }
-
-        return null;
+        try {
+            signature.initSign(privateKey);
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        }
+        ObjectWriter writer = mapper.writer(FIELD_FILTER);
+        return computeSignature(convertToJsonByteArray(message), signature);
     }
 }

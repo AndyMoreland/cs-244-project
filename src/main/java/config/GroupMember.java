@@ -1,6 +1,7 @@
 package config;
 
 import com.google.common.base.Optional;
+import common.CryptoUtil;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
@@ -60,22 +61,12 @@ public class GroupMember<T extends org.apache.thrift.TServiceClient> {
         return client;
     }
 
-    public boolean verifySignature(String message, byte[] signatureToVerify) {
+    public boolean verifySignature(Object message, byte[] signatureToVerify) {
         try {
             Signature newSig = Signature.getInstance(ALGORITHM, PROVIDER);
             newSig.initVerify(publicKey);
-
-            byte[] buffer = new byte[1024];
-            int len;
-
-            InputStream bufin = new ByteArrayInputStream(toString().getBytes());
-            while (bufin.available() != 0) {
-                len = bufin.read(buffer);
-                newSig.update(buffer, 0, len);
-            }
-
-            bufin.close();
-
+            byte[] byteRep = CryptoUtil.convertToJsonByteArray(message);
+            newSig.update(byteRep);
             newSig.verify(signatureToVerify);
 
         } catch (NoSuchAlgorithmException e) {
@@ -87,8 +78,6 @@ public class GroupMember<T extends org.apache.thrift.TServiceClient> {
         } catch (SignatureException e) {
             e.printStackTrace();
             return false;
-        } catch (IOException e) {
-            e.printStackTrace();
         }
 
         return true;
