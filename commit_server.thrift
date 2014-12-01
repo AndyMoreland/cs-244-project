@@ -134,8 +134,8 @@ struct ViewChangeMessage {
 
 struct NewViewMessage {
     1:i32 newViewID,
-    2:set<ViewChangeMessage> viewChangeMessages,
-    3:set<PrePrepareMessage> prePrepareMessages;
+    2:list<ViewChangeMessage> viewChangeMessages,
+    3:list<PrePrepareMessage> prePrepareMessages;
     4:i32 replicaID,
     5:Signature messageSignature;
 }

@@ -1,6 +1,7 @@
 package server;
 
 import PBFT.*;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import common.CryptoUtil;
@@ -12,13 +13,9 @@ import gameengine.ChineseCheckersOperationFactory;
 import gameengine.ChineseCheckersState;
 import gameengine.operations.NoOp;
 import org.apache.thrift.TException;
-import statemachine.Operation;
 
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -29,7 +26,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     private final Log<Operation<ChineseCheckersState>> log;
     private GroupConfigProvider<PBFTCohort.Client> configProvider;
     private final GroupMember<PBFTCohort.Client> thisCohort;
-    private Map<Integer, Set<ViewChangeMessage>> viewChangeMessages; // this should include your own messages
+    private Map<Integer, List<ViewChangeMessage>> viewChangeMessages; // this should include your own messages
     private int replicaID;
     private static final int POOL_SIZE = 10;
     private final ExecutorService pool;
@@ -100,13 +97,13 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
 
     }
 
-    private  Set<PrePrepareMessage> createPrePrepareForCurrentSeqno(
+    private List<PrePrepareMessage> createPrePrepareForCurrentSeqno(
             int newViewID,
             boolean verify,
-            Set<ViewChangeMessage> viewChangeMessages /* this is script V in the paper */ ) {
+            List<ViewChangeMessage> viewChangeMessages /* this is script V in the paper */ ) {
 
         // this is computing script O in the pbft paper
-        Set<PrePrepareMessage> prePrepareMessages = Sets.newLinkedHashSet(); // order is important for when we verify
+        List<PrePrepareMessage> prePrepareMessages = Lists.newArrayList(); // order is important for when we verify
         int max_seqno = MIN_SEQ_NO - 1;
         int lastCheckpointInViewChangeMessages = MIN_SEQ_NO - 1;
         for (ViewChangeMessage viewChangeMessage : viewChangeMessages) {
@@ -182,7 +179,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
                 if (viewChangeMessages.containsKey(newViewID)) {
                     viewChangeMessages.get(newViewID).add(message);
                 } else {
-                    viewChangeMessages.put(newViewID, Sets.newHashSet(message));
+                    viewChangeMessages.put(newViewID, Lists.newArrayList(message));
                 }
 
                 // if primary, check if you have enough to send NewViewMessage
@@ -197,7 +194,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
                         // copy the hashset here because the message could be sent after we leave this method
                         // and start modifying viewChangeMessages again
                         newViewMessage.setPrePrepareMessages(
-                                createPrePrepareForCurrentSeqno(newViewID, false, Sets.newHashSet(viewChangeMessages.get(newViewID))));
+                                createPrePrepareForCurrentSeqno(newViewID, false, Lists.newArrayList(viewChangeMessages.get(newViewID))));
                         pool.execute(new Runnable() {
                             public void run() {
                                 try {
@@ -237,7 +234,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
 
         // verify the preprepares
         // TODO: change this to a list
-        Set<PrePrepareMessage> recomputedPrePrepareMessages = createPrePrepareForCurrentSeqno(
+        List<PrePrepareMessage> recomputedPrePrepareMessages = createPrePrepareForCurrentSeqno(
                 message.getNewViewID(), true, message.getViewChangeMessages());
         int index = 0;
         PBFT.PrePrepareMessage[] receivedPrePrepareMessages
@@ -256,9 +253,9 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
         // send prepares for everything in script O
 
         // clear old entries for old views out from viewChangeMessages
-        for (Iterator<Map.Entry<Integer, Set<ViewChangeMessage>>> it
+        for (Iterator<Map.Entry<Integer, List<ViewChangeMessage>>> it
                      = viewChangeMessages.entrySet().iterator(); it.hasNext(); ) {
-            Map.Entry<Integer, Set<ViewChangeMessage>> entry = it.next();
+            Map.Entry<Integer, List<ViewChangeMessage>> entry = it.next();
             if (entry.getKey().compareTo(configProvider.getViewID()) <= 0) {
                 it.remove();
             }
