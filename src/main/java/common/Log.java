@@ -9,6 +9,7 @@ import com.google.common.collect.Sets;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -21,8 +22,8 @@ public class Log<T> {
     Map<Integer, Map<Viewstamp, Transaction<T>>> tentativeLogEntries = Maps.newHashMap();
     Map<Integer, Transaction<T>> committedLogEntries = Maps.newHashMap();
     Map<Viewstamp, Transaction<T>> transactions = Maps.newConcurrentMap();
-    Map<Viewstamp, CommitMessage> commitMessages = Maps.newConcurrentMap();
-    Map<Viewstamp, PrepareMessage> prepareMessages = Maps.newConcurrentMap();
+    Map<Viewstamp, Set<PrepareMessage>> prepareMessages = Maps.newConcurrentMap();
+    Map<Viewstamp, Set<CommitMessage>> commitMessages = Maps.newConcurrentMap();
     ReadWriteLock logLock = new ReentrantReadWriteLock();
 
     public void addEntry(Transaction<T> value) throws IllegalLogEntryException {
@@ -94,22 +95,35 @@ public class Log<T> {
     public void addPrepareMessage(PrepareMessage message) {
         Lock writeLock = logLock.writeLock();
         writeLock.lock();
-        prepareMessages.put(message.getViewstamp(), message);
+        Viewstamp vs = message.getViewstamp();
+        if(!prepareMessages.containsKey(vs)) prepareMessages.put(vs, Sets.<PrepareMessage>newHashSet());
+        prepareMessages.get(vs).add(message);
         writeLock.unlock();
     }
 
     public void addCommitMessage(CommitMessage message) {
         Lock writeLock = logLock.writeLock();
         writeLock.lock();
-        commitMessages.put(message.getViewstamp(), message);
+        Viewstamp vs = message.getViewstamp();
+        if(!commitMessages.containsKey(vs)) commitMessages.put(vs, Sets.<CommitMessage>newHashSet());
+        commitMessages.get(vs).add(message);
         writeLock.unlock();
     }
 
-    public Map<Viewstamp, PrepareMessage> getPrepareMessages() {
+    public Map<Viewstamp, Set<PrepareMessage>> getPrepareMessages() {
         return prepareMessages;
     }
 
-    public Map<Viewstamp, CommitMessage> getCommitMessages() {
+    public Map<Viewstamp, Set<CommitMessage>> getCommitMessages() {
         return commitMessages;
+    }
+
+    public boolean isPrepared(PrepareMessage message){
+        // TODO: boolean prepared, boolean committed in Transaction. check transactions map before processing
+        // TODO: prepare, commit maps from (viewstamp, digest) => set<message>
+        Transaction<T> transaction = transactions.get(message.getViewstamp());
+        return transaction != null
+            && CryptoUtil.computeTransactionDigest(transaction).equals(message.getTransactionDigest())
+            && false; // # prepares with this viewstamp and digest >= 2N
     }
 }

@@ -52,6 +52,9 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     public void prePrepare(PrePrepareMessage message, Transaction transaction) throws TException {
         assert (configProvider.getLeader().getReplicaID() == this.replicaID);
 
+        // if(!configProvider.getLeader().verifySignature( ... some shit ... )) return;       // Validate signature
+        if(transaction.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
+
         common.Transaction<Operation<ChineseCheckersState>> logTransaction = new common.Transaction<Operation<ChineseCheckersState>>(
                 transaction.viewstamp,
                 transaction.viewstamp.getSequenceNumber(),
@@ -59,7 +62,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
         );
 
         try {
-            log.addEntry(logTransaction);
+            log.addEntry(logTransaction);                                                     // Check sequence number (TODO: "watermark"?)
         } catch (IllegalLogEntryException e) {
             e.printStackTrace();
         }
@@ -86,7 +89,8 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
 
     @Override
     public void prepare(PrepareMessage message) throws TException {
-
+        log.addPrepareMessage(message);
+        log.isPrepared(message);
     }
 
     @Override
