@@ -1,19 +1,17 @@
 package server;
 
 import PBFT.*;
-import PBFT.Transaction;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import common.*;
+import common.IllegalLogEntryException;
+import common.Log;
 import config.GroupConfigProvider;
 import config.GroupMember;
 import gameengine.ChineseCheckersOperationFactory;
 import gameengine.ChineseCheckersState;
 import org.apache.thrift.TException;
-import org.apache.thrift.transport.TTransportException;
 import statemachine.Operation;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -52,7 +50,11 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
                 ChineseCheckersOperationFactory.hydrate(transaction.operation)
         );
 
-        log.addEntry(logTransaction);
+        try {
+            log.addEntry(logTransaction);
+        } catch (IllegalLogEntryException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
