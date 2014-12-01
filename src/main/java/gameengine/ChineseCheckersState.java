@@ -6,7 +6,7 @@ import java.util.List;
  * Created by andrew on 11/30/14.
  */
 public class ChineseCheckersState {
-    private ChineseCheckersBoard board = new ChineseCheckersBoard();
+    private ChineseCheckersBoard board;
     private final List<Player> players;
     private int currentPlayerIndex;
 
@@ -15,6 +15,8 @@ public class ChineseCheckersState {
      * @param players
      */
     public ChineseCheckersState(List<Player> players) {
+        while(players.size() < 6) players.add(Player.makeInactivePlayer());
+        this.board = new ChineseCheckersBoard(players);
         this.players = players;
         currentPlayerIndex = 0;
     }
@@ -31,8 +33,16 @@ public class ChineseCheckersState {
         this.currentPlayerIndex = currentPlayerIndex;
     }
 
+    public ChineseCheckersSpot getSpot(HexPoint pt) { return this.board.getSpot(pt); }
+
     public Player getCurrentPlayer() {
         return players.get(currentPlayerIndex);
     }
 
+    public void nextActivePlayer() {
+        // Will infinite loop if all players inactive
+        do {
+            this.currentPlayerIndex = (this.currentPlayerIndex + 1) % this.players.size();
+        } while(!this.players.get(this.currentPlayerIndex).isActive());
+    }
 }
