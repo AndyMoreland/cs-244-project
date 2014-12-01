@@ -228,18 +228,28 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
         }
 
         // verify the preprepares
-        // TODO: change this to a list
         List<PrePrepareMessage> recomputedPrePrepareMessages = createPrePrepareForCurrentSeqno(
                 message.getNewViewID(), true, message.getViewChangeMessages());
-        int index = 0;
-        PBFT.PrePrepareMessage[] receivedPrePrepareMessages
-                = message.getPrePrepareMessages().toArray(new PrePrepareMessage[0]); // uggggly
-        for (PrePrepareMessage prePrepareMessage : recomputedPrePrepareMessages) {
-            sender = configProvider.getGroupMember(prePrepareMessage.getReplicaId());
-            if (!sender.verifySignature(prePrepareMessage, receivedPrePrepareMessages[index].getMessageSignature())) {
+        // should be the same length
+        if (recomputedPrePrepareMessages.size() != message.getPrePrepareMessages().size()) {
+            return;
+        }
+
+        for (int i=0; i<recomputedPrePrepareMessages.size(); ++i) {
+            PrePrepareMessage received = message.getPrePrepareMessages().get(i);
+            PrePrepareMessage recomputed = recomputedPrePrepareMessages.get(i);
+            sender = configProvider.getGroupMember(recomputed.getReplicaId());
+            // check that recomputed contents are the same
+            if (!received.getTransactionDigest().equals(recomputed.getTransactionDigest())
+                    || !received.getViewstamp().equals(recomputed.getViewstamp())
+                    || received.getReplicaId() != recomputed.getReplicaId()) {
                 return;
             }
-            index++;
+
+            // verify signatures
+            if (!sender.verifySignature(message.getPrePrepareMessages().get(i), message.getPrePrepareMessages().get(i).getMessageSignature())) {
+                return;
+            }
         }
 
         // change to new view
