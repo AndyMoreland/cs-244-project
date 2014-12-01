@@ -21,12 +21,12 @@ public class StaticGroupConfigProvider implements GroupConfigProvider {
     }
 
     @Override
-    public void setViewID(int viewID) {
+    public synchronized void setViewID(int viewID) {
         this.viewID = viewID;
     }
 
     @Override
-    public int getViewID() {
+    public synchronized int getViewID() {
         return this.viewID;
     }
 
