@@ -82,32 +82,32 @@ struct Operation {
     3: string arguments, // JSON formatted or something
 }
 
+struct Viewstamp {
+    1:i32 sequenceNumber,
+    2:i32 viewId;
+}
+
 struct Transaction {
-    1: i32 transactionId,
-    2: Operation operation,
-    3: Signature signature,
-    4: double timestamp,
-    5: i32 replicaId,
-    6: i32 viewId;
+    1:Viewstamp viewstamp,
+    2:Operation operation,
+    3:i32 replicaId;
 }
 
 struct PrePrepareMessage {
-    1:i32 sequenceNumber,
-    2:i32 viewId,
-    3:Signature transactionDigest,
-    4:Signature messageSignature;
+    1:Viewstamp viewstamp,
+    2:Signature transactionDigest,
+    3:Signature messageSignature;
 }
 
 struct PrepareMessage {
-    1:i32 sequenceNumber,
-    2:i32 viewId,
-    3:Signature transactionDigest,
-    4:i32 replicaId,
-    5:Signature messageSignature;
+    1:Viewstamp viewstamp,
+    2:Signature transactionDigest,
+    3:i32 replicaId,
+    4:Signature messageSignature;
 }
 
 struct CommitMessage {
-    1:i32 sequenceNumber,
+    1:Viewstamp viewstamp,
     2:Signature checkpointDigest,
     3:i32 replicaId,
     4:Signature messageSignature;
