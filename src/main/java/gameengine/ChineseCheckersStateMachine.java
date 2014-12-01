@@ -9,7 +9,6 @@ import statemachine.StateMachine;
  */
 public class ChineseCheckersStateMachine implements StateMachine<ChineseCheckersState, ChineseCheckersOperation> {
 
-
     private ChineseCheckersState state;
 
     @Override

@@ -4,21 +4,24 @@
  * DO NOT EDIT UNLESS YOU ARE SURE THAT YOU KNOW WHAT YOU ARE DOING
  *  @generated
  */
-package PBFT;
+package TwoPhaseCommit;
 
 
 import java.util.Map;
 import java.util.HashMap;
 import org.apache.thrift.TEnum;
 
-public enum ChineseCheckersOperation implements org.apache.thrift.TEnum {
-  MOVE_PIECE(1),
-  KICK_PLAYER(2),
-  ADD_PLAYER(3);
+/**
+ * You can define enums, which are just 32 bit integers. Values are optional
+ * and start at 1 if not supplied, C style again.
+ */
+public enum Vote implements org.apache.thrift.TEnum {
+  COMMIT(1),
+  ABBORT(2);
 
   private final int value;
 
-  private ChineseCheckersOperation(int value) {
+  private Vote(int value) {
     this.value = value;
   }
 
@@ -33,14 +36,12 @@ public enum ChineseCheckersOperation implements org.apache.thrift.TEnum {
    * Find a the enum type by its integer value, as defined in the Thrift IDL.
    * @return null if the value is not found.
    */
-  public static ChineseCheckersOperation findByValue(int value) { 
+  public static Vote findByValue(int value) { 
     switch (value) {
       case 1:
-        return MOVE_PIECE;
+        return COMMIT;
       case 2:
-        return KICK_PLAYER;
-      case 3:
-        return ADD_PLAYER;
+        return ABBORT;
       default:
         return null;
     }

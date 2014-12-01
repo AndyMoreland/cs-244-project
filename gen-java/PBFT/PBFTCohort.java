@@ -48,6 +48,10 @@ public class PBFTCohort {
 
     public void checkpoint(CheckpointMessage message) throws org.apache.thrift.TException;
 
+    public void startViewChange(ViewChangeMessage message) throws org.apache.thrift.TException;
+
+    public void approveViewChange(NewViewMessage message) throws org.apache.thrift.TException;
+
   }
 
   public interface AsyncIface {
@@ -59,6 +63,10 @@ public class PBFTCohort {
     public void commit(CommitMessage message, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException;
 
     public void checkpoint(CheckpointMessage message, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException;
+
+    public void startViewChange(ViewChangeMessage message, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException;
+
+    public void approveViewChange(NewViewMessage message, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException;
 
   }
 
@@ -160,6 +168,46 @@ public class PBFTCohort {
     {
       checkpoint_result result = new checkpoint_result();
       receiveBase(result, "checkpoint");
+      return;
+    }
+
+    public void startViewChange(ViewChangeMessage message) throws org.apache.thrift.TException
+    {
+      send_startViewChange(message);
+      recv_startViewChange();
+    }
+
+    public void send_startViewChange(ViewChangeMessage message) throws org.apache.thrift.TException
+    {
+      startViewChange_args args = new startViewChange_args();
+      args.setMessage(message);
+      sendBase("startViewChange", args);
+    }
+
+    public void recv_startViewChange() throws org.apache.thrift.TException
+    {
+      startViewChange_result result = new startViewChange_result();
+      receiveBase(result, "startViewChange");
+      return;
+    }
+
+    public void approveViewChange(NewViewMessage message) throws org.apache.thrift.TException
+    {
+      send_approveViewChange(message);
+      recv_approveViewChange();
+    }
+
+    public void send_approveViewChange(NewViewMessage message) throws org.apache.thrift.TException
+    {
+      approveViewChange_args args = new approveViewChange_args();
+      args.setMessage(message);
+      sendBase("approveViewChange", args);
+    }
+
+    public void recv_approveViewChange() throws org.apache.thrift.TException
+    {
+      approveViewChange_result result = new approveViewChange_result();
+      receiveBase(result, "approveViewChange");
       return;
     }
 
@@ -312,6 +360,70 @@ public class PBFTCohort {
       }
     }
 
+    public void startViewChange(ViewChangeMessage message, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException {
+      checkReady();
+      startViewChange_call method_call = new startViewChange_call(message, resultHandler, this, ___protocolFactory, ___transport);
+      this.___currentMethod = method_call;
+      ___manager.call(method_call);
+    }
+
+    public static class startViewChange_call extends org.apache.thrift.async.TAsyncMethodCall {
+      private ViewChangeMessage message;
+      public startViewChange_call(ViewChangeMessage message, org.apache.thrift.async.AsyncMethodCallback resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+        this.message = message;
+      }
+
+      public void write_args(org.apache.thrift.protocol.TProtocol prot) throws org.apache.thrift.TException {
+        prot.writeMessageBegin(new org.apache.thrift.protocol.TMessage("startViewChange", org.apache.thrift.protocol.TMessageType.CALL, 0));
+        startViewChange_args args = new startViewChange_args();
+        args.setMessage(message);
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public void getResult() throws org.apache.thrift.TException {
+        if (getState() != org.apache.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
+          throw new IllegalStateException("Method call not finished!");
+        }
+        org.apache.thrift.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift.transport.TMemoryInputTransport(getFrameBuffer().array());
+        org.apache.thrift.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        (new Client(prot)).recv_startViewChange();
+      }
+    }
+
+    public void approveViewChange(NewViewMessage message, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException {
+      checkReady();
+      approveViewChange_call method_call = new approveViewChange_call(message, resultHandler, this, ___protocolFactory, ___transport);
+      this.___currentMethod = method_call;
+      ___manager.call(method_call);
+    }
+
+    public static class approveViewChange_call extends org.apache.thrift.async.TAsyncMethodCall {
+      private NewViewMessage message;
+      public approveViewChange_call(NewViewMessage message, org.apache.thrift.async.AsyncMethodCallback resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+        this.message = message;
+      }
+
+      public void write_args(org.apache.thrift.protocol.TProtocol prot) throws org.apache.thrift.TException {
+        prot.writeMessageBegin(new org.apache.thrift.protocol.TMessage("approveViewChange", org.apache.thrift.protocol.TMessageType.CALL, 0));
+        approveViewChange_args args = new approveViewChange_args();
+        args.setMessage(message);
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public void getResult() throws org.apache.thrift.TException {
+        if (getState() != org.apache.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
+          throw new IllegalStateException("Method call not finished!");
+        }
+        org.apache.thrift.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift.transport.TMemoryInputTransport(getFrameBuffer().array());
+        org.apache.thrift.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        (new Client(prot)).recv_approveViewChange();
+      }
+    }
+
   }
 
   public static class Processor<I extends Iface> extends org.apache.thrift.TBaseProcessor<I> implements org.apache.thrift.TProcessor {
@@ -329,6 +441,8 @@ public class PBFTCohort {
       processMap.put("prepare", new prepare());
       processMap.put("commit", new commit());
       processMap.put("checkpoint", new checkpoint());
+      processMap.put("startViewChange", new startViewChange());
+      processMap.put("approveViewChange", new approveViewChange());
       return processMap;
     }
 
@@ -412,6 +526,46 @@ public class PBFTCohort {
       }
     }
 
+    public static class startViewChange<I extends Iface> extends org.apache.thrift.ProcessFunction<I, startViewChange_args> {
+      public startViewChange() {
+        super("startViewChange");
+      }
+
+      public startViewChange_args getEmptyArgsInstance() {
+        return new startViewChange_args();
+      }
+
+      protected boolean isOneway() {
+        return false;
+      }
+
+      public startViewChange_result getResult(I iface, startViewChange_args args) throws org.apache.thrift.TException {
+        startViewChange_result result = new startViewChange_result();
+        iface.startViewChange(args.message);
+        return result;
+      }
+    }
+
+    public static class approveViewChange<I extends Iface> extends org.apache.thrift.ProcessFunction<I, approveViewChange_args> {
+      public approveViewChange() {
+        super("approveViewChange");
+      }
+
+      public approveViewChange_args getEmptyArgsInstance() {
+        return new approveViewChange_args();
+      }
+
+      protected boolean isOneway() {
+        return false;
+      }
+
+      public approveViewChange_result getResult(I iface, approveViewChange_args args) throws org.apache.thrift.TException {
+        approveViewChange_result result = new approveViewChange_result();
+        iface.approveViewChange(args.message);
+        return result;
+      }
+    }
+
   }
 
   public static class AsyncProcessor<I extends AsyncIface> extends org.apache.thrift.TBaseAsyncProcessor<I> {
@@ -429,6 +583,8 @@ public class PBFTCohort {
       processMap.put("prepare", new prepare());
       processMap.put("commit", new commit());
       processMap.put("checkpoint", new checkpoint());
+      processMap.put("startViewChange", new startViewChange());
+      processMap.put("approveViewChange", new approveViewChange());
       return processMap;
     }
 
@@ -629,6 +785,106 @@ public class PBFTCohort {
 
       public void start(I iface, checkpoint_args args, org.apache.thrift.async.AsyncMethodCallback<Void> resultHandler) throws TException {
         iface.checkpoint(args.message,resultHandler);
+      }
+    }
+
+    public static class startViewChange<I extends AsyncIface> extends org.apache.thrift.AsyncProcessFunction<I, startViewChange_args, Void> {
+      public startViewChange() {
+        super("startViewChange");
+      }
+
+      public startViewChange_args getEmptyArgsInstance() {
+        return new startViewChange_args();
+      }
+
+      public AsyncMethodCallback<Void> getResultHandler(final AsyncFrameBuffer fb, final int seqid) {
+        final org.apache.thrift.AsyncProcessFunction fcall = this;
+        return new AsyncMethodCallback<Void>() { 
+          public void onComplete(Void o) {
+            startViewChange_result result = new startViewChange_result();
+            try {
+              fcall.sendResponse(fb,result, org.apache.thrift.protocol.TMessageType.REPLY,seqid);
+              return;
+            } catch (Exception e) {
+              LOGGER.error("Exception writing to internal frame buffer", e);
+            }
+            fb.close();
+          }
+          public void onError(Exception e) {
+            byte msgType = org.apache.thrift.protocol.TMessageType.REPLY;
+            org.apache.thrift.TBase msg;
+            startViewChange_result result = new startViewChange_result();
+            {
+              msgType = org.apache.thrift.protocol.TMessageType.EXCEPTION;
+              msg = (org.apache.thrift.TBase)new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.INTERNAL_ERROR, e.getMessage());
+            }
+            try {
+              fcall.sendResponse(fb,msg,msgType,seqid);
+              return;
+            } catch (Exception ex) {
+              LOGGER.error("Exception writing to internal frame buffer", ex);
+            }
+            fb.close();
+          }
+        };
+      }
+
+      protected boolean isOneway() {
+        return false;
+      }
+
+      public void start(I iface, startViewChange_args args, org.apache.thrift.async.AsyncMethodCallback<Void> resultHandler) throws TException {
+        iface.startViewChange(args.message,resultHandler);
+      }
+    }
+
+    public static class approveViewChange<I extends AsyncIface> extends org.apache.thrift.AsyncProcessFunction<I, approveViewChange_args, Void> {
+      public approveViewChange() {
+        super("approveViewChange");
+      }
+
+      public approveViewChange_args getEmptyArgsInstance() {
+        return new approveViewChange_args();
+      }
+
+      public AsyncMethodCallback<Void> getResultHandler(final AsyncFrameBuffer fb, final int seqid) {
+        final org.apache.thrift.AsyncProcessFunction fcall = this;
+        return new AsyncMethodCallback<Void>() { 
+          public void onComplete(Void o) {
+            approveViewChange_result result = new approveViewChange_result();
+            try {
+              fcall.sendResponse(fb,result, org.apache.thrift.protocol.TMessageType.REPLY,seqid);
+              return;
+            } catch (Exception e) {
+              LOGGER.error("Exception writing to internal frame buffer", e);
+            }
+            fb.close();
+          }
+          public void onError(Exception e) {
+            byte msgType = org.apache.thrift.protocol.TMessageType.REPLY;
+            org.apache.thrift.TBase msg;
+            approveViewChange_result result = new approveViewChange_result();
+            {
+              msgType = org.apache.thrift.protocol.TMessageType.EXCEPTION;
+              msg = (org.apache.thrift.TBase)new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.INTERNAL_ERROR, e.getMessage());
+            }
+            try {
+              fcall.sendResponse(fb,msg,msgType,seqid);
+              return;
+            } catch (Exception ex) {
+              LOGGER.error("Exception writing to internal frame buffer", ex);
+            }
+            fb.close();
+          }
+        };
+      }
+
+      protected boolean isOneway() {
+        return false;
+      }
+
+      public void start(I iface, approveViewChange_args args, org.apache.thrift.async.AsyncMethodCallback<Void> resultHandler) throws TException {
+        iface.approveViewChange(args.message,resultHandler);
       }
     }
 
@@ -3153,6 +3409,1216 @@ public class PBFTCohort {
 
       @Override
       public void read(org.apache.thrift.protocol.TProtocol prot, checkpoint_result struct) throws org.apache.thrift.TException {
+        TTupleProtocol iprot = (TTupleProtocol) prot;
+      }
+    }
+
+  }
+
+  public static class startViewChange_args implements org.apache.thrift.TBase<startViewChange_args, startViewChange_args._Fields>, java.io.Serializable, Cloneable, Comparable<startViewChange_args>   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("startViewChange_args");
+
+    private static final org.apache.thrift.protocol.TField MESSAGE_FIELD_DESC = new org.apache.thrift.protocol.TField("message", org.apache.thrift.protocol.TType.STRUCT, (short)1);
+
+    private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+    static {
+      schemes.put(StandardScheme.class, new startViewChange_argsStandardSchemeFactory());
+      schemes.put(TupleScheme.class, new startViewChange_argsTupleSchemeFactory());
+    }
+
+    public ViewChangeMessage message; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+      MESSAGE((short)1, "message");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // MESSAGE
+            return MESSAGE;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.MESSAGE, new org.apache.thrift.meta_data.FieldMetaData("message", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, ViewChangeMessage.class)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(startViewChange_args.class, metaDataMap);
+    }
+
+    public startViewChange_args() {
+    }
+
+    public startViewChange_args(
+      ViewChangeMessage message)
+    {
+      this();
+      this.message = message;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public startViewChange_args(startViewChange_args other) {
+      if (other.isSetMessage()) {
+        this.message = new ViewChangeMessage(other.message);
+      }
+    }
+
+    public startViewChange_args deepCopy() {
+      return new startViewChange_args(this);
+    }
+
+    @Override
+    public void clear() {
+      this.message = null;
+    }
+
+    public ViewChangeMessage getMessage() {
+      return this.message;
+    }
+
+    public startViewChange_args setMessage(ViewChangeMessage message) {
+      this.message = message;
+      return this;
+    }
+
+    public void unsetMessage() {
+      this.message = null;
+    }
+
+    /** Returns true if field message is set (has been assigned a value) and false otherwise */
+    public boolean isSetMessage() {
+      return this.message != null;
+    }
+
+    public void setMessageIsSet(boolean value) {
+      if (!value) {
+        this.message = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case MESSAGE:
+        if (value == null) {
+          unsetMessage();
+        } else {
+          setMessage((ViewChangeMessage)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case MESSAGE:
+        return getMessage();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case MESSAGE:
+        return isSetMessage();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof startViewChange_args)
+        return this.equals((startViewChange_args)that);
+      return false;
+    }
+
+    public boolean equals(startViewChange_args that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_message = true && this.isSetMessage();
+      boolean that_present_message = true && that.isSetMessage();
+      if (this_present_message || that_present_message) {
+        if (!(this_present_message && that_present_message))
+          return false;
+        if (!this.message.equals(that.message))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return 0;
+    }
+
+    @Override
+    public int compareTo(startViewChange_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+
+      lastComparison = Boolean.valueOf(isSetMessage()).compareTo(other.isSetMessage());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (isSetMessage()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.message, other.message);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+      schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+    }
+
+    public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+      schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("startViewChange_args(");
+      boolean first = true;
+
+      sb.append("message:");
+      if (this.message == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.message);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift.TException {
+      // check for required fields
+      // check for sub-struct validity
+      if (message != null) {
+        message.validate();
+      }
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class startViewChange_argsStandardSchemeFactory implements SchemeFactory {
+      public startViewChange_argsStandardScheme getScheme() {
+        return new startViewChange_argsStandardScheme();
+      }
+    }
+
+    private static class startViewChange_argsStandardScheme extends StandardScheme<startViewChange_args> {
+
+      public void read(org.apache.thrift.protocol.TProtocol iprot, startViewChange_args struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 1: // MESSAGE
+              if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
+                struct.message = new ViewChangeMessage();
+                struct.message.read(iprot);
+                struct.setMessageIsSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+
+        // check for required fields of primitive type, which can't be checked in the validate method
+        struct.validate();
+      }
+
+      public void write(org.apache.thrift.protocol.TProtocol oprot, startViewChange_args struct) throws org.apache.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        if (struct.message != null) {
+          oprot.writeFieldBegin(MESSAGE_FIELD_DESC);
+          struct.message.write(oprot);
+          oprot.writeFieldEnd();
+        }
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class startViewChange_argsTupleSchemeFactory implements SchemeFactory {
+      public startViewChange_argsTupleScheme getScheme() {
+        return new startViewChange_argsTupleScheme();
+      }
+    }
+
+    private static class startViewChange_argsTupleScheme extends TupleScheme<startViewChange_args> {
+
+      @Override
+      public void write(org.apache.thrift.protocol.TProtocol prot, startViewChange_args struct) throws org.apache.thrift.TException {
+        TTupleProtocol oprot = (TTupleProtocol) prot;
+        BitSet optionals = new BitSet();
+        if (struct.isSetMessage()) {
+          optionals.set(0);
+        }
+        oprot.writeBitSet(optionals, 1);
+        if (struct.isSetMessage()) {
+          struct.message.write(oprot);
+        }
+      }
+
+      @Override
+      public void read(org.apache.thrift.protocol.TProtocol prot, startViewChange_args struct) throws org.apache.thrift.TException {
+        TTupleProtocol iprot = (TTupleProtocol) prot;
+        BitSet incoming = iprot.readBitSet(1);
+        if (incoming.get(0)) {
+          struct.message = new ViewChangeMessage();
+          struct.message.read(iprot);
+          struct.setMessageIsSet(true);
+        }
+      }
+    }
+
+  }
+
+  public static class startViewChange_result implements org.apache.thrift.TBase<startViewChange_result, startViewChange_result._Fields>, java.io.Serializable, Cloneable, Comparable<startViewChange_result>   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("startViewChange_result");
+
+
+    private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+    static {
+      schemes.put(StandardScheme.class, new startViewChange_resultStandardSchemeFactory());
+      schemes.put(TupleScheme.class, new startViewChange_resultTupleSchemeFactory());
+    }
+
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+;
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+    public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(startViewChange_result.class, metaDataMap);
+    }
+
+    public startViewChange_result() {
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public startViewChange_result(startViewChange_result other) {
+    }
+
+    public startViewChange_result deepCopy() {
+      return new startViewChange_result(this);
+    }
+
+    @Override
+    public void clear() {
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof startViewChange_result)
+        return this.equals((startViewChange_result)that);
+      return false;
+    }
+
+    public boolean equals(startViewChange_result that) {
+      if (that == null)
+        return false;
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return 0;
+    }
+
+    @Override
+    public int compareTo(startViewChange_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+      schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+    }
+
+    public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+      schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+      }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("startViewChange_result(");
+      boolean first = true;
+
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift.TException {
+      // check for required fields
+      // check for sub-struct validity
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class startViewChange_resultStandardSchemeFactory implements SchemeFactory {
+      public startViewChange_resultStandardScheme getScheme() {
+        return new startViewChange_resultStandardScheme();
+      }
+    }
+
+    private static class startViewChange_resultStandardScheme extends StandardScheme<startViewChange_result> {
+
+      public void read(org.apache.thrift.protocol.TProtocol iprot, startViewChange_result struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            default:
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+
+        // check for required fields of primitive type, which can't be checked in the validate method
+        struct.validate();
+      }
+
+      public void write(org.apache.thrift.protocol.TProtocol oprot, startViewChange_result struct) throws org.apache.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class startViewChange_resultTupleSchemeFactory implements SchemeFactory {
+      public startViewChange_resultTupleScheme getScheme() {
+        return new startViewChange_resultTupleScheme();
+      }
+    }
+
+    private static class startViewChange_resultTupleScheme extends TupleScheme<startViewChange_result> {
+
+      @Override
+      public void write(org.apache.thrift.protocol.TProtocol prot, startViewChange_result struct) throws org.apache.thrift.TException {
+        TTupleProtocol oprot = (TTupleProtocol) prot;
+      }
+
+      @Override
+      public void read(org.apache.thrift.protocol.TProtocol prot, startViewChange_result struct) throws org.apache.thrift.TException {
+        TTupleProtocol iprot = (TTupleProtocol) prot;
+      }
+    }
+
+  }
+
+  public static class approveViewChange_args implements org.apache.thrift.TBase<approveViewChange_args, approveViewChange_args._Fields>, java.io.Serializable, Cloneable, Comparable<approveViewChange_args>   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("approveViewChange_args");
+
+    private static final org.apache.thrift.protocol.TField MESSAGE_FIELD_DESC = new org.apache.thrift.protocol.TField("message", org.apache.thrift.protocol.TType.STRUCT, (short)1);
+
+    private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+    static {
+      schemes.put(StandardScheme.class, new approveViewChange_argsStandardSchemeFactory());
+      schemes.put(TupleScheme.class, new approveViewChange_argsTupleSchemeFactory());
+    }
+
+    public NewViewMessage message; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+      MESSAGE((short)1, "message");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // MESSAGE
+            return MESSAGE;
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.MESSAGE, new org.apache.thrift.meta_data.FieldMetaData("message", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, NewViewMessage.class)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(approveViewChange_args.class, metaDataMap);
+    }
+
+    public approveViewChange_args() {
+    }
+
+    public approveViewChange_args(
+      NewViewMessage message)
+    {
+      this();
+      this.message = message;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public approveViewChange_args(approveViewChange_args other) {
+      if (other.isSetMessage()) {
+        this.message = new NewViewMessage(other.message);
+      }
+    }
+
+    public approveViewChange_args deepCopy() {
+      return new approveViewChange_args(this);
+    }
+
+    @Override
+    public void clear() {
+      this.message = null;
+    }
+
+    public NewViewMessage getMessage() {
+      return this.message;
+    }
+
+    public approveViewChange_args setMessage(NewViewMessage message) {
+      this.message = message;
+      return this;
+    }
+
+    public void unsetMessage() {
+      this.message = null;
+    }
+
+    /** Returns true if field message is set (has been assigned a value) and false otherwise */
+    public boolean isSetMessage() {
+      return this.message != null;
+    }
+
+    public void setMessageIsSet(boolean value) {
+      if (!value) {
+        this.message = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case MESSAGE:
+        if (value == null) {
+          unsetMessage();
+        } else {
+          setMessage((NewViewMessage)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case MESSAGE:
+        return getMessage();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case MESSAGE:
+        return isSetMessage();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof approveViewChange_args)
+        return this.equals((approveViewChange_args)that);
+      return false;
+    }
+
+    public boolean equals(approveViewChange_args that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_message = true && this.isSetMessage();
+      boolean that_present_message = true && that.isSetMessage();
+      if (this_present_message || that_present_message) {
+        if (!(this_present_message && that_present_message))
+          return false;
+        if (!this.message.equals(that.message))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return 0;
+    }
+
+    @Override
+    public int compareTo(approveViewChange_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+
+      lastComparison = Boolean.valueOf(isSetMessage()).compareTo(other.isSetMessage());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (isSetMessage()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.message, other.message);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+      schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+    }
+
+    public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+      schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("approveViewChange_args(");
+      boolean first = true;
+
+      sb.append("message:");
+      if (this.message == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.message);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift.TException {
+      // check for required fields
+      // check for sub-struct validity
+      if (message != null) {
+        message.validate();
+      }
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class approveViewChange_argsStandardSchemeFactory implements SchemeFactory {
+      public approveViewChange_argsStandardScheme getScheme() {
+        return new approveViewChange_argsStandardScheme();
+      }
+    }
+
+    private static class approveViewChange_argsStandardScheme extends StandardScheme<approveViewChange_args> {
+
+      public void read(org.apache.thrift.protocol.TProtocol iprot, approveViewChange_args struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 1: // MESSAGE
+              if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
+                struct.message = new NewViewMessage();
+                struct.message.read(iprot);
+                struct.setMessageIsSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+
+        // check for required fields of primitive type, which can't be checked in the validate method
+        struct.validate();
+      }
+
+      public void write(org.apache.thrift.protocol.TProtocol oprot, approveViewChange_args struct) throws org.apache.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        if (struct.message != null) {
+          oprot.writeFieldBegin(MESSAGE_FIELD_DESC);
+          struct.message.write(oprot);
+          oprot.writeFieldEnd();
+        }
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class approveViewChange_argsTupleSchemeFactory implements SchemeFactory {
+      public approveViewChange_argsTupleScheme getScheme() {
+        return new approveViewChange_argsTupleScheme();
+      }
+    }
+
+    private static class approveViewChange_argsTupleScheme extends TupleScheme<approveViewChange_args> {
+
+      @Override
+      public void write(org.apache.thrift.protocol.TProtocol prot, approveViewChange_args struct) throws org.apache.thrift.TException {
+        TTupleProtocol oprot = (TTupleProtocol) prot;
+        BitSet optionals = new BitSet();
+        if (struct.isSetMessage()) {
+          optionals.set(0);
+        }
+        oprot.writeBitSet(optionals, 1);
+        if (struct.isSetMessage()) {
+          struct.message.write(oprot);
+        }
+      }
+
+      @Override
+      public void read(org.apache.thrift.protocol.TProtocol prot, approveViewChange_args struct) throws org.apache.thrift.TException {
+        TTupleProtocol iprot = (TTupleProtocol) prot;
+        BitSet incoming = iprot.readBitSet(1);
+        if (incoming.get(0)) {
+          struct.message = new NewViewMessage();
+          struct.message.read(iprot);
+          struct.setMessageIsSet(true);
+        }
+      }
+    }
+
+  }
+
+  public static class approveViewChange_result implements org.apache.thrift.TBase<approveViewChange_result, approveViewChange_result._Fields>, java.io.Serializable, Cloneable, Comparable<approveViewChange_result>   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("approveViewChange_result");
+
+
+    private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+    static {
+      schemes.put(StandardScheme.class, new approveViewChange_resultStandardSchemeFactory());
+      schemes.put(TupleScheme.class, new approveViewChange_resultTupleSchemeFactory());
+    }
+
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+;
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+    public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(approveViewChange_result.class, metaDataMap);
+    }
+
+    public approveViewChange_result() {
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public approveViewChange_result(approveViewChange_result other) {
+    }
+
+    public approveViewChange_result deepCopy() {
+      return new approveViewChange_result(this);
+    }
+
+    @Override
+    public void clear() {
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof approveViewChange_result)
+        return this.equals((approveViewChange_result)that);
+      return false;
+    }
+
+    public boolean equals(approveViewChange_result that) {
+      if (that == null)
+        return false;
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return 0;
+    }
+
+    @Override
+    public int compareTo(approveViewChange_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+      schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+    }
+
+    public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+      schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+      }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("approveViewChange_result(");
+      boolean first = true;
+
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift.TException {
+      // check for required fields
+      // check for sub-struct validity
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class approveViewChange_resultStandardSchemeFactory implements SchemeFactory {
+      public approveViewChange_resultStandardScheme getScheme() {
+        return new approveViewChange_resultStandardScheme();
+      }
+    }
+
+    private static class approveViewChange_resultStandardScheme extends StandardScheme<approveViewChange_result> {
+
+      public void read(org.apache.thrift.protocol.TProtocol iprot, approveViewChange_result struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            default:
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+
+        // check for required fields of primitive type, which can't be checked in the validate method
+        struct.validate();
+      }
+
+      public void write(org.apache.thrift.protocol.TProtocol oprot, approveViewChange_result struct) throws org.apache.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class approveViewChange_resultTupleSchemeFactory implements SchemeFactory {
+      public approveViewChange_resultTupleScheme getScheme() {
+        return new approveViewChange_resultTupleScheme();
+      }
+    }
+
+    private static class approveViewChange_resultTupleScheme extends TupleScheme<approveViewChange_result> {
+
+      @Override
+      public void write(org.apache.thrift.protocol.TProtocol prot, approveViewChange_result struct) throws org.apache.thrift.TException {
+        TTupleProtocol oprot = (TTupleProtocol) prot;
+      }
+
+      @Override
+      public void read(org.apache.thrift.protocol.TProtocol prot, approveViewChange_result struct) throws org.apache.thrift.TException {
         TTupleProtocol iprot = (TTupleProtocol) prot;
       }
     }

@@ -1,6 +1,6 @@
 package server;
 
-import TwoPhaseCommit.CommitServer;
+import PBFT.PBFTCohort;
 import com.google.common.collect.Sets;
 import config.GroupConfigProvider;
 import config.GroupMember;
@@ -15,18 +15,20 @@ import static org.apache.thrift.server.TServer.Args;
 /**
  * Created by andrew on 11/25/14.
  */
-public class CommitServerRunner {
+public class PBFTCohortRunner {
 
-    public static CommitServerHandler handler;
+    public static PBFTCohortHandler handler;
 
-    public static CommitServer.Processor processor;
+    public static PBFTCohort.Processor processor;
 
-    private static GroupConfigProvider configProvider = new StaticGroupConfigProvider(null, Sets.<GroupMember>newHashSet());
+    private static GroupConfigProvider configProvider = new StaticGroupConfigProvider(null, Sets.<GroupMember>newHashSet(), 0);
+
+    private static final int REPLICA_ID_ARG_POS = 2;
 
     public static void main(String [] args) {
         try {
-            handler = new CommitServerHandler(configProvider);
-            processor = new CommitServer.Processor(handler);
+            handler = new PBFTCohortHandler(configProvider, Integer.parseInt(args[REPLICA_ID_ARG_POS]));
+            processor = new PBFTCohort.Processor(handler);
 
             Runnable simple = new Runnable() {
                 public void run() {
@@ -40,7 +42,7 @@ public class CommitServerRunner {
         }
     }
 
-    public static void simple(CommitServer.Processor processor) {
+    public static void simple(PBFTCohort.Processor processor) {
         try {
             TServerTransport serverTransport = new TServerSocket(9090);
             TServer server = new TSimpleServer(new Args(serverTransport).processor(processor));

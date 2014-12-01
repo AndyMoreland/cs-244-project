@@ -6,15 +6,31 @@
  */
 package PBFT;
 
-import org.apache.thrift.EncodingUtils;
-import org.apache.thrift.protocol.TTupleProtocol;
 import org.apache.thrift.scheme.IScheme;
 import org.apache.thrift.scheme.SchemeFactory;
 import org.apache.thrift.scheme.StandardScheme;
-import org.apache.thrift.scheme.TupleScheme;
 
+import org.apache.thrift.scheme.TupleScheme;
+import org.apache.thrift.protocol.TTupleProtocol;
+import org.apache.thrift.protocol.TProtocolException;
+import org.apache.thrift.EncodingUtils;
+import org.apache.thrift.TException;
+import org.apache.thrift.async.AsyncMethodCallback;
+import org.apache.thrift.server.AbstractNonblockingServer.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.EnumMap;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.EnumSet;
+import java.util.Collections;
+import java.util.BitSet;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.Arrays;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Operation implements org.apache.thrift.TBase<Operation, Operation._Fields>, java.io.Serializable, Cloneable, Comparable<Operation> {
   private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("Operation");
@@ -22,7 +38,6 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
   private static final org.apache.thrift.protocol.TField OPERATION_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("operationId", org.apache.thrift.protocol.TType.I32, (short)1);
   private static final org.apache.thrift.protocol.TField OPERATION_TYPE_FIELD_DESC = new org.apache.thrift.protocol.TField("operationType", org.apache.thrift.protocol.TType.I32, (short)2);
   private static final org.apache.thrift.protocol.TField ARGUMENTS_FIELD_DESC = new org.apache.thrift.protocol.TField("arguments", org.apache.thrift.protocol.TType.STRING, (short)3);
-  private static final org.apache.thrift.protocol.TField SIGNATURE_FIELD_DESC = new org.apache.thrift.protocol.TField("signature", org.apache.thrift.protocol.TType.STRING, (short)4);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -33,14 +48,12 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
   public int operationId; // required
   public int operationType; // required
   public String arguments; // required
-  public ByteBuffer signature; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
     OPERATION_ID((short)1, "operationId"),
     OPERATION_TYPE((short)2, "operationType"),
-    ARGUMENTS((short)3, "arguments"),
-    SIGNATURE((short)4, "signature");
+    ARGUMENTS((short)3, "arguments");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -61,8 +74,6 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
           return OPERATION_TYPE;
         case 3: // ARGUMENTS
           return ARGUMENTS;
-        case 4: // SIGNATURE
-          return SIGNATURE;
         default:
           return null;
       }
@@ -115,8 +126,6 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
     tmpMap.put(_Fields.ARGUMENTS, new org.apache.thrift.meta_data.FieldMetaData("arguments", org.apache.thrift.TFieldRequirementType.DEFAULT, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
-    tmpMap.put(_Fields.SIGNATURE, new org.apache.thrift.meta_data.FieldMetaData("signature", org.apache.thrift.TFieldRequirementType.DEFAULT, 
-        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING        , "Signature")));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(Operation.class, metaDataMap);
   }
@@ -127,8 +136,7 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
   public Operation(
     int operationId,
     int operationType,
-    String arguments,
-    ByteBuffer signature)
+    String arguments)
   {
     this();
     this.operationId = operationId;
@@ -136,7 +144,6 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
     this.operationType = operationType;
     setOperationTypeIsSet(true);
     this.arguments = arguments;
-    this.signature = signature;
   }
 
   /**
@@ -148,9 +155,6 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
     this.operationType = other.operationType;
     if (other.isSetArguments()) {
       this.arguments = other.arguments;
-    }
-    if (other.isSetSignature()) {
-      this.signature = other.signature;
     }
   }
 
@@ -165,7 +169,6 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
     setOperationTypeIsSet(false);
     this.operationType = 0;
     this.arguments = null;
-    this.signature = null;
   }
 
   public int getOperationId() {
@@ -238,40 +241,6 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
     }
   }
 
-  public byte[] getSignature() {
-    setSignature(org.apache.thrift.TBaseHelper.rightSize(signature));
-    return signature == null ? null : signature.array();
-  }
-
-  public ByteBuffer bufferForSignature() {
-    return signature;
-  }
-
-  public Operation setSignature(byte[] signature) {
-    setSignature(signature == null ? (ByteBuffer)null : ByteBuffer.wrap(signature));
-    return this;
-  }
-
-  public Operation setSignature(ByteBuffer signature) {
-    this.signature = signature;
-    return this;
-  }
-
-  public void unsetSignature() {
-    this.signature = null;
-  }
-
-  /** Returns true if field signature is set (has been assigned a value) and false otherwise */
-  public boolean isSetSignature() {
-    return this.signature != null;
-  }
-
-  public void setSignatureIsSet(boolean value) {
-    if (!value) {
-      this.signature = null;
-    }
-  }
-
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case OPERATION_ID:
@@ -298,14 +267,6 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
       }
       break;
 
-    case SIGNATURE:
-      if (value == null) {
-        unsetSignature();
-      } else {
-        setSignature((ByteBuffer)value);
-      }
-      break;
-
     }
   }
 
@@ -319,9 +280,6 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
 
     case ARGUMENTS:
       return getArguments();
-
-    case SIGNATURE:
-      return getSignature();
 
     }
     throw new IllegalStateException();
@@ -340,8 +298,6 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
       return isSetOperationType();
     case ARGUMENTS:
       return isSetArguments();
-    case SIGNATURE:
-      return isSetSignature();
     }
     throw new IllegalStateException();
   }
@@ -383,15 +339,6 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
       if (!(this_present_arguments && that_present_arguments))
         return false;
       if (!this.arguments.equals(that.arguments))
-        return false;
-    }
-
-    boolean this_present_signature = true && this.isSetSignature();
-    boolean that_present_signature = true && that.isSetSignature();
-    if (this_present_signature || that_present_signature) {
-      if (!(this_present_signature && that_present_signature))
-        return false;
-      if (!this.signature.equals(that.signature))
         return false;
     }
 
@@ -441,16 +388,6 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
         return lastComparison;
       }
     }
-    lastComparison = Boolean.valueOf(isSetSignature()).compareTo(other.isSetSignature());
-    if (lastComparison != 0) {
-      return lastComparison;
-    }
-    if (isSetSignature()) {
-      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.signature, other.signature);
-      if (lastComparison != 0) {
-        return lastComparison;
-      }
-    }
     return 0;
   }
 
@@ -484,14 +421,6 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
       sb.append("null");
     } else {
       sb.append(this.arguments);
-    }
-    first = false;
-    if (!first) sb.append(", ");
-    sb.append("signature:");
-    if (this.signature == null) {
-      sb.append("null");
-    } else {
-      sb.append(this.signature);
     }
     first = false;
     sb.append(")");
@@ -563,14 +492,6 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
-          case 4: // SIGNATURE
-            if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
-              struct.signature = iprot.readBinary();
-              struct.setSignatureIsSet(true);
-            } else { 
-              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
-            }
-            break;
           default:
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
         }
@@ -595,11 +516,6 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
       if (struct.arguments != null) {
         oprot.writeFieldBegin(ARGUMENTS_FIELD_DESC);
         oprot.writeString(struct.arguments);
-        oprot.writeFieldEnd();
-      }
-      if (struct.signature != null) {
-        oprot.writeFieldBegin(SIGNATURE_FIELD_DESC);
-        oprot.writeBinary(struct.signature);
         oprot.writeFieldEnd();
       }
       oprot.writeFieldStop();
@@ -629,10 +545,7 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
       if (struct.isSetArguments()) {
         optionals.set(2);
       }
-      if (struct.isSetSignature()) {
-        optionals.set(3);
-      }
-      oprot.writeBitSet(optionals, 4);
+      oprot.writeBitSet(optionals, 3);
       if (struct.isSetOperationId()) {
         oprot.writeI32(struct.operationId);
       }
@@ -642,15 +555,12 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
       if (struct.isSetArguments()) {
         oprot.writeString(struct.arguments);
       }
-      if (struct.isSetSignature()) {
-        oprot.writeBinary(struct.signature);
-      }
     }
 
     @Override
     public void read(org.apache.thrift.protocol.TProtocol prot, Operation struct) throws org.apache.thrift.TException {
       TTupleProtocol iprot = (TTupleProtocol) prot;
-      BitSet incoming = iprot.readBitSet(4);
+      BitSet incoming = iprot.readBitSet(3);
       if (incoming.get(0)) {
         struct.operationId = iprot.readI32();
         struct.setOperationIdIsSet(true);
@@ -662,10 +572,6 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
       if (incoming.get(2)) {
         struct.arguments = iprot.readString();
         struct.setArgumentsIsSet(true);
-      }
-      if (incoming.get(3)) {
-        struct.signature = iprot.readBinary();
-        struct.setSignatureIsSet(true);
       }
     }
   }

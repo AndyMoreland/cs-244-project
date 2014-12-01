@@ -8,14 +8,31 @@ import java.util.Set;
  */
 public class StaticGroupConfigProvider implements GroupConfigProvider {
     private Set<GroupMember> members;
+    private int viewID;
     private GroupMember leader;
 
-    public StaticGroupConfigProvider(GroupMember leader, Set<GroupMember> members) {
+    public StaticGroupConfigProvider(GroupMember leader, Set<GroupMember> members, int viewID) {
         assert (leader != null);
         assert (members != null);
 
         this.leader = leader;
         this.members = members;
+        this.viewID = viewID;
+    }
+
+    @Override
+    public void setViewID(int viewID) {
+        this.viewID = viewID;
+    }
+
+    @Override
+    public int getViewID() {
+        return this.viewID;
+    }
+
+    @Override
+    public int getQuorumSize() {
+        return members.size() - (members.size()-1)/3;
     }
 
     @Override

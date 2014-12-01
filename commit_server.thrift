@@ -80,7 +80,6 @@ struct Operation {
     1: i32 operationId,
     2: i32 operationType, // an ENUM with service-defined semantics
     3: string arguments, // JSON formatted or something
-    4: Signature signature;
 }
 
 struct Transaction {
@@ -121,6 +120,21 @@ struct CheckpointMessage {
     4:i32 replicaId;
 }
 
+struct ViewChangeMessage {
+    1:i32 newViewID,
+    2:i32 sequenceNumber,
+    3:set<CheckpointMessage> checkpointProof,
+    4:set<PrePrepareMessage> preparedGreaterThanSequenceNumber,
+    5:i32 replicaID,
+    6:Signature messageSignature;
+}
+
+struct NewViewMessage {
+    1:i32 newViewID,
+    2:set<ViewChangeMessage> viewChangeMessages,
+    3:set<PrePrepareMessage> prePrepareMessages;
+}
+
 /**
  * Ahh, now onto the cool part, defining a service. Services just need a name
  * and can optionally inherit from another service using the extends keyword.
@@ -130,5 +144,7 @@ service PBFTCohort {
     void prePrepare(1:PrePrepareMessage message, 2:Transaction transaction),
     void prepare(1:PrepareMessage message),
     void commit(1:CommitMessage message),
-    void checkpoint(1:CheckpointMessage message);
+    void checkpoint(1:CheckpointMessage message),
+    void startViewChange(1:ViewChangeMessage message),
+    void approveViewChange(1:NewViewMessage message);
 }
