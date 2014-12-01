@@ -3,6 +3,7 @@ package server;
 import PBFT.*;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import common.CryptoUtil;
 import common.IllegalLogEntryException;
 import common.Log;
 import config.GroupConfigProvider;
@@ -12,6 +13,7 @@ import gameengine.ChineseCheckersState;
 import org.apache.thrift.TException;
 import statemachine.Operation;
 
+import java.security.*;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -24,6 +26,8 @@ import java.util.concurrent.Executors;
 public class PBFTCohortHandler implements PBFTCohort.Iface {
     private final Log<Operation<ChineseCheckersState>> log;
     private GroupConfigProvider configProvider;
+    private final GroupMember<PBFTCohort.Client> thisCohort;
+    private final Signature signature;
     private Map<Integer, Set<ViewChangeMessage>> viewChangeMessages; // this should include your own messages
     private int replicaID;
     private static final int POOL_SIZE = 10;
@@ -32,12 +36,24 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     private static final int MIN_SEQ_NO = 0;
     private static final int MIN_VIEW_ID = 0;
 
-    public PBFTCohortHandler(GroupConfigProvider<PBFTCohort.Client> configProvider, int replicaID) {
+
+    public PBFTCohortHandler(GroupConfigProvider<PBFTCohort.Client> configProvider, int replicaID, GroupMember<PBFTCohort.Client> thisCohort) {
         this.configProvider = configProvider;
         viewChangeMessages = Maps.newHashMap();
         this.replicaID = replicaID;
         pool = Executors.newFixedThreadPool(POOL_SIZE);
         this.log = new Log<Operation<ChineseCheckersState>>();
+        this.thisCohort = thisCohort;
+        try {
+            this.signature = Signature.getInstance("SHA1withDSA", "SUN");
+            this.signature.initSign(thisCohort.getPrivateKey());
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (NoSuchProviderException e) {
+            e.printStackTrace();
+        }catch (InvalidKeyException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -103,7 +119,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
             prePrepareMessage.getViewstamp().setViewId(newViewID);
             prePrepareMessage.getViewstamp().setSequenceNumber(n);
             if (highestViewID >= MIN_VIEW_ID) {
-                // TODO    prePrepareMessage.setMessageSignature(/* TODO */);
+                prePrepareMessage.setMessageSignature(CryptoUtil.computeMessageSignature(prePrepareMessage, this.signature));
             } else {
                 // TODO    prePrepareMessage.setMessageSignature( /* TODO set as noop */);
             }

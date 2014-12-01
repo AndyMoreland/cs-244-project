@@ -1,5 +1,6 @@
 package config;
 
+import com.google.common.base.Optional;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
@@ -22,15 +23,20 @@ public class GroupMember<T extends org.apache.thrift.TServiceClient> {
     private final Constructor<? extends T> clientCtor;
     private InetSocketAddress address;
     private final PublicKey publicKey;
+    private final Optional<PrivateKey> privateKey;
     private final int id;
     
-    public GroupMember(int id, InetSocketAddress address, Class<? extends T> impl, PublicKey publicKey) throws NoSuchMethodException {
+    public GroupMember(int id, InetSocketAddress address, Class<? extends T> impl, PublicKey publicKey, PrivateKey privateKey) throws NoSuchMethodException {
         this.publicKey = publicKey;
         this.id = id;
+        this.privateKey = Optional.fromNullable(privateKey);
         this.clientCtor = impl.getConstructor();
         this.address = address;
     }
 
+    public PrivateKey getPrivateKey() {
+        return privateKey.get();
+    }
     public int getReplicaID() {
         return id;
     }
