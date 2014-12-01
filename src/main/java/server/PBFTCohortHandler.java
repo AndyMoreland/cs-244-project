@@ -3,8 +3,10 @@ package server;
 import PBFT.*;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import common.Log;
 import config.GroupConfigProvider;
 import config.GroupMember;
+import gameengine.ChineseCheckersState;
 import org.apache.thrift.TException;
 
 import java.util.Map;
@@ -14,6 +16,7 @@ import java.util.Set;
  * Created by andrew on 11/27/14.
  */
 public class PBFTCohortHandler implements PBFTCohort.Iface {
+    private final Log<common.Transaction<Operation<ChineseCheckersState>>> log;
     private GroupConfigProvider configProvider;
     private Map<Integer,Set<ViewChangeMessage>> viewChangeMessages;
     private int replicaID;
