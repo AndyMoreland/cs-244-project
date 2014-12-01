@@ -24,7 +24,7 @@ public class Transaction<T> {
         committed = true;
     }
 
-    public Viewstamp getId() {
+    public Viewstamp getViewstamp() {
         return id;
     }
 }

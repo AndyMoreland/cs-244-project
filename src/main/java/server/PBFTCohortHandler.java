@@ -43,11 +43,13 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
 
     @Override
     public void prePrepare(PrePrepareMessage message, Transaction transaction) throws TException {
+        assert (configProvider.getLeader().getReplicaID() == this.replicaID);
+
         common.Transaction<Operation<ChineseCheckersState>> logTransaction = new common.Transaction<Operation<ChineseCheckersState>>(
                 transaction.viewstamp,
                 transaction.viewstamp.getSequenceNumber(),
                 ChineseCheckersOperationFactory.hydrate(transaction.operation)
-                );
+        );
 
         log.addEntry(logTransaction);
     }
