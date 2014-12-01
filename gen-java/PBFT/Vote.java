@@ -7,6 +7,10 @@
 package PBFT;
 
 
+import java.util.Map;
+import java.util.HashMap;
+import org.apache.thrift.TEnum;
+
 public enum Vote implements org.apache.thrift.TEnum {
   COMMIT(1),
   ABBORT(2);

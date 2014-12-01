@@ -41,6 +41,7 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
   private static final org.apache.thrift.protocol.TField OPERATION_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("operationId", org.apache.thrift.protocol.TType.I32, (short)1);
   private static final org.apache.thrift.protocol.TField OPERATION_TYPE_FIELD_DESC = new org.apache.thrift.protocol.TField("operationType", org.apache.thrift.protocol.TType.I32, (short)2);
   private static final org.apache.thrift.protocol.TField ARGUMENTS_FIELD_DESC = new org.apache.thrift.protocol.TField("arguments", org.apache.thrift.protocol.TType.STRING, (short)3);
+  private static final org.apache.thrift.protocol.TField REPLICA_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("replicaId", org.apache.thrift.protocol.TType.I32, (short)4);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -51,12 +52,14 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
   public int operationId; // required
   public int operationType; // required
   public String arguments; // required
+  public int replicaId; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
     OPERATION_ID((short)1, "operationId"),
     OPERATION_TYPE((short)2, "operationType"),
-    ARGUMENTS((short)3, "arguments");
+    ARGUMENTS((short)3, "arguments"),
+    REPLICA_ID((short)4, "replicaId");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -77,6 +80,8 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
           return OPERATION_TYPE;
         case 3: // ARGUMENTS
           return ARGUMENTS;
+        case 4: // REPLICA_ID
+          return REPLICA_ID;
         default:
           return null;
       }
@@ -119,6 +124,7 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
   // isset id assignments
   private static final int __OPERATIONID_ISSET_ID = 0;
   private static final int __OPERATIONTYPE_ISSET_ID = 1;
+  private static final int __REPLICAID_ISSET_ID = 2;
   private byte __isset_bitfield = 0;
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
@@ -129,6 +135,8 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
     tmpMap.put(_Fields.ARGUMENTS, new org.apache.thrift.meta_data.FieldMetaData("arguments", org.apache.thrift.TFieldRequirementType.DEFAULT, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
+    tmpMap.put(_Fields.REPLICA_ID, new org.apache.thrift.meta_data.FieldMetaData("replicaId", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(Operation.class, metaDataMap);
   }
@@ -139,7 +147,8 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
   public Operation(
     int operationId,
     int operationType,
-    String arguments)
+    String arguments,
+    int replicaId)
   {
     this();
     this.operationId = operationId;
@@ -147,6 +156,8 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
     this.operationType = operationType;
     setOperationTypeIsSet(true);
     this.arguments = arguments;
+    this.replicaId = replicaId;
+    setReplicaIdIsSet(true);
   }
 
   /**
@@ -159,6 +170,7 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
     if (other.isSetArguments()) {
       this.arguments = other.arguments;
     }
+    this.replicaId = other.replicaId;
   }
 
   public Operation deepCopy() {
@@ -172,6 +184,8 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
     setOperationTypeIsSet(false);
     this.operationType = 0;
     this.arguments = null;
+    setReplicaIdIsSet(false);
+    this.replicaId = 0;
   }
 
   public int getOperationId() {
@@ -244,6 +258,29 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
     }
   }
 
+  public int getReplicaId() {
+    return this.replicaId;
+  }
+
+  public Operation setReplicaId(int replicaId) {
+    this.replicaId = replicaId;
+    setReplicaIdIsSet(true);
+    return this;
+  }
+
+  public void unsetReplicaId() {
+    __isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __REPLICAID_ISSET_ID);
+  }
+
+  /** Returns true if field replicaId is set (has been assigned a value) and false otherwise */
+  public boolean isSetReplicaId() {
+    return EncodingUtils.testBit(__isset_bitfield, __REPLICAID_ISSET_ID);
+  }
+
+  public void setReplicaIdIsSet(boolean value) {
+    __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __REPLICAID_ISSET_ID, value);
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case OPERATION_ID:
@@ -270,6 +307,14 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
       }
       break;
 
+    case REPLICA_ID:
+      if (value == null) {
+        unsetReplicaId();
+      } else {
+        setReplicaId((Integer)value);
+      }
+      break;
+
     }
   }
 
@@ -283,6 +328,9 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
 
     case ARGUMENTS:
       return getArguments();
+
+    case REPLICA_ID:
+      return Integer.valueOf(getReplicaId());
 
     }
     throw new IllegalStateException();
@@ -301,6 +349,8 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
       return isSetOperationType();
     case ARGUMENTS:
       return isSetArguments();
+    case REPLICA_ID:
+      return isSetReplicaId();
     }
     throw new IllegalStateException();
   }
@@ -345,6 +395,15 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
         return false;
     }
 
+    boolean this_present_replicaId = true;
+    boolean that_present_replicaId = true;
+    if (this_present_replicaId || that_present_replicaId) {
+      if (!(this_present_replicaId && that_present_replicaId))
+        return false;
+      if (this.replicaId != that.replicaId)
+        return false;
+    }
+
     return true;
   }
 
@@ -366,6 +425,11 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
     list.add(present_arguments);
     if (present_arguments)
       list.add(arguments);
+
+    boolean present_replicaId = true;
+    list.add(present_replicaId);
+    if (present_replicaId)
+      list.add(replicaId);
 
     return list.hashCode();
   }
@@ -408,6 +472,16 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
         return lastComparison;
       }
     }
+    lastComparison = Boolean.valueOf(isSetReplicaId()).compareTo(other.isSetReplicaId());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (isSetReplicaId()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.replicaId, other.replicaId);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
     return 0;
   }
 
@@ -442,6 +516,10 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
     } else {
       sb.append(this.arguments);
     }
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("replicaId:");
+    sb.append(this.replicaId);
     first = false;
     sb.append(")");
     return sb.toString();
@@ -512,6 +590,14 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
+          case 4: // REPLICA_ID
+            if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
+              struct.replicaId = iprot.readI32();
+              struct.setReplicaIdIsSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
           default:
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
         }
@@ -538,6 +624,9 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
         oprot.writeString(struct.arguments);
         oprot.writeFieldEnd();
       }
+      oprot.writeFieldBegin(REPLICA_ID_FIELD_DESC);
+      oprot.writeI32(struct.replicaId);
+      oprot.writeFieldEnd();
       oprot.writeFieldStop();
       oprot.writeStructEnd();
     }
@@ -565,7 +654,10 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
       if (struct.isSetArguments()) {
         optionals.set(2);
       }
-      oprot.writeBitSet(optionals, 3);
+      if (struct.isSetReplicaId()) {
+        optionals.set(3);
+      }
+      oprot.writeBitSet(optionals, 4);
       if (struct.isSetOperationId()) {
         oprot.writeI32(struct.operationId);
       }
@@ -575,12 +667,15 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
       if (struct.isSetArguments()) {
         oprot.writeString(struct.arguments);
       }
+      if (struct.isSetReplicaId()) {
+        oprot.writeI32(struct.replicaId);
+      }
     }
 
     @Override
     public void read(org.apache.thrift.protocol.TProtocol prot, Operation struct) throws org.apache.thrift.TException {
       TTupleProtocol iprot = (TTupleProtocol) prot;
-      BitSet incoming = iprot.readBitSet(3);
+      BitSet incoming = iprot.readBitSet(4);
       if (incoming.get(0)) {
         struct.operationId = iprot.readI32();
         struct.setOperationIdIsSet(true);
@@ -592,6 +687,10 @@ public class Operation implements org.apache.thrift.TBase<Operation, Operation._
       if (incoming.get(2)) {
         struct.arguments = iprot.readString();
         struct.setArgumentsIsSet(true);
+      }
+      if (incoming.get(3)) {
+        struct.replicaId = iprot.readI32();
+        struct.setReplicaIdIsSet(true);
       }
     }
   }
