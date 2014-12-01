@@ -154,20 +154,22 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
         return prePrepareMessages;
     }
 
-    private boolean prePrepareSetValid(Set<PrePrepareMessage> prePrepareMessages) {
+    private boolean prePrepareSetValid(List<PrePrepareMessage> prePrepareMessages, List<Set<PrepareMessage>> prepareMessages) {
         Map<ByteBuffer, Integer> numPrepares = new HashMap<ByteBuffer, Integer>();
-        for (PrePrepareMessage prePrepareMessage: prePrepareMessages) {
-            ByteBuffer buf = ByteBuffer.wrap(prePrepareMessage.getTransactionDigest());
-            if (numPrepares.containsKey(buf)) {
-                numPrepares.put(buf, numPrepares.get(buf) + 1);
-            } else {
-                numPrepares.put(buf, 1);
-            }
-        }
-
-        for (ByteBuffer buf :numPrepares.keySet()) {
-            if (numPrepares.get(buf) < configProvider.getQuorumSize())
+        for(int i=0; i < prePrepareMessages.size(); ++i) {
+            GroupMember<PBFTCohort.Client> sender = configProvider.getGroupMember(prePrepareMessages.get(i).getReplicaId());
+            if (!sender.verifySignature(prePrepareMessages.get(i),prePrepareMessages.get(i).getMessageSignature())) {
                 return false;
+            }
+            if (prepareMessages.get(i).size() < configProvider.getQuorumSize()) return false;
+            // verify each of the messages
+            for (PrepareMessage prepareMessage: prepareMessages.get(i)) {
+                if (!prepareMessage.getViewstamp().equals(prePrepareMessages.get(i).getViewstamp())) return false;
+                sender = configProvider.getGroupMember(prepareMessage.getReplicaId());
+                if (!sender.verifySignature(prepareMessage, prepareMessage.getMessageSignature())) {
+                    return false;
+                }
+            }
         }
         return true;
     }
@@ -179,7 +181,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
             int newViewID = message.getNewViewID();
             if (newViewID > configProvider.getViewID()) { // can only move to a higher view
                 // TODO: verify of checkpoint messages
-                if (!prePrepareSetValid(message.getPreparedGreaterThanSequenceNumber())) {
+                if (!prePrepareSetValid(message.getPreparedGreaterThanSequenceNumber(), message.getPrepareMessages())) {
                     return;
                 }
 

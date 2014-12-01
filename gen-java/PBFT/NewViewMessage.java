@@ -38,8 +38,8 @@ public class NewViewMessage implements org.apache.thrift.TBase<NewViewMessage, N
   private static final org.apache.thrift.protocol.TField NEW_VIEW_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("newViewID", org.apache.thrift.protocol.TType.I32, (short)1);
   private static final org.apache.thrift.protocol.TField VIEW_CHANGE_MESSAGES_FIELD_DESC = new org.apache.thrift.protocol.TField("viewChangeMessages", org.apache.thrift.protocol.TType.LIST, (short)2);
   private static final org.apache.thrift.protocol.TField PRE_PREPARE_MESSAGES_FIELD_DESC = new org.apache.thrift.protocol.TField("prePrepareMessages", org.apache.thrift.protocol.TType.LIST, (short)3);
-  private static final org.apache.thrift.protocol.TField REPLICA_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("replicaID", org.apache.thrift.protocol.TType.I32, (short)4);
-  private static final org.apache.thrift.protocol.TField MESSAGE_SIGNATURE_FIELD_DESC = new org.apache.thrift.protocol.TField("messageSignature", org.apache.thrift.protocol.TType.STRING, (short)5);
+  private static final org.apache.thrift.protocol.TField REPLICA_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("replicaID", org.apache.thrift.protocol.TType.I32, (short)5);
+  private static final org.apache.thrift.protocol.TField MESSAGE_SIGNATURE_FIELD_DESC = new org.apache.thrift.protocol.TField("messageSignature", org.apache.thrift.protocol.TType.STRING, (short)6);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -58,8 +58,8 @@ public class NewViewMessage implements org.apache.thrift.TBase<NewViewMessage, N
     NEW_VIEW_ID((short)1, "newViewID"),
     VIEW_CHANGE_MESSAGES((short)2, "viewChangeMessages"),
     PRE_PREPARE_MESSAGES((short)3, "prePrepareMessages"),
-    REPLICA_ID((short)4, "replicaID"),
-    MESSAGE_SIGNATURE((short)5, "messageSignature");
+    REPLICA_ID((short)5, "replicaID"),
+    MESSAGE_SIGNATURE((short)6, "messageSignature");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -80,9 +80,9 @@ public class NewViewMessage implements org.apache.thrift.TBase<NewViewMessage, N
           return VIEW_CHANGE_MESSAGES;
         case 3: // PRE_PREPARE_MESSAGES
           return PRE_PREPARE_MESSAGES;
-        case 4: // REPLICA_ID
+        case 5: // REPLICA_ID
           return REPLICA_ID;
-        case 5: // MESSAGE_SIGNATURE
+        case 6: // MESSAGE_SIGNATURE
           return MESSAGE_SIGNATURE;
         default:
           return null;
@@ -683,14 +683,14 @@ public class NewViewMessage implements org.apache.thrift.TBase<NewViewMessage, N
           case 2: // VIEW_CHANGE_MESSAGES
             if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
               {
-                org.apache.thrift.protocol.TList _list16 = iprot.readListBegin();
-                struct.viewChangeMessages = new ArrayList<ViewChangeMessage>(_list16.size);
-                for (int _i17 = 0; _i17 < _list16.size; ++_i17)
+                org.apache.thrift.protocol.TList _list32 = iprot.readListBegin();
+                struct.viewChangeMessages = new ArrayList<ViewChangeMessage>(_list32.size);
+                for (int _i33 = 0; _i33 < _list32.size; ++_i33)
                 {
-                  ViewChangeMessage _elem18;
-                  _elem18 = new ViewChangeMessage();
-                  _elem18.read(iprot);
-                  struct.viewChangeMessages.add(_elem18);
+                  ViewChangeMessage _elem34;
+                  _elem34 = new ViewChangeMessage();
+                  _elem34.read(iprot);
+                  struct.viewChangeMessages.add(_elem34);
                 }
                 iprot.readListEnd();
               }
@@ -702,14 +702,14 @@ public class NewViewMessage implements org.apache.thrift.TBase<NewViewMessage, N
           case 3: // PRE_PREPARE_MESSAGES
             if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
               {
-                org.apache.thrift.protocol.TList _list19 = iprot.readListBegin();
-                struct.prePrepareMessages = new ArrayList<PrePrepareMessage>(_list19.size);
-                for (int _i20 = 0; _i20 < _list19.size; ++_i20)
+                org.apache.thrift.protocol.TList _list35 = iprot.readListBegin();
+                struct.prePrepareMessages = new ArrayList<PrePrepareMessage>(_list35.size);
+                for (int _i36 = 0; _i36 < _list35.size; ++_i36)
                 {
-                  PrePrepareMessage _elem21;
-                  _elem21 = new PrePrepareMessage();
-                  _elem21.read(iprot);
-                  struct.prePrepareMessages.add(_elem21);
+                  PrePrepareMessage _elem37;
+                  _elem37 = new PrePrepareMessage();
+                  _elem37.read(iprot);
+                  struct.prePrepareMessages.add(_elem37);
                 }
                 iprot.readListEnd();
               }
@@ -718,7 +718,7 @@ public class NewViewMessage implements org.apache.thrift.TBase<NewViewMessage, N
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
-          case 4: // REPLICA_ID
+          case 5: // REPLICA_ID
             if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
               struct.replicaID = iprot.readI32();
               struct.setReplicaIDIsSet(true);
@@ -726,7 +726,7 @@ public class NewViewMessage implements org.apache.thrift.TBase<NewViewMessage, N
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
-          case 5: // MESSAGE_SIGNATURE
+          case 6: // MESSAGE_SIGNATURE
             if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
               struct.messageSignature = iprot.readBinary();
               struct.setMessageSignatureIsSet(true);
@@ -756,9 +756,9 @@ public class NewViewMessage implements org.apache.thrift.TBase<NewViewMessage, N
         oprot.writeFieldBegin(VIEW_CHANGE_MESSAGES_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, struct.viewChangeMessages.size()));
-          for (ViewChangeMessage _iter22 : struct.viewChangeMessages)
+          for (ViewChangeMessage _iter38 : struct.viewChangeMessages)
           {
-            _iter22.write(oprot);
+            _iter38.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -768,9 +768,9 @@ public class NewViewMessage implements org.apache.thrift.TBase<NewViewMessage, N
         oprot.writeFieldBegin(PRE_PREPARE_MESSAGES_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, struct.prePrepareMessages.size()));
-          for (PrePrepareMessage _iter23 : struct.prePrepareMessages)
+          for (PrePrepareMessage _iter39 : struct.prePrepareMessages)
           {
-            _iter23.write(oprot);
+            _iter39.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -824,18 +824,18 @@ public class NewViewMessage implements org.apache.thrift.TBase<NewViewMessage, N
       if (struct.isSetViewChangeMessages()) {
         {
           oprot.writeI32(struct.viewChangeMessages.size());
-          for (ViewChangeMessage _iter24 : struct.viewChangeMessages)
+          for (ViewChangeMessage _iter40 : struct.viewChangeMessages)
           {
-            _iter24.write(oprot);
+            _iter40.write(oprot);
           }
         }
       }
       if (struct.isSetPrePrepareMessages()) {
         {
           oprot.writeI32(struct.prePrepareMessages.size());
-          for (PrePrepareMessage _iter25 : struct.prePrepareMessages)
+          for (PrePrepareMessage _iter41 : struct.prePrepareMessages)
           {
-            _iter25.write(oprot);
+            _iter41.write(oprot);
           }
         }
       }
@@ -857,28 +857,28 @@ public class NewViewMessage implements org.apache.thrift.TBase<NewViewMessage, N
       }
       if (incoming.get(1)) {
         {
-          org.apache.thrift.protocol.TList _list26 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.viewChangeMessages = new ArrayList<ViewChangeMessage>(_list26.size);
-          for (int _i27 = 0; _i27 < _list26.size; ++_i27)
+          org.apache.thrift.protocol.TList _list42 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.viewChangeMessages = new ArrayList<ViewChangeMessage>(_list42.size);
+          for (int _i43 = 0; _i43 < _list42.size; ++_i43)
           {
-            ViewChangeMessage _elem28;
-            _elem28 = new ViewChangeMessage();
-            _elem28.read(iprot);
-            struct.viewChangeMessages.add(_elem28);
+            ViewChangeMessage _elem44;
+            _elem44 = new ViewChangeMessage();
+            _elem44.read(iprot);
+            struct.viewChangeMessages.add(_elem44);
           }
         }
         struct.setViewChangeMessagesIsSet(true);
       }
       if (incoming.get(2)) {
         {
-          org.apache.thrift.protocol.TList _list29 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.prePrepareMessages = new ArrayList<PrePrepareMessage>(_list29.size);
-          for (int _i30 = 0; _i30 < _list29.size; ++_i30)
+          org.apache.thrift.protocol.TList _list45 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.prePrepareMessages = new ArrayList<PrePrepareMessage>(_list45.size);
+          for (int _i46 = 0; _i46 < _list45.size; ++_i46)
           {
-            PrePrepareMessage _elem31;
-            _elem31 = new PrePrepareMessage();
-            _elem31.read(iprot);
-            struct.prePrepareMessages.add(_elem31);
+            PrePrepareMessage _elem47;
+            _elem47 = new PrePrepareMessage();
+            _elem47.read(iprot);
+            struct.prePrepareMessages.add(_elem47);
           }
         }
         struct.setPrePrepareMessagesIsSet(true);
