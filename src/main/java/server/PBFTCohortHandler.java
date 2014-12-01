@@ -106,7 +106,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
             Set<ViewChangeMessage> viewChangeMessages /* this is script V in the paper */ ) {
 
         // this is computing script O in the pbft paper
-        Set<PrePrepareMessage> prePrepareMessages = Sets.newHashSet();
+        Set<PrePrepareMessage> prePrepareMessages = Sets.newLinkedHashSet(); // order is important for when we verify
         int max_seqno = MIN_SEQ_NO - 1;
         int lastCheckpointInViewChangeMessages = MIN_SEQ_NO - 1;
         for (ViewChangeMessage viewChangeMessage : viewChangeMessages) {
@@ -235,15 +235,20 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
             }
         }
 
-        // verify the preprepares FIXME
-        /* Set<PrePrepareMessage> prePrepareMessages = createPrePrepareForCurrentSeqno(
+        // verify the preprepares
+        // TODO: change this to a list
+        Set<PrePrepareMessage> recomputedPrePrepareMessages = createPrePrepareForCurrentSeqno(
                 message.getNewViewID(), true, message.getViewChangeMessages());
-        for (PrePrepareMessage prePrepareMessage : prePrepareMessages) {
+        int index = 0;
+        PBFT.PrePrepareMessage[] receivedPrePrepareMessages
+                = message.getPrePrepareMessages().toArray(new PrePrepareMessage[0]); // uggggly
+        for (PrePrepareMessage prePrepareMessage : recomputedPrePrepareMessages) {
             sender = configProvider.getGroupMember(prePrepareMessage.getReplicaId());
-            if (!sender.verifySignature(prePrepareMessage, prePrepareMessage.getMessageSignature())) {
+            if (!sender.verifySignature(prePrepareMessage, receivedPrePrepareMessages[index].getMessageSignature())) {
                 return;
             }
-        } */
+            index++;
+        }
 
         // change to new view
         configProvider.setViewID(message.getNewViewID());
