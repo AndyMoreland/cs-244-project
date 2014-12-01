@@ -1,15 +1,16 @@
 package server;
 
 import PBFT.*;
+import PBFT.Transaction;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import common.IllegalLogEntryException;
-import common.Log;
+import common.*;
 import config.GroupConfigProvider;
 import config.GroupMember;
 import gameengine.ChineseCheckersOperationFactory;
 import gameengine.ChineseCheckersState;
 import org.apache.thrift.TException;
+import org.codehaus.jackson.map.ObjectMapper;
 import statemachine.Operation;
 
 import java.util.Iterator;
@@ -31,7 +32,6 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     private static final int LAST_CHECKPOINT = 0; // set to 0 for now; no checkpointing
     private static final int MIN_SEQ_NO = 0;
     private static final int MIN_VIEW_ID = 0;
-    private static final ObjectMapper mapper;
 
     public PBFTCohortHandler(GroupConfigProvider<PBFTCohort.Client> configProvider, int replicaID) {
         this.configProvider = configProvider;
@@ -58,24 +58,22 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
         }
 
         for (final GroupMember<PBFTCohort.Client> member : configProvider.getGroupMembers()) {
-            if (member.getReplicaID() != this.replicaID) {
-                final PrepareMessage prepareMessage = new PrepareMessage();
-                prepareMessage.viewstamp = transaction.viewstamp;
-                prepareMessage.replicaId = member.getReplicaID();
-                prepareMessage.transactionDigest = UNIMPLEMENTED;
-                prepareMessage.messageSignature = UNIMPLEMENTED;
+            final PrepareMessage prepareMessage = new PrepareMessage();
+            prepareMessage.viewstamp = transaction.viewstamp;
+            prepareMessage.replicaId = member.getReplicaID();
+            prepareMessage.transactionDigest = CryptoUtil.computeTransactionDigest(new common.Transaction(transaction));
+            prepareMessage.messageSignature = UNIMPLEMENTED;
 
-                pool.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            member.getThriftConnection().prepare(prepareMessage);
-                        } catch (TException e) {
-                            e.printStackTrace();
-                        }
+            pool.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        member.getThriftConnection().prepare(prepareMessage);
+                    } catch (TException e) {
+                        e.printStackTrace();
                     }
-                });
-            }
+                }
+            });
         }
     }
 
@@ -152,27 +150,25 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
                         && viewChangeMessages.get(newViewID).size() > configProvider.getQuorumSize()) {
                     // multicast NEW-VIEW message
                     Set<GroupMember<PBFTCohort.Client>> groupMembers = configProvider.getGroupMembers();
-                    for (final GroupMember<PBFTCohort.Client> groupMember : groupMembers)
-                        if (groupMember.getReplicaID() != replicaID) {
-                            final NewViewMessage newViewMessage = new NewViewMessage();
-                            newViewMessage.setNewViewID(newViewID);
-                            newViewMessage.setViewChangeMessages(viewChangeMessages.get(newViewID));
-                            // copy the hashset here because the message could be sent after we leave this method
-                            // and start modifying viewChangeMessages again
-                            newViewMessage.setPrePrepareMessages(
-                                    createPrePrepareForCurrentSeqno(newViewID, Sets.newHashSet(viewChangeMessages.get(newViewID))));
-                            pool.execute(new Runnable() {
-                                public void run() {
-                                    try {
-                                        groupMember.getThriftConnection().approveViewChange(newViewMessage);
-                                    } catch (TException e) {
-                                        e.printStackTrace();
-                                    }
+                    for (final GroupMember<PBFTCohort.Client> groupMember : groupMembers) {
+                        final NewViewMessage newViewMessage = new NewViewMessage();
+                        newViewMessage.setNewViewID(newViewID);
+                        newViewMessage.setViewChangeMessages(viewChangeMessages.get(newViewID));
+                        // copy the hashset here because the message could be sent after we leave this method
+                        // and start modifying viewChangeMessages again
+                        newViewMessage.setPrePrepareMessages(
+                                createPrePrepareForCurrentSeqno(newViewID, Sets.newHashSet(viewChangeMessages.get(newViewID))));
+                        pool.execute(new Runnable() {
+                            public void run() {
+                                try {
+                                    groupMember.getThriftConnection().approveViewChange(newViewMessage);
+                                } catch (TException e) {
+                                    e.printStackTrace();
                                 }
-                            });
+                            }
+                        });
 
-                        }
-
+                    }
                 }
             }
         }
