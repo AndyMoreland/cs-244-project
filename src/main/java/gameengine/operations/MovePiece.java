@@ -13,6 +13,11 @@ public class MovePiece implements ChineseCheckersOperation {
     }
 
     @Override
+    public void undo(ChineseCheckersState state) {
+        
+    }
+
+    @Override
     public Operation serialize() {
         return null;
     }
