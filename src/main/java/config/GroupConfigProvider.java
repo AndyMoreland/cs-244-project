@@ -11,8 +11,8 @@ public interface GroupConfigProvider<T extends org.apache.thrift.TServiceClient>
     int getViewID();
     int getQuorumSize();
 
-    Set<GroupMember> getGroupMembers();
-    GroupMember getGroupMember(int replicaID);
+    Set<GroupMember<T>> getGroupMembers();
+    GroupMember<T> getGroupMember(int replicaID);
 
     GroupMember<T> getLeader();
 

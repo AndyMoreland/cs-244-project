@@ -1,7 +1,6 @@
 package server;
 
 import PBFT.*;
-import PBFT.Transaction;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import common.CryptoUtil;
@@ -16,7 +15,6 @@ import org.apache.thrift.TException;
 import statemachine.Operation;
 
 import java.nio.ByteBuffer;
-import java.security.*;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -29,9 +27,8 @@ import java.util.concurrent.Executors;
  */
 public class PBFTCohortHandler implements PBFTCohort.Iface {
     private final Log<Operation<ChineseCheckersState>> log;
-    private GroupConfigProvider configProvider;
+    private GroupConfigProvider<PBFTCohort.Client> configProvider;
     private final GroupMember<PBFTCohort.Client> thisCohort;
-    private Signature signature;
     private Map<Integer, Set<ViewChangeMessage>> viewChangeMessages; // this should include your own messages
     private int replicaID;
     private static final int POOL_SIZE = 10;
@@ -50,16 +47,6 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
         pool = Executors.newFixedThreadPool(POOL_SIZE);
         this.log = new Log<Operation<ChineseCheckersState>>();
         this.thisCohort = thisCohort;
-        try {
-            this.signature = Signature.getInstance("SHA1withDSA", "SUN");
-            this.signature.initSign(thisCohort.getPrivateKey());
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchProviderException e) {
-            e.printStackTrace();
-        }catch (InvalidKeyException e) {
-            e.printStackTrace();
-        }
     }
 
     @Override
@@ -82,8 +69,8 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
             final PrepareMessage prepareMessage = new PrepareMessage();
             prepareMessage.viewstamp = transaction.viewstamp;
             prepareMessage.replicaId = member.getReplicaID();
-            prepareMessage.transactionDigest = CryptoUtil.computeTransactionDigest(new common.Transaction(transaction));
-            prepareMessage.messageSignature = UNIMPLEMENTED;
+            prepareMessage.transactionDigest = ByteBuffer.wrap(CryptoUtil.computeTransactionDigest(logTransaction));
+            prepareMessage.messageSignature = ByteBuffer.wrap(CryptoUtil.computeMessageSignature(prepareMessage, thisCohort.getPrivateKey()));
 
             pool.execute(new Runnable() {
                 @Override
@@ -154,8 +141,9 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
             } else {
                 prePrepareMessage.setTransactionDigest(NO_OP_TRANSACTION_DIGEST);
             }
+
             if (!verify) {
-                prePrepareMessage.setMessageSignature(CryptoUtil.computeMessageSignature(prePrepareMessage, this.signature));
+                prePrepareMessage.setMessageSignature(CryptoUtil.computeMessageSignature(prePrepareMessage, thisCohort.getPrivateKey()));
             }
             prePrepareMessages.add(prePrepareMessage);
         }
@@ -227,7 +215,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     }
 
     @Override
-    public synchronized void approveViewChange(NewViewMessage message) throws TException {e
+    public synchronized void approveViewChange(NewViewMessage message) throws TException {
         int senderReplicaID = message.getReplicaID();
         GroupMember<PBFTCohort.Client> sender = configProvider.getGroupMember(senderReplicaID);
 
@@ -247,15 +235,15 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
             }
         }
 
-        // verify the preprepares
-        Set<PrePrepareMessage> prePrepareMessages = createPrePrepareForCurrentSeqno(
+        // verify the preprepares FIXME
+        /* Set<PrePrepareMessage> prePrepareMessages = createPrePrepareForCurrentSeqno(
                 message.getNewViewID(), true, message.getViewChangeMessages());
         for (PrePrepareMessage prePrepareMessage : prePrepareMessages) {
             sender = configProvider.getGroupMember(prePrepareMessage.getReplicaId());
             if (!sender.verifySignature(prePrepareMessage, prePrepareMessage.getMessageSignature())) {
                 return;
             }
-        }
+        } */
 
         // change to new view
         configProvider.setViewID(message.getNewViewID());
