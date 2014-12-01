@@ -20,19 +20,24 @@ public class Log<T> {
     Map<Viewstamp, Transaction<T>> transactions = Maps.newHashMap();
     ReadWriteLock logLock = new ReentrantReadWriteLock();
 
-    public void addEntry(Transaction<T> value) {
+    public void addEntry(Transaction<T> value) throws IllegalLogEntryException {
         Lock writeLock = logLock.writeLock();
         writeLock.lock();
 
-        if (tentativeLogEntries.containsKey(value.getId().getViewId())) {
-            tentativeLogEntries.get(value.getId().getSequenceNumber()).put(value.getId(), value);
+        int sequenceNumber = value.getViewstamp().getSequenceNumber();
+        if (tentativeLogEntries.containsKey(sequenceNumber)) {
+            Map<Viewstamp, Transaction<T>> sequenceNumberTransactions = tentativeLogEntries.get(value.getViewstamp());
+            if (sequenceNumberTransactions.containsKey(value.getViewstamp()) && sequenceNumberTransactions.get(value.getViewstamp()) != value) {
+                throw new IllegalLogEntryException();
+            }
+            tentativeLogEntries.get(sequenceNumber).put(value.getViewstamp(), value);
         } else {
             Map<Viewstamp, Transaction<T>> map = Maps.newHashMap();
-            map.put(value.getId(), value);
-            tentativeLogEntries.put(value.getId().getSequenceNumber(), map);
+            map.put(value.getViewstamp(), value);
+            tentativeLogEntries.put(sequenceNumber, map);
         }
 
-        transactions.put(value.getId(), value);
+        transactions.put(value.getViewstamp(), value);
 
         writeLock.unlock();
     }
@@ -71,7 +76,7 @@ public class Log<T> {
 
         Transaction<T> entry = transactions.get(id);
         tentativeLogEntries.remove(id.getSequenceNumber());
-        committedLogEntries.put(entry.getId().getSequenceNumber(), entry);
+        committedLogEntries.put(entry.getViewstamp().getSequenceNumber(), entry);
 
         writeLock.unlock();
     }

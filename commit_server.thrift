@@ -65,6 +65,7 @@ enum Vote {
 }
 
 enum ChineseCheckersOperation {
+    NO_OP = 0,
     MOVE_PIECE = 1,
     KICK_PLAYER = 2,
     ADD_PLAYER = 3;
