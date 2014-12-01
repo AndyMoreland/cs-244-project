@@ -13,6 +13,7 @@ import org.apache.thrift.TException;
 import statemachine.Operation;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -129,8 +130,10 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
                             final NewViewMessage newViewMessage = new NewViewMessage();
                             newViewMessage.setNewViewID(newViewID);
                             newViewMessage.setViewChangeMessages(viewChangeMessages.get(newViewID));
+                            // copy the hashset here because the message could be sent after we leave this method
+                            // and start modifying viewChangeMessages again
                             newViewMessage.setPrePrepareMessages(
-                                    createPrePrepareForCurrentSeqno(newViewID, viewChangeMessages.get(newViewID)));
+                                    createPrePrepareForCurrentSeqno(newViewID, Sets.newHashSet(viewChangeMessages.get(newViewID))));
                             pool.execute(new Runnable() {
                                 public void run() {
                                     try {
@@ -156,8 +159,19 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
 
     @Override
     public synchronized void approveViewChange(NewViewMessage message) throws TException {
+        // verify contents of message
         // change to new view
+        configProvider.setViewID(message.getNewViewID());
+
+        // send prepares for everything in script O
 
         // clear old entries for old views out from viewChangeMessages
+        for(Iterator<Map.Entry<Integer, Set<ViewChangeMessage>>> it
+                    = viewChangeMessages.entrySet().iterator(); it.hasNext();) {
+            Map.Entry<Integer, Set<ViewChangeMessage>> entry = it.next();
+            if (entry.getKey().compareTo(configProvider.getViewID()) <= 0) {
+                it.remove();
+            }
+        }
     }
 }
