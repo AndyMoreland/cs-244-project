@@ -13,6 +13,11 @@ public class AddPlayer implements ChineseCheckersOperation {
     }
 
     @Override
+    public boolean isValid(ChineseCheckersState state) {
+        return false;
+    }
+
+    @Override
     public void undo(ChineseCheckersState state) {
 
     }
