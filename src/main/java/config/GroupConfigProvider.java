@@ -5,7 +5,6 @@ import java.util.Set;
 /**
  * Created by andrew on 11/27/14.
  */
-
 public interface GroupConfigProvider<T extends org.apache.thrift.TServiceClient> {
 
     void setViewID(int viewID);
@@ -13,6 +12,7 @@ public interface GroupConfigProvider<T extends org.apache.thrift.TServiceClient>
     int getQuorumSize();
 
     Set<GroupMember> getGroupMembers();
+    GroupMember getGroupMember(int replicaID);
 
     GroupMember<T> getLeader();
 

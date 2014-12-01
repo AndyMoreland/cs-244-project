@@ -17,6 +17,7 @@ import statemachine.Operation;
 
 import java.nio.ByteBuffer;
 import java.security.*;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -112,7 +113,11 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
 
     }
 
-    private Set<PrePrepareMessage> createPrePrepareForCurrentSeqno(int newViewID, Set<ViewChangeMessage> viewChangeMessages) {
+    private  Set<PrePrepareMessage> createPrePrepareForCurrentSeqno(
+            int newViewID,
+            boolean verify,
+            Set<ViewChangeMessage> viewChangeMessages /* this is script V in the paper */ ) {
+
         // this is computing script O in the pbft paper
         Set<PrePrepareMessage> prePrepareMessages = Sets.newHashSet();
         int max_seqno = MIN_SEQ_NO - 1;
@@ -149,7 +154,9 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
             } else {
                 prePrepareMessage.setTransactionDigest(NO_OP_TRANSACTION_DIGEST);
             }
-            prePrepareMessage.setMessageSignature(CryptoUtil.computeMessageSignature(prePrepareMessage, this.signature));
+            if (!verify) {
+                prePrepareMessage.setMessageSignature(CryptoUtil.computeMessageSignature(prePrepareMessage, this.signature));
+            }
             prePrepareMessages.add(prePrepareMessage);
         }
         return prePrepareMessages;
@@ -157,11 +164,11 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
 
 
     private boolean prePrepareSetValid(Set<PrePrepareMessage> prePrepareMessages) {
-        Map<ByteBuffer, Integer> numPrepares = new Maps.newHashMap();
+        Map<ByteBuffer, Integer> numPrepares = new HashMap<ByteBuffer, Integer>();
         for (PrePrepareMessage prePrepareMessage: prePrepareMessages) {
             ByteBuffer buf = ByteBuffer.wrap(prePrepareMessage.getTransactionDigest());
             if (numPrepares.containsKey(buf)) {
-                numPrepares.put(buf, numPrepares.get(buf) +1);
+                numPrepares.put(buf, numPrepares.get(buf) + 1);
             } else {
                 numPrepares.put(buf, 1);
             }
@@ -202,7 +209,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
                         // copy the hashset here because the message could be sent after we leave this method
                         // and start modifying viewChangeMessages again
                         newViewMessage.setPrePrepareMessages(
-                                createPrePrepareForCurrentSeqno(newViewID, Sets.newHashSet(viewChangeMessages.get(newViewID))));
+                                createPrePrepareForCurrentSeqno(newViewID, false, Sets.newHashSet(viewChangeMessages.get(newViewID))));
                         pool.execute(new Runnable() {
                             public void run() {
                                 try {
@@ -220,8 +227,35 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     }
 
     @Override
-    public synchronized void approveViewChange(NewViewMessage message) throws TException {
-        // verify contents of message
+    public synchronized void approveViewChange(NewViewMessage message) throws TException {e
+        int senderReplicaID = message.getReplicaID();
+        GroupMember<PBFTCohort.Client> sender = configProvider.getGroupMember(senderReplicaID);
+
+        // verify the NewViewMessage
+        if (!sender.verifySignature(message, message.getMessageSignature())) {
+            return;
+        }
+
+        // verify the ViewChangeMessages
+        for (ViewChangeMessage viewChangeMessage : message.getViewChangeMessages()) {
+            if (viewChangeMessage.getNewViewID() != message.getNewViewID()) {
+                return;
+            }
+            sender = configProvider.getGroupMember(viewChangeMessage.getReplicaID());
+            if (!sender.verifySignature(viewChangeMessage, viewChangeMessage.getMessageSignature())) {
+                return;
+            }
+        }
+
+        // verify the preprepares
+        Set<PrePrepareMessage> prePrepareMessages = createPrePrepareForCurrentSeqno(
+                message.getNewViewID(), true, message.getViewChangeMessages());
+        for (PrePrepareMessage prePrepareMessage : prePrepareMessages) {
+            sender = configProvider.getGroupMember(prePrepareMessage.getReplicaId());
+            if (!sender.verifySignature(prePrepareMessage, prePrepareMessage.getMessageSignature())) {
+                return;
+            }
+        }
 
         // change to new view
         configProvider.setViewID(message.getNewViewID());

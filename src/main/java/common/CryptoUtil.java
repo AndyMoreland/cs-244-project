@@ -57,18 +57,18 @@ public final class CryptoUtil {
         return null;
     }
 
-    public static byte[] computeMessageSignature(Object message, Signature sig) {
+    public static byte[] convertToJsonByteArray(Object message) {
+        ObjectWriter writer = mapper.writer(FIELD_FILTER);
         try {
-            ObjectWriter writer = mapper.writer(FIELD_FILTER);
-            return computeSignature(writer.writeValueAsString(message).getBytes(), sig);
-        } catch (JsonMappingException e) {
-            e.printStackTrace();
-        } catch (JsonGenerationException e) {
-            e.printStackTrace();
+            return writer.writeValueAsString(message).getBytes();
         } catch (IOException e) {
             e.printStackTrace();
         }
-
         return null;
+    }
+
+    public static byte[] computeMessageSignature(Object message, Signature sig) {
+        ObjectWriter writer = mapper.writer(FIELD_FILTER);
+        return computeSignature(convertToJsonByteArray(message), sig);
     }
 }
