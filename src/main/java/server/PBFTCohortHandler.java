@@ -1,11 +1,16 @@
 package server;
 
 import PBFT.*;
+import PBFT.Transaction;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import common.*;
 import config.GroupConfigProvider;
 import config.GroupMember;
+import gameengine.ChineseCheckersOperationFactory;
+import gameengine.ChineseCheckersState;
 import org.apache.thrift.TException;
+import statemachine.Operation;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
@@ -17,6 +22,7 @@ import java.util.concurrent.Executors;
  * Created by andrew on 11/27/14.
  */
 public class PBFTCohortHandler implements PBFTCohort.Iface {
+    private final Log<Operation<ChineseCheckersState>> log;
     private GroupConfigProvider configProvider;
     private Map<Integer,Set<ViewChangeMessage>> viewChangeMessages; // this should include your own messages
     private int replicaID;
@@ -31,11 +37,18 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
         viewChangeMessages = Maps.newHashMap();
         this.replicaID = replicaID;
         pool = Executors.newFixedThreadPool(POOL_SIZE);
+        this.log = new Log<Operation<ChineseCheckersState>>();
     }
 
     @Override
     public void prePrepare(PrePrepareMessage message, Transaction transaction) throws TException {
+        common.Transaction<Operation<ChineseCheckersState>> logTransaction = new common.Transaction<Operation<ChineseCheckersState>>(
+                transaction.viewstamp,
+                transaction.viewstamp.getSequenceNumber(),
+                ChineseCheckersOperationFactory.hydrate(transaction.operation)
+                );
 
+        log.addEntry(logTransaction);
     }
 
     @Override
@@ -60,8 +73,8 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
         int lastCheckpointInViewChangeMessages = MIN_SEQ_NO-1;
         for (ViewChangeMessage viewChangeMessage : viewChangeMessages) {
             for (PrePrepareMessage prePrepareMessage : viewChangeMessage.getPreparedGreaterThanSequenceNumber()) {
-                if (max_seqno < prePrepareMessage.getSequenceNumber())
-                    max_seqno = prePrepareMessage.getSequenceNumber();
+                if (max_seqno < prePrepareMessage.getViewstamp().getSequenceNumber())
+                    max_seqno = prePrepareMessage.getViewstamp().getSequenceNumber();
             }
             if (lastCheckpointInViewChangeMessages < viewChangeMessage.getSequenceNumber()) {
                 lastCheckpointInViewChangeMessages = viewChangeMessage.getSequenceNumber();
@@ -72,17 +85,17 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
             int highestViewID = MIN_VIEW_ID - 1;
             for (ViewChangeMessage viewChangeMessage : viewChangeMessages) {
                 for (PrePrepareMessage prePrepareMessage : viewChangeMessage.getPreparedGreaterThanSequenceNumber()) {
-                    if (prePrepareMessage.getSequenceNumber() == n) {
-                        if (highestViewID < prePrepareMessage.getViewId()) {
-                            highestViewID = prePrepareMessage.getViewId();
+                    if (prePrepareMessage.getViewstamp().getSequenceNumber() == n) {
+                        if (highestViewID < prePrepareMessage.getViewstamp().getViewId()) {
+                            highestViewID = prePrepareMessage.getViewstamp().getViewId();
                         }
                     }
                 }
             }
 
             PrePrepareMessage prePrepareMessage = new PrePrepareMessage();
-            prePrepareMessage.setViewId(newViewID);
-            prePrepareMessage.setSequenceNumber(n);
+            prePrepareMessage.getViewstamp().setViewId(newViewID);
+            prePrepareMessage.getViewstamp().setSequenceNumber(n);
             if (highestViewID >= MIN_VIEW_ID) {
             // TODO    prePrepareMessage.setMessageSignature(/* TODO */);
             } else {
@@ -107,8 +120,12 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
                 }
 
                 // if primary, check if you have enough to send NewViewMessage
+<<<<<<< HEAD
                 if (configProvider.getLeader().getReplicaID() == replicaID
                         && viewChangeMessages.get(newViewID).size() > configProvider.getQuorumSize()) {
+=======
+                if (configProvider.getLeader().getReplicaID() == replicaID && viewChangeMessages.get(newViewID).size() > configProvider.getQuorumSize()) {
+>>>>>>> 9b6930dac1e5389d8b4516bcba3ec013ab65a86b
                     // multicast NEW-VIEW message
                     Set<GroupMember<PBFTCohort.Client>> groupMembers = configProvider.getGroupMembers();
                     for (final GroupMember<PBFTCohort.Client> groupMember : groupMembers)

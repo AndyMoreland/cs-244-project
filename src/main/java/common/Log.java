@@ -1,8 +1,12 @@
 package common;
 
-import com.google.common.collect.Lists;
+import PBFT.Viewstamp;
+import com.google.common.base.Optional;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
-import java.util.List;
+import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -11,29 +15,64 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * Created by andrew on 11/27/14.
  */
 public class Log<T> {
-    List<Transaction<T>> logEntries = Lists.newArrayList();
+    Map<Integer, Map<Viewstamp, Transaction<T>>> tentativeLogEntries = Maps.newHashMap();
+    Map<Integer, Transaction<T>> committedLogEntries = Maps.newHashMap();
+    Map<Viewstamp, Transaction<T>> transactions = Maps.newHashMap();
     ReadWriteLock logLock = new ReentrantReadWriteLock();
 
-    void addEntry(int index, Transaction<T> value) {
+    public void addEntry(Transaction<T> value) {
         Lock writeLock = logLock.writeLock();
+        writeLock.lock();
 
-        if (logEntries.size() <= index) {
-            for (int i = logEntries.size(); i <= index; i++) {
-                logEntries.add(null);
-            }
+        if (tentativeLogEntries.containsKey(value.getId().getViewId())) {
+            tentativeLogEntries.get(value.getId().getSequenceNumber()).put(value.getId(), value);
+        } else {
+            Map<Viewstamp, Transaction<T>> map = Maps.newHashMap();
+            map.put(value.getId(), value);
+            tentativeLogEntries.put(value.getId().getSequenceNumber(), map);
         }
 
-        logEntries.add(index, value);
+        transactions.put(value.getId(), value);
 
         writeLock.unlock();
     }
 
-    Transaction<T> getEntry(int index) {
-        Lock readLock = logLock.readLock();
-        Transaction<T> val = logEntries.get(index);
-        readLock.unlock();
-
-        return val;
+    public Transaction<T> getTransaction(Viewstamp viewstamp) {
+        return transactions.get(viewstamp);
     }
 
+    public Collection<Transaction<T>> getTentativeEntries(int index) {
+        Lock readLock = logLock.readLock();
+        readLock.lock();
+        Map<Viewstamp, Transaction<T>> val = tentativeLogEntries.get(index);
+        readLock.unlock();
+
+        if (val != null) {
+            return val.values();
+        } else {
+            return Sets.newHashSet();
+        }
+    }
+
+    public Optional<Transaction<T>> getEntry(int index) {
+        Lock readLock = logLock.readLock();
+        readLock.lock();
+        Transaction<T> val = committedLogEntries.get(index);
+        readLock.unlock();
+
+        return Optional.of(val);
+    }
+
+    public void commitEntry(Viewstamp id) {
+        Lock writeLock = logLock.writeLock();
+        writeLock.lock();
+
+        assert (tentativeLogEntries.containsKey(id));
+
+        Transaction<T> entry = transactions.get(id);
+        tentativeLogEntries.remove(id.getSequenceNumber());
+        committedLogEntries.put(entry.getId().getSequenceNumber(), entry);
+
+        writeLock.unlock();
+    }
 }
