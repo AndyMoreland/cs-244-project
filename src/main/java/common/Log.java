@@ -6,6 +6,7 @@ import PBFT.Viewstamp;
 import com.google.common.base.Optional;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.sun.istack.internal.Nullable;
 
 import java.util.Collection;
 import java.util.Map;
@@ -49,6 +50,7 @@ public class Log<T> {
         writeLock.unlock();
     }
 
+    @Nullable
     public Transaction<T> getTransaction(Viewstamp viewstamp) {
         Lock readLock = logLock.readLock();
         readLock.lock();

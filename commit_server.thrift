@@ -126,18 +126,24 @@ struct CheckpointMessage {
 struct ViewChangeMessage {
     1:i32 newViewID,
     2:i32 sequenceNumber,
-    3:set<CheckpointMessage> checkpointProof,
-    4:set<PrePrepareMessage> preparedGreaterThanSequenceNumber,
-    5:i32 replicaID,
-    6:Signature messageSignature;
+    3:list<CheckpointMessage> checkpointProof,
+    4:list<PrePrepareMessage> preparedGreaterThanSequenceNumber,
+    5:list<set<PrepareMessage>> prepareMessages, // this is just proof for 4
+    6:i32 replicaID,
+    7:Signature messageSignature;
 }
 
 struct NewViewMessage {
     1:i32 newViewID,
     2:list<ViewChangeMessage> viewChangeMessages,
     3:list<PrePrepareMessage> prePrepareMessages;
-    4:i32 replicaID,
-    5:Signature messageSignature;
+    5:i32 replicaID,
+    6:Signature messageSignature;
+}
+
+struct AskForTransaction {
+    1:Viewstamp viewstamp,
+    2:i32 replicaID;
 }
 
 /**
@@ -151,5 +157,6 @@ service PBFTCohort {
     void commit(1:CommitMessage message),
     void checkpoint(1:CheckpointMessage message),
     void startViewChange(1:ViewChangeMessage message),
-    void approveViewChange(1:NewViewMessage message);
+    void approveViewChange(1:NewViewMessage message),
+    Transaction getTransaction(1:AskForTransaction message);
 }

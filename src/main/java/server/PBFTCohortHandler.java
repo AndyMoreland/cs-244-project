@@ -6,6 +6,7 @@ import com.google.common.collect.Maps;
 import common.CryptoUtil;
 import common.IllegalLogEntryException;
 import common.Log;
+import common.TransactionDigest;
 import config.GroupConfigProvider;
 import config.GroupMember;
 import gameengine.ChineseCheckersOperationFactory;
@@ -58,24 +59,31 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
             e.printStackTrace();
         }
 
+        multicastPrepare(CryptoUtil.computeTransactionDigest(logTransaction), transaction.viewstamp);
+    }
+
+    private void multicastPrepare(TransactionDigest transactionDigest, Viewstamp viewstamp) {
         for (final GroupMember<PBFTCohort.Client> member : configProvider.getGroupMembers()) {
             final PrepareMessage prepareMessage = new PrepareMessage();
-            prepareMessage.viewstamp = transaction.viewstamp;
+            prepareMessage.viewstamp = viewstamp;
             prepareMessage.replicaId = thisCohort.getReplicaID();
-            prepareMessage.transactionDigest = ByteBuffer.wrap(CryptoUtil.computeTransactionDigest(logTransaction).getBytes());
+            prepareMessage.transactionDigest = ByteBuffer.wrap(transactionDigest.getBytes());
             prepareMessage.messageSignature = ByteBuffer.wrap(CryptoUtil.computeMessageSignature(prepareMessage, thisCohort.getPrivateKey()).getBytes());
-
-            pool.execute(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        member.getThriftConnection().prepare(prepareMessage);
-                    } catch (TException e) {
-                        e.printStackTrace();
-                    }
-                }
-            });
         }
+
+    }
+
+    private void sendPrepare(final PrepareMessage prepareMessage, final GroupMember<PBFTCohort.Client> target) {
+        pool.execute(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    target.getThriftConnection().prepare(prepareMessage);
+                } catch (TException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     @Override
@@ -171,20 +179,22 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
         return prePrepareMessages;
     }
 
-    private boolean prePrepareSetValid(Set<PrePrepareMessage> prePrepareMessages) {
+    private boolean prePrepareSetValid(List<PrePrepareMessage> prePrepareMessages, List<Set<PrepareMessage>> prepareMessages) {
         Map<ByteBuffer, Integer> numPrepares = new HashMap<ByteBuffer, Integer>();
-        for (PrePrepareMessage prePrepareMessage: prePrepareMessages) {
-            ByteBuffer buf = ByteBuffer.wrap(prePrepareMessage.getTransactionDigest());
-            if (numPrepares.containsKey(buf)) {
-                numPrepares.put(buf, numPrepares.get(buf) + 1);
-            } else {
-                numPrepares.put(buf, 1);
-            }
-        }
-
-        for (ByteBuffer buf :numPrepares.keySet()) {
-            if (numPrepares.get(buf) < configProvider.getQuorumSize())
+        for(int i=0; i < prePrepareMessages.size(); ++i) {
+            GroupMember<PBFTCohort.Client> sender = configProvider.getGroupMember(prePrepareMessages.get(i).getReplicaId());
+            if (!sender.verifySignature(prePrepareMessages.get(i),prePrepareMessages.get(i).getMessageSignature())) {
                 return false;
+            }
+            if (prepareMessages.get(i).size() < configProvider.getQuorumSize()) return false;
+            // verify each of the messages
+            for (PrepareMessage prepareMessage: prepareMessages.get(i)) {
+                if (!prepareMessage.getViewstamp().equals(prePrepareMessages.get(i).getViewstamp())) return false;
+                sender = configProvider.getGroupMember(prepareMessage.getReplicaId());
+                if (!sender.verifySignature(prepareMessage, prepareMessage.getMessageSignature())) {
+                    return false;
+                }
+            }
         }
         return true;
     }
@@ -196,7 +206,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
             int newViewID = message.getNewViewID();
             if (newViewID > configProvider.getViewID()) { // can only move to a higher view
                 // TODO: verify of checkpoint messages
-                if (!prePrepareSetValid(message.getPreparedGreaterThanSequenceNumber())) {
+                if (!prePrepareSetValid(message.getPreparedGreaterThanSequenceNumber(), message.getPrepareMessages())) {
                     return;
                 }
 
@@ -257,24 +267,51 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
         }
 
         // verify the preprepares
-        // TODO: change this to a list
         List<PrePrepareMessage> recomputedPrePrepareMessages = createPrePrepareForCurrentSeqno(
                 message.getNewViewID(), true, message.getViewChangeMessages());
-        int index = 0;
-        PBFT.PrePrepareMessage[] receivedPrePrepareMessages
-                = message.getPrePrepareMessages().toArray(new PrePrepareMessage[0]); // uggggly
-        for (PrePrepareMessage prePrepareMessage : recomputedPrePrepareMessages) {
-            sender = configProvider.getGroupMember(prePrepareMessage.getReplicaId());
-            if (!sender.verifySignature(prePrepareMessage, receivedPrePrepareMessages[index].getMessageSignature())) {
+        // should be the same length
+        if (recomputedPrePrepareMessages.size() != message.getPrePrepareMessages().size()) {
+            return;
+        }
+
+        for (int i=0; i<recomputedPrePrepareMessages.size(); ++i) {
+            PrePrepareMessage received = message.getPrePrepareMessages().get(i);
+            PrePrepareMessage recomputed = recomputedPrePrepareMessages.get(i);
+            sender = configProvider.getGroupMember(recomputed.getReplicaId());
+            // check that recomputed contents are the same
+            if (!received.getTransactionDigest().equals(recomputed.getTransactionDigest())
+                    || !received.getViewstamp().equals(recomputed.getViewstamp())
+                    || received.getReplicaId() != recomputed.getReplicaId()) {
                 return;
             }
-            index++;
+
+            // verify signatures
+            if (!sender.verifySignature(message.getPrePrepareMessages().get(i), message.getPrePrepareMessages().get(i).getMessageSignature())) {
+                return;
+            }
         }
 
         // change to new view
         configProvider.setViewID(message.getNewViewID());
 
         // send prepares for everything in script O
+        for (PrePrepareMessage prePrepareMessage : message.getPrePrepareMessages()) {
+            TransactionDigest transactionDigest = new TransactionDigest(prePrepareMessage.getTransactionDigest());
+            Viewstamp viewstamp = new Viewstamp(
+                    prePrepareMessage.getViewstamp().getSequenceNumber(), configProvider.getViewID());
+            multicastPrepare(transactionDigest, viewstamp);
+            if (log.getTransaction(viewstamp) == null ) {
+                // if we don't have this in our log already, we need to ask someone else for it
+                GroupMember<PBFTCohort.Client> target = getReplicaThatPreparedSeqno(viewstamp.getSequenceNumber());
+                common.Transaction<statemachine.Operation<ChineseCheckersState>> logTransaction = getTransactionForPBFTTransaction(
+                        target.getThriftConnection().getTransaction(new AskForTransaction().setReplicaID(replicaID).setViewstamp(viewstamp)));
+                try {
+                    log.addEntry(logTransaction);
+                } catch (IllegalLogEntryException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
 
         // clear old entries for old views out from viewChangeMessages
         for (Iterator<Map.Entry<Integer, List<ViewChangeMessage>>> it
@@ -284,6 +321,18 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
                 it.remove();
             }
         }
+    }
+
+    private static GroupMember<PBFTCohort.Client> getReplicaThatPreparedSeqno(int sequenceNumber) {
+        // look through V
+        // look through P,
+        // find preprepare with that seqno and look through corresponding prepares to find someone who sent one
+        return null;
+    }
+
+    @Override
+    public Transaction getTransaction(AskForTransaction message) throws TException {
+        return null;
     }
 
     private static common.Transaction<statemachine.Operation<ChineseCheckersState>> getTransactionForPBFTTransaction(Transaction transaction) {
