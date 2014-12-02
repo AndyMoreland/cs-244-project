@@ -77,6 +77,8 @@ public class PBFTCohortHandler implements Iface {
 
         LOG.info(log);
         multicastPrepare(CryptoUtil.computeTransactionDigest(logTransaction), transaction.viewstamp);
+        prepareIfReady(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()));
+        commitIfReady(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()));
     }
 
     private void multicastPrepare(TransactionDigest transactionDigest, Viewstamp viewstamp) throws TException {
@@ -111,16 +113,19 @@ public class PBFTCohortHandler implements Iface {
         LOG.info("Validated signature");
         if(message.getViewstamp().getViewId() != this.configProvider.getViewID()) throw new TException("Failed to validate view number"); // Check we're in view v
         log.addPrepareMessage(message);
-        LOG.info("Checking if we're ready to prepare");
-        if(!log.readyToPrepare(message, configProvider.getQuorumSize())) return;
-        LOG.info("Marking as prepared.");
-        log.markAsPrepared(message.getViewstamp());
+        prepareIfReady(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()));
+    }
+
+    private void prepareIfReady(Viewstamp viewstamp, TransactionDigest transactionDigest){
+        if(!log.readyToPrepare(viewstamp, transactionDigest, configProvider.getQuorumSize())) return;
+        log.markAsPrepared(viewstamp);
+
 
         for (final GroupMember<PBFTCohort.Client> member : configProvider.getGroupMembers()) {
             final CommitMessage commitMessage = new CommitMessage();
-            commitMessage.viewstamp = message.getViewstamp();
+            commitMessage.viewstamp = viewstamp;
             commitMessage.replicaId = thisCohort.getReplicaID();
-            commitMessage.transactionDigest = ByteBuffer.wrap(message.getTransactionDigest());
+            commitMessage.transactionDigest = ByteBuffer.wrap(transactionDigest.getBytes());
             commitMessage.messageSignature = ByteBuffer.wrap(CryptoUtil.computeMessageSignature(commitMessage, thisCohort.getPrivateKey()).getBytes());
 
             pool.execute(new Runnable() {
@@ -135,7 +140,6 @@ public class PBFTCohortHandler implements Iface {
                 }
             });
         }
-
     }
 
     private boolean shouldCheckpoint(int lastCommitted) {
@@ -149,11 +153,12 @@ public class PBFTCohortHandler implements Iface {
         if(!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) return;       // Validate signature
         if(message.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
         log.addCommitMessage(message);
+        commitIfReady(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()));
+    }
 
-        LOG.info("Quorum size: " + configProvider.getQuorumSize());
-        if(!log.readyToCommit(message, configProvider.getQuorumSize())) return;
-        LOG.info("Ready to commit!");
-        log.commitEntry(message.getViewstamp());
+    private void commitIfReady(Viewstamp viewstamp, TransactionDigest transactionDigest) throws TException {
+        if(!log.readyToCommit(viewstamp, transactionDigest, configProvider.getQuorumSize())) return;
+        log.commitEntry(viewstamp);
 
         int lastCommited = log.getLastCommited();
         if (shouldCheckpoint(lastCommited)) {

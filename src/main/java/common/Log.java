@@ -134,44 +134,35 @@ public class Log<T> {
         transactions.get(id).prepare();
     }
 
-    public boolean readyToPrepare(PrepareMessage message, int quorumSize){
+    public boolean readyToPrepare(Viewstamp viewstamp, TransactionDigest mtd, int quorumSize){
         Lock readLock = logLock.readLock();
         readLock.lock();
-        Transaction<T> transaction = transactions.get(message.getViewstamp());
-        TransactionDigest mtd = new TransactionDigest(message.getTransactionDigest());
+        Transaction<T> transaction = transactions.get(viewstamp);
         boolean quorum;
 
         // Haven't seen this viewstamp, or have already processed, or haven't prepared this request
         if(transaction == null || transaction.isPrepared() || !CryptoUtil.computeTransactionDigest(transaction).equals(mtd)){
             quorum = false;
         } else {
-            quorum = prepareMessages.get(MultiKey.newKey(message.getViewstamp(), mtd)).size() >= quorumSize - 1; // -1 for own log entry
+            quorum = prepareMessages.get(MultiKey.newKey(viewstamp, mtd)).size() >= quorumSize - 1; // -1 for own log entry
         }
         readLock.unlock();
         return quorum;
     }
 
-    public boolean readyToCommit(CommitMessage message, int quorumSize) {
+    public boolean readyToCommit(Viewstamp viewstamp, TransactionDigest mtd, int quorumSize) {
         Lock readLock = logLock.readLock();
         readLock.lock();
-        try {
-            LOG.info("Checking if we're ready to commit!");
-            Transaction<T> transaction = transactions.get(message.getViewstamp());
-            LOG.info("Prepared: " + (transaction != null && transaction.isPrepared()));
-            if (transaction == null || !transaction.isPrepared() || transaction.isCommitted())
-                return false; // Not prepared yet or already committed => ignore
-
-            MultiKey<Viewstamp, TransactionDigest> key = MultiKey.newKey(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()));
-            int commitMessagesReceived = commitMessages.get(key).size();
-            LOG.info(commitMessagesReceived);
-            boolean quorum = commitMessagesReceived >= quorumSize - 1;
-            for (CommitMessage m : commitMessages.get(key)) {
-                LOG.debug(m.getReplicaId());
-            }
-            return quorum;
-        } finally {
-            readLock.unlock();
+        Transaction<T> transaction = transactions.get(viewstamp);
+        boolean quorum;
+        if(transaction == null || !transaction.isPrepared() || transaction.isCommitted()){
+            quorum = false; // Not (pre)prepared yet or already committed => ignore
+        } else {
+            quorum = commitMessages.get(MultiKey.newKey(viewstamp, mtd)).size() >= quorumSize - 1;
         }
+
+        readLock.unlock();
+        return quorum;
     }
 
     @Override
