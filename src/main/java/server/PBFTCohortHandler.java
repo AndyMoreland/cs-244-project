@@ -37,7 +37,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     private static final int MIN_SEQ_NO = 0;
     private static final int MIN_VIEW_ID = 0;
     private static final byte[] NO_OP_TRANSACTION_DIGEST = CryptoUtil.computeTransactionDigest(
-            new common.Transaction(null, -1, new NoOp(),0)).getBytes();
+            new common.Transaction(null, -1, new NoOp())).getBytes();
     private static final int CHECKPOINT_INTERVAL = 100;
 
 
@@ -384,7 +384,8 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
 
     @Override
     public Transaction getTransaction(AskForTransaction message) throws TException {
-        return log.getTransaction(message.getViewstamp()).toThriftTransaction();
+        // return log.getTransaction(message.getViewstamp()).toThriftTransaction();
+        return null;
     }
 
     @Override
