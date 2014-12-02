@@ -44,26 +44,26 @@ public class PBFTServerInstance implements Runnable {
     private int replicaID;
     private final String[] args;
     private String name;
+    private int port;
 
     public PBFTServerInstance(String[] args) {
         this.args = args;
     }
 
     private void configureLogging() {
-        BasicConfigurator.configure(new ConsoleAppender(new PatternLayout("{" + this.replicaID + ":" + this.name + "} " + PatternLayout.TTCC_CONVERSION_PATTERN)));
+        MDC.put("server-name", "[" + this.replicaID + "] " + this.name + ":" + this.port);
     }
 
     public void run() {
         System.err.println("calling run method");
         try {
             replicaID = Integer.parseInt(args[REPLICA_ID_ARG_POS]);
-            final int port = Integer.parseInt(args[PORT_ARG_POS]);
+            port = Integer.parseInt(args[PORT_ARG_POS]);
 
             KeyPair keyPair = CryptoUtil.generateNewKeyPair();
             GroupMember<PBFTCohort.Client> me = new GroupMember<PBFTCohort.Client>(replicaID, new InetSocketAddress("localhost", port), PBFTCohort.Client.class, keyPair.getPublic(), Optional.of(keyPair.getPrivate()));
 
             configProvider = initializeConfigProvider(me, new File(CONFIG_FILE));
-
             configureLogging();
 
             LOG.info("Starting server on port: " + port + " with address: " + "localhost");
