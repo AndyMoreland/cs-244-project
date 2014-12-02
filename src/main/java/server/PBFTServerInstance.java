@@ -3,10 +3,7 @@ package server;
 import PBFT.PBFTCohort;
 import com.google.common.base.Optional;
 import com.google.common.collect.Sets;
-import config.GroupConfigProvider;
-import config.GroupMember;
-import config.NetworkedGroupMember;
-import config.StaticGroupConfigProvider;
+import config.*;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.MDC;
@@ -137,13 +134,25 @@ public class PBFTServerInstance implements Runnable {
 
     private GroupMember<PBFTCohort.Client> serverNodeToClient(JsonNode server) throws NoSuchMethodException, UnknownHostException {
         int id = server.get("id").getIntValue();
-        return new NetworkedGroupMember<PBFTCohort.Client>(
+        JsonNode isMock = server.get("mock");
+        if(isMock == null || !isMock.getBooleanValue()) return new NetworkedGroupMember<PBFTCohort.Client>(
                 server.get("name").getTextValue(),
                 id,
                 new InetSocketAddress(server.get("hostname").getTextValue(), server.get("port").getIntValue()),
                 PBFTCohort.Client.class,
                 publicKeys.get(id),
-                Optional.fromNullable(id == this.replicaID ? this.privateKey : null));
+                Optional.fromNullable(id == this.replicaID ? this.privateKey : null)
+            );
+        else {
+            return new StubbedGroupMember<PBFTCohort.Client>(
+                server.get("name").getTextValue(),
+                id,
+                new InetSocketAddress(server.get("hostname").getTextValue(), server.get("port").getIntValue()),
+                PBFTCohort.Client.class,
+                publicKeys.get(id),
+                Optional.fromNullable(id == this.replicaID ? this.privateKey : null)
+            );
+        }
     }
 
     public GroupConfigProvider<PBFTCohort.Client> getConfigProvider() {
