@@ -15,15 +15,23 @@ public class Transaction<T> {
     private final T value;
     private boolean prepared;
     private boolean committed;
-    private Viewstamp viewStamp;
+    private int replicaID;
 
-    public Transaction(Viewstamp id, int targetIndex, T value) {
+    public Transaction(Viewstamp id, int targetIndex, T value, int replicaID) {
         this.id = id;
         this.targetIndex = targetIndex;
         this.value = value;
         this.committed = false;
+        this.replicaID = replicaID;
     }
 
+    public T getValue() {
+        return value;
+    }
+
+    public int getReplicaId() {
+        return replicaID;
+    }
     public void prepare() { prepared = true; }
     public void commit() {
         committed = true;
@@ -40,8 +48,16 @@ public class Transaction<T> {
         common.Transaction<statemachine.Operation<ChineseCheckersState>> commonTransaction = new Transaction<Operation<ChineseCheckersState>>(
                 transaction.viewstamp,
                 transaction.viewstamp.getSequenceNumber(),
-                ChineseCheckersOperationFactory.hydrate(transaction.getOperation()));
-
+                ChineseCheckersOperationFactory.hydrate(transaction.getOperation()),
+                transaction.getReplicaId());
         return commonTransaction;
+    }
+
+    public static TTransaction serialize(Transaction<Operation> transaction) {
+        TTransaction thriftTransaction = new TTransaction();
+        thriftTransaction.setReplicaId(transaction.getReplicaId());
+        thriftTransaction.setViewstamp(transaction.getViewstamp());
+        thriftTransaction.setOperation(transaction.getValue().serialize());
+        return thriftTransaction;
     }
 }

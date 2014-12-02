@@ -38,7 +38,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     private static final int MIN_SEQ_NO = 0;
     private static final int MIN_VIEW_ID = 0;
     private static final byte[] NO_OP_TRANSACTION_DIGEST = CryptoUtil.computeTransactionDigest(
-            new common.Transaction(null, -1, new NoOp())).getBytes();
+            new common.Transaction(null, -1, new NoOp(),0)).getBytes();
     private static final int CHECKPOINT_INTERVAL = 100;
 
 
@@ -72,8 +72,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
         }
 
         LOG.info(log);
-        multicastPrepare(CryptoUtil.computeTransactionDiggs
-                est(logTransaction), transaction.viewstamp);
+        multicastPrepare(CryptoUtil.computeTransactionDigest(logTransaction), transaction.viewstamp);
     }
 
     private void multicastPrepare(TransactionDigest transactionDigest, Viewstamp viewstamp) throws TException {
@@ -350,8 +349,9 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
                 // if we don't have this in our log already, we need to ask someone else for it
                 GroupMember<PBFTCohort.Client> target = getReplicaThatPreparedSeqno(message, viewstamp.getSequenceNumber());
                 Preconditions.checkNotNull(target);
+                TTransaction thriftTransaction = target.getThriftConnection().getTransaction(new AskForTransaction().setReplicaID(replicaID).setViewstamp(viewstamp));
                 common.Transaction<statemachine.Operation<ChineseCheckersState>> logTransaction = common.Transaction.getTransactionForPBFTTransaction(
-                        target.getThriftConnection().getTransaction(new AskForTransaction().setReplicaID(replicaID).setViewstamp(viewstamp)));
+                        thriftTransaction);
                 try {
                     log.addEntry(logTransaction);
                 } catch (IllegalLogEntryException e) {
