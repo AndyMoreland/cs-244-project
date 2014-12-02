@@ -2,19 +2,18 @@ package config;
 
 import com.sun.istack.internal.Nullable;
 
-import java.security.acl.Group;
 import java.util.Set;
 
 /**
  * Created by andrew on 11/27/14.
  * Simple group membership provider that doesn't take into account dynamic network conditions or change.
  */
-public class StaticGroupConfigProvider implements GroupConfigProvider {
-    private Set<GroupMember> members;
+public class StaticGroupConfigProvider<T extends org.apache.thrift.TServiceClient> implements GroupConfigProvider<T> {
+    private Set<GroupMember<T>> members;
     private int viewID;
-    private GroupMember leader;
+    private GroupMember<T> leader;
 
-    public StaticGroupConfigProvider(GroupMember leader, Set<GroupMember> members, int viewID) {
+    public StaticGroupConfigProvider(GroupMember<T> leader, Set<GroupMember<T>> members, int viewID) {
         assert (leader != null);
         assert (members != null);
 
@@ -39,7 +38,7 @@ public class StaticGroupConfigProvider implements GroupConfigProvider {
     }
 
     @Override
-    public Set<GroupMember> getGroupMembers() {
+    public Set<GroupMember<T>> getGroupMembers() {
         return members;
     }
 
@@ -62,5 +61,14 @@ public class StaticGroupConfigProvider implements GroupConfigProvider {
         assert (members.contains(leader));
 
         this.leader = leader;
+    }
+
+    @Override
+    public String toString() {
+        return "StaticGroupConfigProvider{" +
+                "members=" + members +
+                ", viewID=" + viewID +
+                ", leader=" + leader +
+                '}';
     }
 }

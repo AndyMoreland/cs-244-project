@@ -1,5 +1,7 @@
-package gameengine;
-
+import gameengine.ChineseCheckersSpot;
+import gameengine.ChineseCheckersState;
+import gameengine.HexPoint;
+import gameengine.Player;
 import gameengine.operations.MovePiece;
 import org.junit.Test;
 

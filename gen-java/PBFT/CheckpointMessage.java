@@ -36,8 +36,8 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
   private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("CheckpointMessage");
 
   private static final org.apache.thrift.protocol.TField SEQUENCE_NUMBER_FIELD_DESC = new org.apache.thrift.protocol.TField("sequenceNumber", org.apache.thrift.protocol.TType.I32, (short)1);
-  private static final org.apache.thrift.protocol.TField CHECKPOINT_DIGEST_FIELD_DESC = new org.apache.thrift.protocol.TField("checkpointDigest", org.apache.thrift.protocol.TType.STRING, (short)3);
-  private static final org.apache.thrift.protocol.TField REPLICA_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("replicaId", org.apache.thrift.protocol.TType.I32, (short)4);
+  private static final org.apache.thrift.protocol.TField CHECKPOINT_DIGEST_FIELD_DESC = new org.apache.thrift.protocol.TField("checkpointDigest", org.apache.thrift.protocol.TType.STRING, (short)2);
+  private static final org.apache.thrift.protocol.TField REPLICA_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("replicaId", org.apache.thrift.protocol.TType.I32, (short)3);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -52,8 +52,8 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
     SEQUENCE_NUMBER((short)1, "sequenceNumber"),
-    CHECKPOINT_DIGEST((short)3, "checkpointDigest"),
-    REPLICA_ID((short)4, "replicaId");
+    CHECKPOINT_DIGEST((short)2, "checkpointDigest"),
+    REPLICA_ID((short)3, "replicaId");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -70,9 +70,9 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
       switch(fieldId) {
         case 1: // SEQUENCE_NUMBER
           return SEQUENCE_NUMBER;
-        case 3: // CHECKPOINT_DIGEST
+        case 2: // CHECKPOINT_DIGEST
           return CHECKPOINT_DIGEST;
-        case 4: // REPLICA_ID
+        case 3: // REPLICA_ID
           return REPLICA_ID;
         default:
           return null;
@@ -486,7 +486,7 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
-          case 3: // CHECKPOINT_DIGEST
+          case 2: // CHECKPOINT_DIGEST
             if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
               struct.checkpointDigest = iprot.readBinary();
               struct.setCheckpointDigestIsSet(true);
@@ -494,7 +494,7 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
-          case 4: // REPLICA_ID
+          case 3: // REPLICA_ID
             if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
               struct.replicaId = iprot.readI32();
               struct.setReplicaIdIsSet(true);

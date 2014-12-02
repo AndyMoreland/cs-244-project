@@ -1,5 +1,7 @@
 package common;
 
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -16,11 +18,18 @@ import java.security.*;
  * Created by sctu on 11/30/14.
  */
 public final class CryptoUtil {
+    private static Logger LOG = LogManager.getLogger(CryptoUtil.class.getName());
+
     private static final ObjectMapper mapper = new ObjectMapper(); // thread-safe
     private static final String[] IGNORED_FIELD = {"messageSignature"};
     private static final FilterProvider FIELD_FILTER = new SimpleFilterProvider()
             .addFilter("pre-prepare filter",
                     SimpleBeanPropertyFilter.serializeAllExcept(IGNORED_FIELD));
+    public static final String ALGORITHM = "DSA";
+    public static final String PROVIDER = "SUN";
+    public static final String DIGEST_TYPE = "SHA-256";
+    public static final String KEY_PAIR_TYPE = "RSA";
+    public static final String PRNG_TYPE = "SHA1PRNG";
 
     private CryptoUtil() {
         // don't instantiate
@@ -40,7 +49,7 @@ public final class CryptoUtil {
     public static TransactionDigest computeTransactionDigest(Transaction transaction) {
         try {
             ObjectWriter writer = mapper.writer();
-            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            MessageDigest digest = MessageDigest.getInstance(DIGEST_TYPE);
             return new TransactionDigest(digest.digest(writer.writeValueAsString(transaction).getBytes()));
         } catch (JsonMappingException e) {
             e.printStackTrace();
@@ -68,7 +77,7 @@ public final class CryptoUtil {
     public static MessageSignature computeMessageSignature(Object message, PrivateKey privateKey) {
         Signature signature = null;
         try {
-            signature = Signature.getInstance("SHA1withDSA", "SUN");
+            signature = Signature.getInstance(ALGORITHM, PROVIDER);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (NoSuchProviderException e) {
@@ -81,5 +90,21 @@ public final class CryptoUtil {
         }
         ObjectWriter writer = mapper.writer(FIELD_FILTER);
         return new MessageSignature(computeSignature(convertToJsonByteArray(message), signature));
+    }
+
+    public static KeyPair generateNewKeyPair() {
+        try {
+            KeyPairGenerator generator = KeyPairGenerator.getInstance(ALGORITHM, PROVIDER);
+            SecureRandom random = SecureRandom.getInstance(PRNG_TYPE, PROVIDER);
+            generator.initialize(1024, random);
+
+            return generator.generateKeyPair();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (NoSuchProviderException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 }

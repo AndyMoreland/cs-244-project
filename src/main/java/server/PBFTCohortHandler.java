@@ -9,8 +9,11 @@ import com.sun.istack.internal.Nullable;
 import common.*;
 import config.GroupConfigProvider;
 import config.GroupMember;
+import gameengine.ChineseCheckersOperationFactory;
 import gameengine.ChineseCheckersState;
 import gameengine.operations.NoOp;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 
 import java.nio.ByteBuffer;
@@ -22,6 +25,7 @@ import java.util.concurrent.Executors;
  * Created by andrew on 11/27/14.
  */
 public class PBFTCohortHandler implements PBFTCohort.Iface {
+    private static Logger LOG = LogManager.getLogger(PBFTCohortHandler.class);
     private final Log<statemachine.Operation<ChineseCheckersState>> log;
     private GroupConfigProvider<PBFTCohort.Client> configProvider;
     private final GroupMember<PBFTCohort.Client> thisCohort;
@@ -33,7 +37,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     private static final int MIN_SEQ_NO = 0;
     private static final int MIN_VIEW_ID = 0;
     private static final byte[] NO_OP_TRANSACTION_DIGEST = CryptoUtil.computeTransactionDigest(
-            new common.Transaction(null, -1, new NoOp())).getBytes();
+            new common.Transaction(null, -1, new NoOp(),0)).getBytes();
     private static final int CHECKPOINT_INTERVAL = 100;
 
 
@@ -45,10 +49,13 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
         pool = Executors.newFixedThreadPool(POOL_SIZE);
         this.log = new Log<statemachine.Operation<ChineseCheckersState>>();
         this.thisCohort = thisCohort;
+
+        LOG.info("Starting handler!");
     }
 
     @Override
     public void prePrepare(PrePrepareMessage message, Transaction transaction) throws TException {
+        LOG.info("Entering prePrepare");
         if(!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) return;       // Validate signature
         if(transaction.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
 
@@ -90,6 +97,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
 
     @Override
     public void prepare(PrepareMessage message) throws TException {
+        LOG.info("Entering prepare");
         if(!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) return;       // Validate signature
         if(message.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
         log.addPrepareMessage(message);
@@ -123,6 +131,8 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
 
     @Override
     public void commit(CommitMessage message) throws TException {
+        LOG.info("Entering commit");
+
         if(!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) return;       // Validate signature
         if(message.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
         log.addCommitMessage(message);
@@ -154,6 +164,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
 
     @Override
     public void checkpoint(CheckpointMessage message) throws TException {
+        LOG.info("Entering checkpoint");
 
     }
 
@@ -374,5 +385,10 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     @Override
     public Transaction getTransaction(AskForTransaction message) throws TException {
         return log.getTransaction(message.getViewstamp()).toThriftTransaction();
+    }
+
+    @Override
+    public void ping() throws TException {
+        LOG.info("Ping!!!!");
     }
 }
