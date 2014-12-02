@@ -3,11 +3,12 @@ package server;
 import PBFT.PBFTCohort;
 import com.google.common.base.Optional;
 import com.google.common.collect.Sets;
-import common.CryptoUtil;
 import config.GroupConfigProvider;
 import config.GroupMember;
 import config.StaticGroupConfigProvider;
-import org.apache.log4j.*;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
+import org.apache.log4j.MDC;
 import org.apache.thrift.server.TServer;
 import org.apache.thrift.server.TSimpleServer;
 import org.apache.thrift.transport.TServerSocket;
@@ -20,8 +21,11 @@ import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.*;
 import java.net.InetSocketAddress;
-import java.security.KeyPair;
+import java.net.UnknownHostException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -42,12 +46,16 @@ public class PBFTServerInstance implements Runnable {
     private GroupConfigProvider<PBFTCohort.Client> configProvider;
 
     private int replicaID;
+
     private final String[] args;
+    private final PrivateKey privateKey;
+    private final Map<Integer, PublicKey> publicKeys;
     private String name;
     private int port;
-
-    public PBFTServerInstance(String[] args) {
+    public PBFTServerInstance(String[] args, PrivateKey privateKey, Map<Integer, PublicKey> publicKeys) {
         this.args = args;
+        this.privateKey = privateKey;
+        this.publicKeys = publicKeys;
     }
 
     private void configureLogging() {
@@ -55,19 +63,23 @@ public class PBFTServerInstance implements Runnable {
     }
 
     public void run() {
-        System.err.println("calling run method");
         try {
             replicaID = Integer.parseInt(args[REPLICA_ID_ARG_POS]);
             port = Integer.parseInt(args[PORT_ARG_POS]);
 
-            KeyPair keyPair = CryptoUtil.generateNewKeyPair();
-            GroupMember<PBFTCohort.Client> me = new GroupMember<PBFTCohort.Client>(replicaID, new InetSocketAddress("localhost", port), PBFTCohort.Client.class, keyPair.getPublic(), Optional.of(keyPair.getPrivate()));
+            GroupMember<PBFTCohort.Client> me = new GroupMember<PBFTCohort.Client>(
+                    replicaID,
+                    new InetSocketAddress("localhost", port),
+                    PBFTCohort.Client.class,
+                    publicKeys.get(replicaID),
+                    Optional.of(privateKey));
 
             configProvider = initializeConfigProvider(me, new File(CONFIG_FILE));
             configureLogging();
 
             LOG.info("Starting server on port: " + port + " with address: " + "localhost");
             LOG.info(configProvider.toString());
+            LOG.info(configProvider.getLeader().getReplicaID());
 
             handler = new PBFTCohortHandler(configProvider, replicaID, me);
             processor = new PBFTCohort.Processor(handler);
@@ -88,7 +100,7 @@ public class PBFTServerInstance implements Runnable {
 
     public void simple(PBFTCohort.Processor processor, int port) {
         try {
-            TServerTransport serverTransport = new TServerSocket(port);
+            TServerTransport serverTransport = new TServerSocket(new InetSocketAddress("127.0.0.1", port));
             TServer server = new TSimpleServer(new TServer.Args(serverTransport).processor(processor));
 
             server.serve();
@@ -97,7 +109,7 @@ public class PBFTServerInstance implements Runnable {
         }
     }
 
-    private StaticGroupConfigProvider<PBFTCohort.Client> initializeConfigProvider(GroupMember<PBFTCohort.Client> me, File file) throws NoSuchMethodException {
+    private GroupConfigProvider<PBFTCohort.Client> initializeConfigProvider(GroupMember<PBFTCohort.Client> me, File file) throws NoSuchMethodException {
         try {
             BufferedReader reader = new BufferedReader(new FileReader(file));
             JsonFactory factory = new JsonFactory();
@@ -140,15 +152,17 @@ public class PBFTServerInstance implements Runnable {
         return null;
     }
 
-    private GroupMember<PBFTCohort.Client> serverNodeToClient(JsonNode server) throws NoSuchMethodException {
-        KeyPair keyPair = CryptoUtil.generateNewKeyPair();
-
+    private GroupMember<PBFTCohort.Client> serverNodeToClient(JsonNode server) throws NoSuchMethodException, UnknownHostException {
+        int id = server.get("id").getIntValue();
         return new GroupMember<PBFTCohort.Client>(
-                server.get("id").getIntValue(),
-                new InetSocketAddress(server.get("hostname").getTextValue(), server.get("port").getIntValue()),
+                id,
+                new InetSocketAddress("127.0.0.1", server.get("port").getIntValue()),
                 PBFTCohort.Client.class,
-                keyPair.getPublic(),
-                Optional.of(keyPair.getPrivate()));
+                publicKeys.get(id),
+                Optional.fromNullable(id == this.replicaID ? this.privateKey : null));
     }
 
+    public GroupConfigProvider<PBFTCohort.Client> getConfigProvider() {
+        return configProvider;
+    }
 }

@@ -38,7 +38,7 @@ public class GroupMember<T extends org.apache.thrift.TServiceClient> {
     }
 
     public T getThriftConnection() throws TTransportException {
-        TSocket transport = new TSocket(address.getHostName(), address.getPort());
+        TSocket transport = new TSocket(address.getHostName(), address.getPort(), 5000);
         transport.open();
 
         TProtocol protocol = new TBinaryProtocol(transport);
