@@ -144,7 +144,8 @@ public class Log<T> {
         if(transaction == null || transaction.isPrepared() || !CryptoUtil.computeTransactionDigest(transaction).equals(mtd)){
             quorum = false;
         } else {
-            quorum = prepareMessages.get(MultiKey.newKey(viewstamp, mtd)).size() >= quorumSize - 1; // -1 for own log entry
+            Set<PrepareMessage> previouslyReceivedPrepareMessages = prepareMessages.get(MultiKey.newKey(viewstamp, mtd));
+            quorum = (previouslyReceivedPrepareMessages == null ? 0 : previouslyReceivedPrepareMessages.size()) >= quorumSize - 1; // -1 for own log entry
         }
         readLock.unlock();
         return quorum;

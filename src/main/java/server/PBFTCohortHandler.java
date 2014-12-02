@@ -41,10 +41,9 @@ public class PBFTCohortHandler implements Iface {
     private static final int MIN_SEQ_NO = 0;
     private static final int MIN_VIEW_ID = 0;
     private static final byte[] NO_OP_TRANSACTION_DIGEST = CryptoUtil.computeTransactionDigest(
-            new common.Transaction(null, -1, new NoOp(),0)).getBytes();
+            new common.Transaction(null, -1, new NoOp(), 0)).getBytes();
 
     private static final int CHECKPOINT_INTERVAL = 100;
-
 
 
     public PBFTCohortHandler(GroupConfigProvider<PBFTCohort.Client> configProvider, int replicaID, GroupMember<PBFTCohort.Client> thisCohort) {
@@ -61,9 +60,10 @@ public class PBFTCohortHandler implements Iface {
     @Override
     public void prePrepare(PrePrepareMessage message, TTransaction transaction) throws TException {
         LOG.info("Entering prePrepare");
-        if(!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) return;       // Validate signature
+        if (!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature()))
+            return;       // Validate signature
         LOG.info("Validated signature");
-        if(transaction.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
+        if (transaction.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
         LOG.info("Successfully passed view id validation");
 
         Transaction<statemachine.Operation<ChineseCheckersState>> logTransaction
@@ -82,7 +82,7 @@ public class PBFTCohortHandler implements Iface {
     }
 
     private void multicastPrepare(TransactionDigest transactionDigest, Viewstamp viewstamp) throws TException {
-        for (final GroupMember<PBFTCohort.Client> member : configProvider.getGroupMembers()) {
+        for (final GroupMember<PBFTCohort.Client> member : configProvider.getOtherGroupMembers()) {
             final PrepareMessage prepareMessage = new PrepareMessage();
             prepareMessage.viewstamp = viewstamp;
             prepareMessage.replicaId = thisCohort.getReplicaID();
@@ -109,19 +109,21 @@ public class PBFTCohortHandler implements Iface {
     @Override
     public void prepare(PrepareMessage message) throws TException {
         LOG.info("Entering prepare");
-        if(!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) throw new TException("Failed to validate signature.");       // Validate signature
+        if (!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature()))
+            throw new TException("Failed to validate signature.");       // Validate signature
         LOG.info("Validated signature");
-        if(message.getViewstamp().getViewId() != this.configProvider.getViewID()) throw new TException("Failed to validate view number"); // Check we're in view v
+        if (message.getViewstamp().getViewId() != this.configProvider.getViewID())
+            throw new TException("Failed to validate view number"); // Check we're in view v
         log.addPrepareMessage(message);
         prepareIfReady(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()));
     }
 
-    private void prepareIfReady(Viewstamp viewstamp, TransactionDigest transactionDigest){
-        if(!log.readyToPrepare(viewstamp, transactionDigest, configProvider.getQuorumSize())) return;
+    private void prepareIfReady(Viewstamp viewstamp, TransactionDigest transactionDigest) {
+        if (!log.readyToPrepare(viewstamp, transactionDigest, configProvider.getQuorumSize())) return;
         log.markAsPrepared(viewstamp);
 
 
-        for (final GroupMember<PBFTCohort.Client> member : configProvider.getGroupMembers()) {
+        for (final GroupMember<PBFTCohort.Client> member : configProvider.getOtherGroupMembers()) {
             final CommitMessage commitMessage = new CommitMessage();
             commitMessage.viewstamp = viewstamp;
             commitMessage.replicaId = thisCohort.getReplicaID();
@@ -150,14 +152,15 @@ public class PBFTCohortHandler implements Iface {
     public void commit(CommitMessage message) throws TException {
         LOG.info("Entering commit");
 
-        if(!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) return;       // Validate signature
-        if(message.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
+        if (!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature()))
+            return;       // Validate signature
+        if (message.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
         log.addCommitMessage(message);
         commitIfReady(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()));
     }
 
     private void commitIfReady(Viewstamp viewstamp, TransactionDigest transactionDigest) throws TException {
-        if(!log.readyToCommit(viewstamp, transactionDigest, configProvider.getQuorumSize())) return;
+        if (!log.readyToCommit(viewstamp, transactionDigest, configProvider.getQuorumSize())) return;
         log.commitEntry(viewstamp);
 
         int lastCommited = log.getLastCommited();
@@ -168,7 +171,7 @@ public class PBFTCohortHandler implements Iface {
             checkpointMessage.setSequenceNumber(lastCommited);
             checkpointMessage.setCheckpointDigest(digest.getBytes());
             checkpointMessage.setReplicaId(replicaID);
-            for (final GroupMember<PBFTCohort.Client> target : configProvider.getGroupMembers())
+            for (final GroupMember<PBFTCohort.Client> target : configProvider.getOtherGroupMembers())
                 pool.execute(new Runnable() {
                     @Override
                     public void run() {
@@ -192,7 +195,7 @@ public class PBFTCohortHandler implements Iface {
     private List<PrePrepareMessage> createPrePrepareForCurrentSeqno(
             int newViewID,
             boolean verify,
-            List<ViewChangeMessage> viewChangeMessages /* this is script V in the paper */ ) {
+            List<ViewChangeMessage> viewChangeMessages /* this is script V in the paper */) {
 
         // this is computing script O in the pbft paper
         List<PrePrepareMessage> prePrepareMessages = Lists.newArrayList(); // order is important for when we verify
@@ -241,14 +244,14 @@ public class PBFTCohortHandler implements Iface {
 
     private boolean prePrepareSetValid(List<PrePrepareMessage> prePrepareMessages, List<Set<PrepareMessage>> prepareMessages) {
         Map<ByteBuffer, Integer> numPrepares = new HashMap<ByteBuffer, Integer>();
-        for(int i=0; i < prePrepareMessages.size(); ++i) {
+        for (int i = 0; i < prePrepareMessages.size(); ++i) {
             GroupMember<PBFTCohort.Client> sender = configProvider.getGroupMember(prePrepareMessages.get(i).getReplicaId());
-            if (!sender.verifySignature(prePrepareMessages.get(i),prePrepareMessages.get(i).getMessageSignature())) {
+            if (!sender.verifySignature(prePrepareMessages.get(i), prePrepareMessages.get(i).getMessageSignature())) {
                 return false;
             }
             if (prepareMessages.get(i).size() < configProvider.getQuorumSize()) return false;
             // verify each of the messages
-            for (PrepareMessage prepareMessage: prepareMessages.get(i)) {
+            for (PrepareMessage prepareMessage : prepareMessages.get(i)) {
                 if (!prepareMessage.getViewstamp().equals(prePrepareMessages.get(i).getViewstamp())) return false;
                 sender = configProvider.getGroupMember(prepareMessage.getReplicaId());
                 if (!sender.verifySignature(prepareMessage, prepareMessage.getMessageSignature())) {
@@ -280,7 +283,7 @@ public class PBFTCohortHandler implements Iface {
                 if (configProvider.getLeader().getReplicaID() == replicaID
                         && viewChangeMessages.get(newViewID).size() > configProvider.getQuorumSize()) {
                     // multicast NEW-VIEW message
-                    Set<GroupMember<PBFTCohort.Client>> groupMembers = configProvider.getGroupMembers();
+                    Set<GroupMember<PBFTCohort.Client>> groupMembers = configProvider.getOtherGroupMembers();
                     for (final GroupMember<PBFTCohort.Client> groupMember : groupMembers) {
                         final NewViewMessage newViewMessage = new NewViewMessage();
                         newViewMessage.setNewViewID(newViewID);
@@ -334,7 +337,7 @@ public class PBFTCohortHandler implements Iface {
             return;
         }
 
-        for (int i=0; i<recomputedPrePrepareMessages.size(); ++i) {
+        for (int i = 0; i < recomputedPrePrepareMessages.size(); ++i) {
             PrePrepareMessage received = message.getPrePrepareMessages().get(i);
             PrePrepareMessage recomputed = recomputedPrePrepareMessages.get(i);
             sender = configProvider.getGroupMember(recomputed.getReplicaId());
@@ -360,7 +363,7 @@ public class PBFTCohortHandler implements Iface {
             Viewstamp viewstamp = new Viewstamp(
                     prePrepareMessage.getViewstamp().getSequenceNumber(), configProvider.getViewID());
             multicastPrepare(transactionDigest, viewstamp);
-            if (log.getTransaction(viewstamp) == null ) {
+            if (log.getTransaction(viewstamp) == null) {
                 // if we don't have this in our log already, we need to ask someone else for it
                 GroupMember<PBFTCohort.Client> target = getReplicaThatPreparedSeqno(message, viewstamp.getSequenceNumber());
                 Preconditions.checkNotNull(target);

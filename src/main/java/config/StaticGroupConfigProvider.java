@@ -1,5 +1,6 @@
 package config;
 
+import com.google.common.collect.Sets;
 import com.sun.istack.internal.Nullable;
 
 import java.util.Set;
@@ -9,16 +10,18 @@ import java.util.Set;
  * Simple group membership provider that doesn't take into account dynamic network conditions or change.
  */
 public class StaticGroupConfigProvider<T extends org.apache.thrift.TServiceClient> implements GroupConfigProvider<T> {
+    private final GroupMember<T> me;
     private Set<GroupMember<T>> members;
     private int viewID;
     private GroupMember<T> leader;
 
-    public StaticGroupConfigProvider(GroupMember<T> leader, Set<GroupMember<T>> members, int viewID) {
+    public StaticGroupConfigProvider(GroupMember<T> leader, GroupMember<T> me, Set<GroupMember<T>> members, int viewID) {
+        this.me = me;
+        this.members = members;
         assert (leader != null);
-        assert (members != null);
+        assert (this.members != null);
 
         this.leader = leader;
-        this.members = members;
         this.viewID = viewID;
     }
 
@@ -35,6 +38,14 @@ public class StaticGroupConfigProvider<T extends org.apache.thrift.TServiceClien
     @Override
     public int getQuorumSize() {
         return (members.size() + 1) - (members.size())/3;
+    }
+
+    @Override
+    public Set<GroupMember<T>> getOtherGroupMembers() {
+        Set<GroupMember<T>> otherMembers = Sets.newHashSet(members);
+        otherMembers.remove(me);
+
+        return otherMembers;
     }
 
     @Override
