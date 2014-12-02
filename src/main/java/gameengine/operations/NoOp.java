@@ -1,6 +1,6 @@
 package gameengine.operations;
 
-import PBFT.Operation;
+import PBFT.TOperation;
 import gameengine.ChineseCheckersState;
 
 /**
@@ -23,7 +23,7 @@ public class NoOp implements statemachine.Operation<ChineseCheckersState> {
     }
 
     @Override
-    public Operation serialize() {
+    public TOperation serialize() {
         return null;
     }
 }

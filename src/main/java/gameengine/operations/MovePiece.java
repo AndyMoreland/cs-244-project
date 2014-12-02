@@ -1,6 +1,6 @@
 package gameengine.operations;
 
-import PBFT.Operation;
+import PBFT.TOperation;
 import gameengine.*;
 
 /**
@@ -74,7 +74,7 @@ public class MovePiece implements statemachine.Operation<ChineseCheckersState> {
     }
 
     @Override
-    public Operation serialize() {
+    public TOperation serialize() {
         return null;
     }
 }

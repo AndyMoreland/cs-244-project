@@ -55,7 +55,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     }
 
     @Override
-    public void prePrepare(PrePrepareMessage message, Transaction transaction) throws TException {
+    public void prePrepare(PrePrepareMessage message, TTransaction transaction) throws TException {
         LOG.info("Entering prePrepare");
         if(!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) return;       // Validate signature
         LOG.info("Validated signature");
@@ -72,7 +72,8 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
         }
 
         LOG.info(log);
-        multicastPrepare(CryptoUtil.computeTransactionDigest(logTransaction), transaction.viewstamp);
+        multicastPrepare(CryptoUtil.computeTransactionDiggs
+                est(logTransaction), transaction.viewstamp);
     }
 
     private void multicastPrepare(TransactionDigest transactionDigest, Viewstamp viewstamp) throws TException {
@@ -389,7 +390,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     }
 
     @Override
-    public Transaction getTransaction(AskForTransaction message) throws TException {
+    public TTransaction getTransaction(AskForTransaction message) throws TException {
         // return log.getTransaction(message.getViewstamp()).toThriftTransaction();
         return null;
     }

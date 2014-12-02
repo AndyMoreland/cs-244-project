@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.HashMap;
 import org.apache.thrift.TEnum;
 
-public enum ChineseCheckersOperation implements org.apache.thrift.TEnum {
+public enum TChineseCheckersOperation implements org.apache.thrift.TEnum {
   NO_OP(0),
   MOVE_PIECE(1),
   KICK_PLAYER(2),
@@ -19,7 +19,7 @@ public enum ChineseCheckersOperation implements org.apache.thrift.TEnum {
 
   private final int value;
 
-  private ChineseCheckersOperation(int value) {
+  private TChineseCheckersOperation(int value) {
     this.value = value;
   }
 
@@ -34,7 +34,7 @@ public enum ChineseCheckersOperation implements org.apache.thrift.TEnum {
    * Find a the enum type by its integer value, as defined in the Thrift IDL.
    * @return null if the value is not found.
    */
-  public static ChineseCheckersOperation findByValue(int value) { 
+  public static TChineseCheckersOperation findByValue(int value) { 
     switch (value) {
       case 0:
         return NO_OP;

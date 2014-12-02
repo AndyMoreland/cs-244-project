@@ -10,7 +10,7 @@ public class JsonThriftSerializationUtilTest {
 
     @Test
     public void testOperationDeserialization() {
-        PBFT.Operation operation = new PBFT.Operation()
+        TOperation operation = new TOperation()
                 .setOperationType(1).setOperationId(1).setArguments("args").setReplicaId(5);
         String jsonRep = JsonThriftSerializationUtil.serializeToJsonOperation(operation);
         System.out.println(jsonRep);

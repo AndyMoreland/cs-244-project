@@ -43,7 +43,7 @@ public class PBFTCohort {
    */
   public interface Iface {
 
-    public void prePrepare(PrePrepareMessage message, Transaction transaction) throws org.apache.thrift.TException;
+    public void prePrepare(PrePrepareMessage message, TTransaction transaction) throws org.apache.thrift.TException;
 
     public void prepare(PrepareMessage message) throws org.apache.thrift.TException;
 
@@ -55,7 +55,7 @@ public class PBFTCohort {
 
     public void approveViewChange(NewViewMessage message) throws org.apache.thrift.TException;
 
-    public Transaction getTransaction(AskForTransaction message) throws org.apache.thrift.TException;
+    public TTransaction getTransaction(AskForTransaction message) throws org.apache.thrift.TException;
 
     public void ping() throws org.apache.thrift.TException;
 
@@ -63,7 +63,7 @@ public class PBFTCohort {
 
   public interface AsyncIface {
 
-    public void prePrepare(PrePrepareMessage message, Transaction transaction, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException;
+    public void prePrepare(PrePrepareMessage message, TTransaction transaction, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException;
 
     public void prepare(PrepareMessage message, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException;
 
@@ -101,13 +101,13 @@ public class PBFTCohort {
       super(iprot, oprot);
     }
 
-    public void prePrepare(PrePrepareMessage message, Transaction transaction) throws org.apache.thrift.TException
+    public void prePrepare(PrePrepareMessage message, TTransaction transaction) throws org.apache.thrift.TException
     {
       send_prePrepare(message, transaction);
       recv_prePrepare();
     }
 
-    public void send_prePrepare(PrePrepareMessage message, Transaction transaction) throws org.apache.thrift.TException
+    public void send_prePrepare(PrePrepareMessage message, TTransaction transaction) throws org.apache.thrift.TException
     {
       prePrepare_args args = new prePrepare_args();
       args.setMessage(message);
@@ -222,7 +222,7 @@ public class PBFTCohort {
       return;
     }
 
-    public Transaction getTransaction(AskForTransaction message) throws org.apache.thrift.TException
+    public TTransaction getTransaction(AskForTransaction message) throws org.apache.thrift.TException
     {
       send_getTransaction(message);
       return recv_getTransaction();
@@ -235,7 +235,7 @@ public class PBFTCohort {
       sendBase("getTransaction", args);
     }
 
-    public Transaction recv_getTransaction() throws org.apache.thrift.TException
+    public TTransaction recv_getTransaction() throws org.apache.thrift.TException
     {
       getTransaction_result result = new getTransaction_result();
       receiveBase(result, "getTransaction");
@@ -282,7 +282,7 @@ public class PBFTCohort {
       super(protocolFactory, clientManager, transport);
     }
 
-    public void prePrepare(PrePrepareMessage message, Transaction transaction, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException {
+    public void prePrepare(PrePrepareMessage message, TTransaction transaction, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException {
       checkReady();
       prePrepare_call method_call = new prePrepare_call(message, transaction, resultHandler, this, ___protocolFactory, ___transport);
       this.___currentMethod = method_call;
@@ -291,8 +291,8 @@ public class PBFTCohort {
 
     public static class prePrepare_call extends org.apache.thrift.async.TAsyncMethodCall {
       private PrePrepareMessage message;
-      private Transaction transaction;
-      public prePrepare_call(PrePrepareMessage message, Transaction transaction, org.apache.thrift.async.AsyncMethodCallback resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+      private TTransaction transaction;
+      public prePrepare_call(PrePrepareMessage message, TTransaction transaction, org.apache.thrift.async.AsyncMethodCallback resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
         super(client, protocolFactory, transport, resultHandler, false);
         this.message = message;
         this.transaction = transaction;
@@ -499,7 +499,7 @@ public class PBFTCohort {
         prot.writeMessageEnd();
       }
 
-      public Transaction getResult() throws org.apache.thrift.TException {
+      public TTransaction getResult() throws org.apache.thrift.TException {
         if (getState() != org.apache.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
           throw new IllegalStateException("Method call not finished!");
         }
@@ -1046,7 +1046,7 @@ public class PBFTCohort {
       }
     }
 
-    public static class getTransaction<I extends AsyncIface> extends org.apache.thrift.AsyncProcessFunction<I, getTransaction_args, Transaction> {
+    public static class getTransaction<I extends AsyncIface> extends org.apache.thrift.AsyncProcessFunction<I, getTransaction_args, TTransaction> {
       public getTransaction() {
         super("getTransaction");
       }
@@ -1055,10 +1055,10 @@ public class PBFTCohort {
         return new getTransaction_args();
       }
 
-      public AsyncMethodCallback<Transaction> getResultHandler(final AsyncFrameBuffer fb, final int seqid) {
+      public AsyncMethodCallback<TTransaction> getResultHandler(final AsyncFrameBuffer fb, final int seqid) {
         final org.apache.thrift.AsyncProcessFunction fcall = this;
-        return new AsyncMethodCallback<Transaction>() { 
-          public void onComplete(Transaction o) {
+        return new AsyncMethodCallback<TTransaction>() { 
+          public void onComplete(TTransaction o) {
             getTransaction_result result = new getTransaction_result();
             result.success = o;
             try {
@@ -1092,7 +1092,7 @@ public class PBFTCohort {
         return false;
       }
 
-      public void start(I iface, getTransaction_args args, org.apache.thrift.async.AsyncMethodCallback<Transaction> resultHandler) throws TException {
+      public void start(I iface, getTransaction_args args, org.apache.thrift.async.AsyncMethodCallback<TTransaction> resultHandler) throws TException {
         iface.getTransaction(args.message,resultHandler);
       }
     }
@@ -1162,7 +1162,7 @@ public class PBFTCohort {
     }
 
     public PrePrepareMessage message; // required
-    public Transaction transaction; // required
+    public TTransaction transaction; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -1232,7 +1232,7 @@ public class PBFTCohort {
       tmpMap.put(_Fields.MESSAGE, new org.apache.thrift.meta_data.FieldMetaData("message", org.apache.thrift.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, PrePrepareMessage.class)));
       tmpMap.put(_Fields.TRANSACTION, new org.apache.thrift.meta_data.FieldMetaData("transaction", org.apache.thrift.TFieldRequirementType.DEFAULT, 
-          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Transaction.class)));
+          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, TTransaction.class)));
       metaDataMap = Collections.unmodifiableMap(tmpMap);
       org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(prePrepare_args.class, metaDataMap);
     }
@@ -1242,7 +1242,7 @@ public class PBFTCohort {
 
     public prePrepare_args(
       PrePrepareMessage message,
-      Transaction transaction)
+      TTransaction transaction)
     {
       this();
       this.message = message;
@@ -1257,7 +1257,7 @@ public class PBFTCohort {
         this.message = new PrePrepareMessage(other.message);
       }
       if (other.isSetTransaction()) {
-        this.transaction = new Transaction(other.transaction);
+        this.transaction = new TTransaction(other.transaction);
       }
     }
 
@@ -1295,11 +1295,11 @@ public class PBFTCohort {
       }
     }
 
-    public Transaction getTransaction() {
+    public TTransaction getTransaction() {
       return this.transaction;
     }
 
-    public prePrepare_args setTransaction(Transaction transaction) {
+    public prePrepare_args setTransaction(TTransaction transaction) {
       this.transaction = transaction;
       return this;
     }
@@ -1333,7 +1333,7 @@ public class PBFTCohort {
         if (value == null) {
           unsetTransaction();
         } else {
-          setTransaction((Transaction)value);
+          setTransaction((TTransaction)value);
         }
         break;
 
@@ -1541,7 +1541,7 @@ public class PBFTCohort {
               break;
             case 2: // TRANSACTION
               if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
-                struct.transaction = new Transaction();
+                struct.transaction = new TTransaction();
                 struct.transaction.read(iprot);
                 struct.setTransactionIsSet(true);
               } else { 
@@ -1616,7 +1616,7 @@ public class PBFTCohort {
           struct.setMessageIsSet(true);
         }
         if (incoming.get(1)) {
-          struct.transaction = new Transaction();
+          struct.transaction = new TTransaction();
           struct.transaction.read(iprot);
           struct.setTransactionIsSet(true);
         }
@@ -5320,7 +5320,7 @@ public class PBFTCohort {
       schemes.put(TupleScheme.class, new getTransaction_resultTupleSchemeFactory());
     }
 
-    public Transaction success; // required
+    public TTransaction success; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -5385,7 +5385,7 @@ public class PBFTCohort {
     static {
       Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
       tmpMap.put(_Fields.SUCCESS, new org.apache.thrift.meta_data.FieldMetaData("success", org.apache.thrift.TFieldRequirementType.DEFAULT, 
-          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, Transaction.class)));
+          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, TTransaction.class)));
       metaDataMap = Collections.unmodifiableMap(tmpMap);
       org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(getTransaction_result.class, metaDataMap);
     }
@@ -5394,7 +5394,7 @@ public class PBFTCohort {
     }
 
     public getTransaction_result(
-      Transaction success)
+      TTransaction success)
     {
       this();
       this.success = success;
@@ -5405,7 +5405,7 @@ public class PBFTCohort {
      */
     public getTransaction_result(getTransaction_result other) {
       if (other.isSetSuccess()) {
-        this.success = new Transaction(other.success);
+        this.success = new TTransaction(other.success);
       }
     }
 
@@ -5418,11 +5418,11 @@ public class PBFTCohort {
       this.success = null;
     }
 
-    public Transaction getSuccess() {
+    public TTransaction getSuccess() {
       return this.success;
     }
 
-    public getTransaction_result setSuccess(Transaction success) {
+    public getTransaction_result setSuccess(TTransaction success) {
       this.success = success;
       return this;
     }
@@ -5448,7 +5448,7 @@ public class PBFTCohort {
         if (value == null) {
           unsetSuccess();
         } else {
-          setSuccess((Transaction)value);
+          setSuccess((TTransaction)value);
         }
         break;
 
@@ -5607,7 +5607,7 @@ public class PBFTCohort {
           switch (schemeField.id) {
             case 0: // SUCCESS
               if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
-                struct.success = new Transaction();
+                struct.success = new TTransaction();
                 struct.success.read(iprot);
                 struct.setSuccessIsSet(true);
               } else { 
@@ -5666,7 +5666,7 @@ public class PBFTCohort {
         TTupleProtocol iprot = (TTupleProtocol) prot;
         BitSet incoming = iprot.readBitSet(1);
         if (incoming.get(0)) {
-          struct.success = new Transaction();
+          struct.success = new TTransaction();
           struct.success.read(iprot);
           struct.setSuccessIsSet(true);
         }

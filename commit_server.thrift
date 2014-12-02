@@ -64,7 +64,7 @@ enum Vote {
     ABBORT = 2
 }
 
-enum ChineseCheckersOperation {
+enum TChineseCheckersOperation {
     NO_OP = 0,
     MOVE_PIECE = 1,
     KICK_PLAYER = 2,
@@ -77,7 +77,7 @@ exception InvalidOperation {
     3: Signature signature;
 }
 
-struct Operation {
+struct TOperation {
     1: i32 operationId,
     2: i32 operationType, // an ENUM with service-defined semantics
     3: string arguments, // JSON formatted or something
@@ -89,9 +89,9 @@ struct Viewstamp {
     2:i32 viewId;
 }
 
-struct Transaction {
+struct TTransaction {
     1:Viewstamp viewstamp,
-    2:Operation operation,
+    2:TOperation operation,
     3:i32 replicaId;
 }
 
@@ -151,12 +151,12 @@ struct AskForTransaction {
  */
 
 service PBFTCohort {
-    void prePrepare(1:PrePrepareMessage message, 2:Transaction transaction),
+    void prePrepare(1:PrePrepareMessage message, 2:TTransaction transaction),
     void prepare(1:PrepareMessage message),
     void commit(1:CommitMessage message),
     void checkpoint(1:CheckpointMessage message),
     void startViewChange(1:ViewChangeMessage message),
     void approveViewChange(1:NewViewMessage message),
-    Transaction getTransaction(1:AskForTransaction message),
+    TTransaction getTransaction(1:AskForTransaction message),
     void ping();
 }

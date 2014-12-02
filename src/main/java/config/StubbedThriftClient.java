@@ -9,7 +9,7 @@ import org.apache.thrift.TException;
 public class StubbedThriftClient implements PBFTCohort.Iface {
 
     @Override
-    public void prePrepare(PrePrepareMessage message, Transaction transaction) throws TException {
+    public void prePrepare(PrePrepareMessage message, TTransaction transaction) throws TException {
 
     }
 
@@ -39,7 +39,7 @@ public class StubbedThriftClient implements PBFTCohort.Iface {
     }
 
     @Override
-    public Transaction getTransaction(AskForTransaction message) throws TException {
+    public TTransaction getTransaction(AskForTransaction message) throws TException {
         return null;
     }
 

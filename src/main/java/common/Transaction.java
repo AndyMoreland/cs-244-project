@@ -1,5 +1,6 @@
 package common;
 
+import PBFT.TTransaction;
 import PBFT.Viewstamp;
 import gameengine.ChineseCheckersOperationFactory;
 import gameengine.ChineseCheckersState;
@@ -35,7 +36,7 @@ public class Transaction<T> {
         return id;
     }
 
-    public static Transaction<Operation<ChineseCheckersState>> getTransactionForPBFTTransaction(PBFT.Transaction transaction) {
+    public static Transaction<Operation<ChineseCheckersState>> getTransactionForPBFTTransaction(TTransaction transaction) {
         common.Transaction<statemachine.Operation<ChineseCheckersState>> commonTransaction = new Transaction<Operation<ChineseCheckersState>>(
                 transaction.viewstamp,
                 transaction.viewstamp.getSequenceNumber(),
