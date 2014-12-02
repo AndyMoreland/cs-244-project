@@ -78,10 +78,8 @@ exception InvalidOperation {
 }
 
 struct TOperation {
-    1: i32 operationId,
-    2: i32 operationType, // an ENUM with service-defined semantics
-    3: string arguments, // JSON formatted or something
-    4: i32 replicaId;
+    1: i32 operationType, // an ENUM with service-defined semantics
+    2: string arguments, // JSON formatted or something
 }
 
 struct Viewstamp {

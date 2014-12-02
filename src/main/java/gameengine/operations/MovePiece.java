@@ -1,5 +1,6 @@
 package gameengine.operations;
 
+import PBFT.TChineseCheckersOperation;
 import PBFT.TOperation;
 import gameengine.*;
 
@@ -75,6 +76,9 @@ public class MovePiece implements statemachine.Operation<ChineseCheckersState> {
 
     @Override
     public TOperation serialize() {
-        return null;
+        TOperation tOperation = new TOperation();
+        tOperation.setArguments(start.toString() + "," + end.toString() + "," + replicaID);
+        tOperation.setOperationType(TChineseCheckersOperation.MOVE_PIECE.getValue());
+        return tOperation;
     }
 }
