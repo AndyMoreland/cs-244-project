@@ -124,30 +124,29 @@ public class Log<T> {
         transactions.get(id).prepare();
     }
 
-    public boolean readyToPrepare(PrepareMessage message, int quorumSize){
+    public boolean readyToPrepare(Viewstamp viewstamp, TransactionDigest mtd, int quorumSize){
         Lock readLock = logLock.readLock();
         readLock.lock();
-        Transaction<T> transaction = transactions.get(message.getViewstamp());
-        TransactionDigest mtd = new TransactionDigest(message.getTransactionDigest());
+        Transaction<T> transaction = transactions.get(viewstamp);
         boolean quorum;
 
         // Haven't seen this viewstamp, or have already processed, or haven't prepared this request
         if(transaction == null || transaction.isPrepared() || !CryptoUtil.computeTransactionDigest(transaction).equals(mtd)){
             quorum = false;
         } else {
-            quorum = prepareMessages.get(MultiKey.newKey(message.getViewstamp(), mtd)).size() >= quorumSize - 1; // -1 for own log entry
+            quorum = prepareMessages.get(MultiKey.newKey(viewstamp, mtd)).size() >= quorumSize - 1; // -1 for own log entry
         }
         readLock.unlock();
         return quorum;
     }
 
-    public boolean readyToCommit(CommitMessage message, int quorumSize) {
+    public boolean readyToCommit(Viewstamp viewstamp, TransactionDigest mtd, int quorumSize) {
         Lock readLock = logLock.readLock();
         readLock.lock();
-        Transaction<T> transaction = transactions.get(message.getViewstamp());
+        Transaction<T> transaction = transactions.get(viewstamp);
         if(!transaction.isPrepared() || transaction.isCommitted()) return false; // Not prepared yet or already committed => ignore
 
-        boolean quorum = commitMessages.get(MultiKey.newKey(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()))).size() >= quorumSize - 1;
+        boolean quorum = commitMessages.get(MultiKey.newKey(viewstamp, mtd)).size() >= quorumSize - 1;
         readLock.unlock();
         return quorum;
     }

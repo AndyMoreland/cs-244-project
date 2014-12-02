@@ -1,15 +1,16 @@
 package server;
 
 import PBFT.*;
-import PBFT.Transaction;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.sun.istack.internal.Nullable;
-import common.*;
+import common.CryptoUtil;
+import common.IllegalLogEntryException;
+import common.Log;
+import common.TransactionDigest;
 import config.GroupConfigProvider;
 import config.GroupMember;
-import gameengine.ChineseCheckersOperationFactory;
 import gameengine.ChineseCheckersState;
 import gameengine.operations.NoOp;
 import org.apache.log4j.LogManager;
@@ -69,6 +70,8 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
         }
 
         multicastPrepare(CryptoUtil.computeTransactionDigest(logTransaction), transaction.viewstamp);
+        prepareIfReady(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()));
+        commitIfReady(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()));
     }
 
     private void multicastPrepare(TransactionDigest transactionDigest, Viewstamp viewstamp) {
@@ -101,14 +104,18 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
         if(!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) return;       // Validate signature
         if(message.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
         log.addPrepareMessage(message);
-        if(!log.readyToPrepare(message, configProvider.getQuorumSize())) return;
-        log.markAsPrepared(message.getViewstamp());
+        prepareIfReady(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()));
+    }
+
+    private void prepareIfReady(Viewstamp viewstamp, TransactionDigest transactionDigest){
+        if(!log.readyToPrepare(viewstamp, transactionDigest, configProvider.getQuorumSize())) return;
+        log.markAsPrepared(viewstamp);
 
         for (final GroupMember<PBFTCohort.Client> member : configProvider.getGroupMembers()) {
             final CommitMessage commitMessage = new CommitMessage();
-            commitMessage.viewstamp = message.getViewstamp();
+            commitMessage.viewstamp = viewstamp;
             commitMessage.replicaId = thisCohort.getReplicaID();
-            commitMessage.transactionDigest = ByteBuffer.wrap(message.getTransactionDigest());
+            commitMessage.transactionDigest = ByteBuffer.wrap(transactionDigest.getBytes());
             commitMessage.messageSignature = ByteBuffer.wrap(CryptoUtil.computeMessageSignature(commitMessage, thisCohort.getPrivateKey()).getBytes());
 
             pool.execute(new Runnable() {
@@ -122,7 +129,6 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
                 }
             });
         }
-
     }
 
     private boolean shouldCheckpoint(int lastCommitted) {
@@ -136,8 +142,12 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
         if(!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) return;       // Validate signature
         if(message.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
         log.addCommitMessage(message);
-        if(!log.readyToCommit(message, configProvider.getQuorumSize())) return;
-        log.commitEntry(message.getViewstamp());
+        commitIfReady(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()));
+    }
+
+    private void commitIfReady(Viewstamp viewstamp, TransactionDigest transactionDigest) throws TException {
+        if(!log.readyToCommit(viewstamp, transactionDigest, configProvider.getQuorumSize())) return;
+        log.commitEntry(viewstamp);
 
         int lastCommited = log.getLastCommited();
         if (shouldCheckpoint(lastCommited)) {
