@@ -136,7 +136,7 @@ struct ViewChangeMessage {
 struct NewViewMessage {
     1:i32 newViewID,
     2:list<ViewChangeMessage> viewChangeMessages,
-    3:list<PrePrepareMessage> prePrepareMessages;
+    3:list<PrePrepareMessage> prePrepareMessages,
     5:i32 replicaID,
     6:Signature messageSignature;
 }
@@ -158,5 +158,6 @@ service PBFTCohort {
     void checkpoint(1:CheckpointMessage message),
     void startViewChange(1:ViewChangeMessage message),
     void approveViewChange(1:NewViewMessage message),
-    Transaction getTransaction(1:AskForTransaction message);
+    Transaction getTransaction(1:AskForTransaction message),
+    void ping();
 }
