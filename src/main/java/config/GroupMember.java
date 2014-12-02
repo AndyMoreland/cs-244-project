@@ -7,9 +7,6 @@ import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
 import org.apache.thrift.transport.TTransportException;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
@@ -19,19 +16,17 @@ import java.security.*;
  * Created by andrew on 11/27/14.
  */
 public class GroupMember<T extends org.apache.thrift.TServiceClient> {
-    public static final String ALGORITHM = "SHA1withDSA";
-    public static final String PROVIDER = "SUN";
     private final Constructor<? extends T> clientCtor;
     private InetSocketAddress address;
     private final PublicKey publicKey;
     private final Optional<PrivateKey> privateKey;
     private final int id;
     
-    public GroupMember(int id, InetSocketAddress address, Class<? extends T> impl, PublicKey publicKey, PrivateKey privateKey) throws NoSuchMethodException {
+    public GroupMember(int id, InetSocketAddress address, Class<? extends T> impl, PublicKey publicKey, Optional<PrivateKey> privateKey) throws NoSuchMethodException {
         this.publicKey = publicKey;
         this.id = id;
-        this.privateKey = Optional.fromNullable(privateKey);
-        this.clientCtor = impl.getConstructor();
+        this.privateKey = privateKey;
+        this.clientCtor = impl.getConstructor(TProtocol.class);
         this.address = address;
     }
 
@@ -63,7 +58,7 @@ public class GroupMember<T extends org.apache.thrift.TServiceClient> {
 
     public boolean verifySignature(Object message, byte[] signatureToVerify) {
         try {
-            Signature newSig = Signature.getInstance(ALGORITHM, PROVIDER);
+            Signature newSig = Signature.getInstance(CryptoUtil.ALGORITHM, CryptoUtil.PROVIDER);
             newSig.initVerify(publicKey);
             byte[] byteRep = CryptoUtil.convertToJsonByteArray(message);
             newSig.update(byteRep);
