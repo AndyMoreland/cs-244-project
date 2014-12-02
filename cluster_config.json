@@ -1,0 +1,41 @@
+{
+  "primary": 1,
+  "servers": [
+    {
+      "id": 1,
+      "name": "server1",
+      "hostname": "localhost",
+      "port": 9001
+    },
+    {
+      "id": 2,
+      "name": "server2",
+      "hostname": "localhost",
+      "port": 9002
+    },
+    {
+      "id": 3,
+      "name": "server3",
+      "hostname": "localhost",
+      "port": 9003
+    },
+    {
+      "id": 4,
+      "name": "server4",
+      "hostname": "localhost",
+      "port": 9004
+    },
+    {
+      "id": 5,
+      "name": "server5",
+      "hostname": "localhost",
+      "port": 9005
+    },
+    {
+      "id": 6,
+      "name": "server6",
+      "hostname": "localhost",
+      "port": 9006
+    }
+  ]
+}
