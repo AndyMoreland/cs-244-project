@@ -49,4 +49,9 @@ public class HexPoint {
     public boolean isNeighbor(HexPoint other) {
         return HexDirection.lookup(other.subtract(this)) != null;
     }
+
+    @Override
+    public String toString() {
+        return "HexPoint(" + q + ")(" + r + ")";
+    }
 }

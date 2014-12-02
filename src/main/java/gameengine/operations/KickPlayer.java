@@ -1,5 +1,6 @@
 package gameengine.operations;
 
+import PBFT.TChineseCheckersOperation;
 import PBFT.TOperation;
 import gameengine.ChineseCheckersState;
 
@@ -7,6 +8,8 @@ import gameengine.ChineseCheckersState;
  * Created by andrew on 11/30/14.
  */
 public class KickPlayer implements statemachine.Operation<ChineseCheckersState> {
+    private int replicaId;
+
     @Override
     public void apply(ChineseCheckersState state) {
         
@@ -24,6 +27,9 @@ public class KickPlayer implements statemachine.Operation<ChineseCheckersState> 
 
     @Override
     public TOperation serialize() {
-        return null;
+        TOperation tOperation = new TOperation();
+        tOperation.setArguments(new Integer(replicaId).toString());
+        tOperation.setOperationType(TChineseCheckersOperation.KICK_PLAYER.getValue());
+        return tOperation;
     }
 }
