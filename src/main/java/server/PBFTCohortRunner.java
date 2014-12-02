@@ -50,7 +50,7 @@ public class PBFTCohortRunner {
     }
 
     private static void testSystem(Map<Integer, PrivateKey> privateKeyMap, GroupConfigProvider<PBFTCohort.Client> leaderConfigProvider) throws TException {
-        for (int i = 2; i <= 6; i++) {
+        for (int i = 1; i <= 6; i++) {
             int sendingReplicaID = leaderConfigProvider.getLeader().getReplicaID();
             TTransaction transaction = new TTransaction(
                     new Viewstamp(1, 0),

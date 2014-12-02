@@ -15,7 +15,6 @@ public class Transaction<T> {
     private final T value;
     private boolean prepared;
     private boolean committed;
-    private Viewstamp viewStamp;
 
     public Transaction(Viewstamp id, int targetIndex, T value) {
         this.id = id;
@@ -25,9 +24,7 @@ public class Transaction<T> {
     }
 
     public void prepare() { prepared = true; }
-    public void commit() {
-        committed = true;
-    }
+    public void commit() { committed = true; }
 
     public boolean isPrepared() { return prepared; }
     public boolean isCommitted() { return committed; }
@@ -37,8 +34,8 @@ public class Transaction<T> {
     }
 
     public static Transaction<Operation<ChineseCheckersState>> getTransactionForPBFTTransaction(TTransaction transaction) {
-        common.Transaction<statemachine.Operation<ChineseCheckersState>> commonTransaction = new Transaction<Operation<ChineseCheckersState>>(
-                transaction.viewstamp,
+        Transaction<Operation<ChineseCheckersState>> commonTransaction = new Transaction<Operation<ChineseCheckersState>>(
+                transaction.getViewstamp(),
                 transaction.viewstamp.getSequenceNumber(),
                 ChineseCheckersOperationFactory.hydrate(transaction.getOperation()));
 
