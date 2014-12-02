@@ -50,6 +50,8 @@ public class Log<T> {
         writeLock.unlock();
     }
 
+    public int getLastCommited() { return lastCommited; }
+
     @Nullable
     public Transaction<T> getTransaction(Viewstamp viewstamp) {
         Lock readLock = logLock.readLock();
