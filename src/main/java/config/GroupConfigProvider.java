@@ -1,5 +1,7 @@
 package config;
 
+import statemachine.StateMachine;
+
 import java.util.Set;
 
 /**

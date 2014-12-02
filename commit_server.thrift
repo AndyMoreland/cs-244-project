@@ -118,9 +118,8 @@ struct CommitMessage {
 
 struct CheckpointMessage {
     1:i32 sequenceNumber,
-    2:i32 viewId,
-    3:Signature transactionDigest,
-    4:i32 replicaId;
+    2:Signature checkpointDigest,
+    3:i32 replicaId;
 }
 
 struct ViewChangeMessage {
