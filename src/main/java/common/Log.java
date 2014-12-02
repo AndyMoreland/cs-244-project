@@ -4,6 +4,7 @@ import PBFT.CommitMessage;
 import PBFT.PrepareMessage;
 import PBFT.Viewstamp;
 import com.google.common.base.Optional;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.sun.istack.internal.Nullable;
@@ -11,6 +12,7 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
@@ -31,6 +33,15 @@ public class Log<T> {
     Map<MultiKey<Viewstamp, TransactionDigest>, Set<CommitMessage>> commitMessages = Maps.newConcurrentMap();
     ReadWriteLock logLock = new ReentrantReadWriteLock();
     int lastCommited = -1;
+    private List<LogListener<T>> listeners = Lists.newArrayList();
+
+    public Log() {
+
+    }
+
+    public Log(List<LogListener<T>> listeners) {
+        this.listeners = listeners;
+    }
 
     public void addEntry(Transaction<T> value) throws IllegalLogEntryException {
         Lock writeLock = logLock.writeLock();
@@ -92,7 +103,7 @@ public class Log<T> {
         return Optional.of(val);
     }
 
-    public void commitEntry(Viewstamp id) {
+    public void commitEntry(Viewstamp id) throws Exception {
         Lock writeLock = logLock.writeLock();
         writeLock.lock();
 
@@ -107,6 +118,11 @@ public class Log<T> {
 
         if (id.getSequenceNumber() == lastCommited + 1) {
             lastCommited++;
+        }
+
+        for (LogListener<T> listener : listeners) {
+            LOG.info("Notifying listeners");
+            listener.notifyOnCommit(entry);
         }
 
         writeLock.unlock();
@@ -177,5 +193,10 @@ public class Log<T> {
                 ", logLock=" + logLock +
                 ", lastCommited=" + lastCommited +
                 '}';
+    }
+
+    public void addListener(LogListener<T> logListener) {
+        LOG.info("Registered listener: " + logListener);
+        listeners.add(logListener);
     }
 }

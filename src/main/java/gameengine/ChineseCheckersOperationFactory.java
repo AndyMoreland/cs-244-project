@@ -5,6 +5,7 @@ import PBFT.TOperation;
 import gameengine.operations.AddPlayer;
 import gameengine.operations.KickPlayer;
 import gameengine.operations.MovePiece;
+import gameengine.operations.NoOp;
 import statemachine.Operation;
 
 /**
@@ -21,6 +22,8 @@ public class ChineseCheckersOperationFactory {
                 return new KickPlayer();
             case ADD_PLAYER:
                 return new AddPlayer();
+            case NO_OP:
+                return new NoOp();
         }
         return null;
     }

@@ -5,38 +5,40 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.sun.istack.internal.Nullable;
-import common.CryptoUtil;
-import common.IllegalLogEntryException;
-import common.Log;
-import common.Transaction;
-import common.TransactionDigest;
+import common.*;
 import config.GroupConfigProvider;
 import config.GroupMember;
+import gameengine.ChineseCheckersLogListener;
 import gameengine.ChineseCheckersState;
+import gameengine.ChineseCheckersStateMachine;
 import gameengine.operations.NoOp;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
+import statemachine.InvalidStateMachineOperationException;
+import statemachine.Operation;
 
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static PBFT.PBFTCohort.*;
+import static PBFT.PBFTCohort.Iface;
 
 /**
  * Created by andrew on 11/27/14.
  */
 public class PBFTCohortHandler implements Iface {
     private static Logger LOG = LogManager.getLogger(PBFTCohortHandler.class);
-    private final Log<statemachine.Operation<ChineseCheckersState>> log;
+    private final Log<Operation<ChineseCheckersState>> log;
     private GroupConfigProvider<PBFTCohort.Client> configProvider;
     private final GroupMember<PBFTCohort.Client> thisCohort;
     private Map<Integer, List<ViewChangeMessage>> viewChangeMessages; // this should include your own messages
     private int replicaID;
-    private static final int POOL_SIZE = 10;
     private final ExecutorService pool;
+    private final ChineseCheckersStateMachine stateMachine;
+
+    private static final int POOL_SIZE = 10;
     private static final int LAST_CHECKPOINT = 0; // set to 0 for now; no checkpointing
     private static final int MIN_SEQ_NO = 0;
     private static final int MIN_VIEW_ID = 0;
@@ -51,8 +53,13 @@ public class PBFTCohortHandler implements Iface {
         viewChangeMessages = Maps.newHashMap();
         this.replicaID = replicaID;
         pool = Executors.newFixedThreadPool(POOL_SIZE);
-        this.log = new Log<statemachine.Operation<ChineseCheckersState>>();
+        this.log = new Log<Operation<ChineseCheckersState>>();
         this.thisCohort = thisCohort;
+        this.stateMachine = new ChineseCheckersStateMachine(
+                ChineseCheckersState.buildGameForGroupMembers(configProvider.getGroupMembers())
+        );
+
+        this.log.addListener(new ChineseCheckersLogListener(stateMachine));
 
         LOG.info("Starting handler!");
     }
@@ -66,7 +73,7 @@ public class PBFTCohortHandler implements Iface {
         if (transaction.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
         LOG.info("Successfully passed view id validation");
 
-        Transaction<statemachine.Operation<ChineseCheckersState>> logTransaction
+        Transaction<Operation<ChineseCheckersState>> logTransaction
                 = Transaction.getTransactionForPBFTTransaction(transaction);
 
         try {
@@ -161,28 +168,34 @@ public class PBFTCohortHandler implements Iface {
 
     private void commitIfReady(Viewstamp viewstamp, TransactionDigest transactionDigest) throws TException {
         if (!log.readyToCommit(viewstamp, transactionDigest, configProvider.getQuorumSize())) return;
-        log.commitEntry(viewstamp);
+        try {
+            log.commitEntry(viewstamp);
+        } catch (InvalidStateMachineOperationException e) {
 
-        int lastCommited = log.getLastCommited();
-        if (shouldCheckpoint(lastCommited)) {
-            // checkpoint and multicast a proof
-            TransactionDigest digest = null; // CryptoUtil.computeCheckpointDigest(); TODO need access to state machine
-            final CheckpointMessage checkpointMessage = new CheckpointMessage();
-            checkpointMessage.setSequenceNumber(lastCommited);
-            checkpointMessage.setCheckpointDigest(digest.getBytes());
-            checkpointMessage.setReplicaId(replicaID);
-            for (final GroupMember<PBFTCohort.Client> target : configProvider.getOtherGroupMembers())
-                pool.execute(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            target.getThriftConnection().checkpoint(checkpointMessage);
-                        } catch (TException e) {
-                            e.printStackTrace();
+        } catch (Exception e) {
+
+        } finally {
+            int lastCommited = log.getLastCommited();
+            if (shouldCheckpoint(lastCommited)) {
+                // checkpoint and multicast a proof
+                TransactionDigest digest = null; // CryptoUtil.computeCheckpointDigest(); TODO need access to state machine
+                final CheckpointMessage checkpointMessage = new CheckpointMessage();
+                checkpointMessage.setSequenceNumber(lastCommited);
+                checkpointMessage.setCheckpointDigest(digest.getBytes());
+                checkpointMessage.setReplicaId(replicaID);
+                for (final GroupMember<PBFTCohort.Client> target : configProvider.getOtherGroupMembers())
+                    pool.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                target.getThriftConnection().checkpoint(checkpointMessage);
+                            } catch (TException e) {
+                                e.printStackTrace();
+                            }
                         }
-                    }
-                });
-            thisCohort.getThriftConnection().checkpoint(checkpointMessage);
+                    });
+                thisCohort.getThriftConnection().checkpoint(checkpointMessage);
+            }
         }
     }
 
@@ -368,7 +381,7 @@ public class PBFTCohortHandler implements Iface {
                 GroupMember<PBFTCohort.Client> target = getReplicaThatPreparedSeqno(message, viewstamp.getSequenceNumber());
                 Preconditions.checkNotNull(target);
                 TTransaction thriftTransaction = target.getThriftConnection().getTransaction(new AskForTransaction().setReplicaID(replicaID).setViewstamp(viewstamp));
-                common.Transaction<statemachine.Operation<ChineseCheckersState>> logTransaction = common.Transaction.getTransactionForPBFTTransaction(
+                common.Transaction<Operation<ChineseCheckersState>> logTransaction = common.Transaction.getTransactionForPBFTTransaction(
                         thriftTransaction);
                 try {
                     log.addEntry(logTransaction);

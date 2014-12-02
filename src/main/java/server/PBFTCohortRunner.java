@@ -7,6 +7,7 @@ import common.TransactionDigest;
 import config.GroupConfigProvider;
 import org.apache.log4j.*;
 import org.apache.thrift.TException;
+import org.apache.thrift.transport.TTransportException;
 
 import java.nio.ByteBuffer;
 import java.security.KeyPair;
@@ -42,16 +43,12 @@ public class PBFTCohortRunner {
 
         GroupConfigProvider<PBFTCohort.Client> leaderConfigProvider = servers.get(1).getConfigProvider();
 
-        try {
-            for (int i = 1; i < 3; i++) {
-                testSystem(privateKeyMap, leaderConfigProvider, i);
-            }
-        } catch (TException e) {
-            e.printStackTrace();
+        for (int i = 1; i < 3; i++) {
+            testSystem(privateKeyMap, leaderConfigProvider, i);
         }
     }
 
-    private static void testSystem(Map<Integer, PrivateKey> privateKeyMap, GroupConfigProvider<PBFTCohort.Client> leaderConfigProvider, int sequenceNumber) throws TException {
+    private static void testSystem(Map<Integer, PrivateKey> privateKeyMap, GroupConfigProvider<PBFTCohort.Client> leaderConfigProvider, int sequenceNumber) {
         for (int i = 1; i <= 6; i++) {
             int sendingReplicaID = leaderConfigProvider.getLeader().getReplicaID();
             Viewstamp viewstamp = new Viewstamp(sequenceNumber, 0);
@@ -76,8 +73,16 @@ public class PBFTCohortRunner {
 
             message.setMessageSignature(CryptoUtil.computeMessageSignature(message, privateKeyMap.get(sendingReplicaID)).getBytes());
 
-            PBFTCohort.Client secondServer = leaderConfigProvider.getGroupMember(i).getThriftConnection();
-            secondServer.prePrepare(message, transaction);
+            try {
+                PBFTCohort.Client secondServer = leaderConfigProvider.getGroupMember(i).getThriftConnection();
+                secondServer.prePrepare(message, transaction);
+            } catch (TTransportException e) {
+                System.err.println("Failed to send preprepare for server: " + i);
+                e.printStackTrace();
+            } catch (TException e) {
+                System.err.println("Failed to send preprepare for server: " + i);
+                e.printStackTrace();
+            }
         }
     }
 }

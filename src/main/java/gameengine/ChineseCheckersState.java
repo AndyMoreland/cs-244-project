@@ -1,6 +1,11 @@
 package gameengine;
 
+import PBFT.PBFTCohort;
+import com.google.common.collect.Lists;
+import config.GroupMember;
+
 import java.util.List;
+import java.util.Set;
 
 /**
  * Created by andrew on 11/30/14.
@@ -53,5 +58,15 @@ public class ChineseCheckersState {
         do {
             this.currentPlayerIndex = (this.currentPlayerIndex - 1) % this.players.size();
         } while(!this.players.get(this.currentPlayerIndex).isActive());
+    }
+
+    public static ChineseCheckersState buildGameForGroupMembers(Set<GroupMember<PBFTCohort.Client>> groupMembers) {
+        List<Player> players = Lists.newArrayList();
+
+        for (GroupMember member: groupMembers) {
+            players.add(new Player(member.getName(), member.getReplicaID()));
+        }
+
+        return new ChineseCheckersState(players);
     }
 }
