@@ -43,19 +43,21 @@ public class PBFTCohortRunner {
         GroupConfigProvider<PBFTCohort.Client> leaderConfigProvider = servers.get(1).getConfigProvider();
 
         try {
-            testSystem(privateKeyMap, leaderConfigProvider);
+            for (int i = 1; i < 3; i++) {
+                testSystem(privateKeyMap, leaderConfigProvider, i);
+            }
         } catch (TException e) {
             e.printStackTrace();
         }
     }
 
-    private static void testSystem(Map<Integer, PrivateKey> privateKeyMap, GroupConfigProvider<PBFTCohort.Client> leaderConfigProvider) throws TException {
+    private static void testSystem(Map<Integer, PrivateKey> privateKeyMap, GroupConfigProvider<PBFTCohort.Client> leaderConfigProvider, int sequenceNumber) throws TException {
         for (int i = 1; i <= 6; i++) {
             int sendingReplicaID = leaderConfigProvider.getLeader().getReplicaID();
+            Viewstamp viewstamp = new Viewstamp(sequenceNumber, 0);
             TTransaction transaction = new TTransaction(
-                    new Viewstamp(1, 0),
+                    viewstamp,
                     new TOperation(
-                            0,
                             TChineseCheckersOperation.NO_OP.getValue(),
                             "{}",
                             sendingReplicaID
@@ -66,7 +68,7 @@ public class PBFTCohortRunner {
             TransactionDigest transactionDigest = CryptoUtil.computeTransactionDigest(common.Transaction.getTransactionForPBFTTransaction(transaction));
 
             PrePrepareMessage message = new PrePrepareMessage(
-                    new Viewstamp(1, 0),
+                    viewstamp,
                     ByteBuffer.wrap(transactionDigest.getBytes()),
                     sendingReplicaID,
                     ByteBuffer.allocate(0)
