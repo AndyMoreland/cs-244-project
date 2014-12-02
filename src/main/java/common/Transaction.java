@@ -33,9 +33,7 @@ public class Transaction<T> {
         return replicaID;
     }
     public void prepare() { prepared = true; }
-    public void commit() {
-        committed = true;
-    }
+    public void commit() { committed = true; }
 
     public boolean isPrepared() { return prepared; }
     public boolean isCommitted() { return committed; }
@@ -45,8 +43,8 @@ public class Transaction<T> {
     }
 
     public static Transaction<Operation<ChineseCheckersState>> getTransactionForPBFTTransaction(TTransaction transaction) {
-        common.Transaction<statemachine.Operation<ChineseCheckersState>> commonTransaction = new Transaction<Operation<ChineseCheckersState>>(
-                transaction.viewstamp,
+        Transaction<Operation<ChineseCheckersState>> commonTransaction = new Transaction<Operation<ChineseCheckersState>>(
+                transaction.getViewstamp(),
                 transaction.viewstamp.getSequenceNumber(),
                 ChineseCheckersOperationFactory.hydrate(transaction.getOperation()),
                 transaction.getReplicaId());

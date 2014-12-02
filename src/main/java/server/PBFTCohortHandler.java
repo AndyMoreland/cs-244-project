@@ -8,6 +8,7 @@ import com.sun.istack.internal.Nullable;
 import common.CryptoUtil;
 import common.IllegalLogEntryException;
 import common.Log;
+import common.Transaction;
 import common.TransactionDigest;
 import config.GroupConfigProvider;
 import config.GroupMember;
@@ -22,10 +23,12 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static PBFT.PBFTCohort.*;
+
 /**
  * Created by andrew on 11/27/14.
  */
-public class PBFTCohortHandler implements PBFTCohort.Iface {
+public class PBFTCohortHandler implements Iface {
     private static Logger LOG = LogManager.getLogger(PBFTCohortHandler.class);
     private final Log<statemachine.Operation<ChineseCheckersState>> log;
     private GroupConfigProvider<PBFTCohort.Client> configProvider;
@@ -39,6 +42,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     private static final int MIN_VIEW_ID = 0;
     private static final byte[] NO_OP_TRANSACTION_DIGEST = CryptoUtil.computeTransactionDigest(
             new common.Transaction(null, -1, new NoOp(),0)).getBytes();
+
     private static final int CHECKPOINT_INTERVAL = 100;
 
 
@@ -62,8 +66,8 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
         if(transaction.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
         LOG.info("Successfully passed view id validation");
 
-        common.Transaction<statemachine.Operation<ChineseCheckersState>> logTransaction
-                = common.Transaction.getTransactionForPBFTTransaction(transaction);
+        Transaction<statemachine.Operation<ChineseCheckersState>> logTransaction
+                = Transaction.getTransactionForPBFTTransaction(transaction);
 
         try {
             log.addEntry(logTransaction);                                                     // Check sequence number
@@ -107,7 +111,9 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
         LOG.info("Validated signature");
         if(message.getViewstamp().getViewId() != this.configProvider.getViewID()) throw new TException("Failed to validate view number"); // Check we're in view v
         log.addPrepareMessage(message);
+        LOG.info("Checking if we're ready to prepare");
         if(!log.readyToPrepare(message, configProvider.getQuorumSize())) return;
+        LOG.info("Marking as prepared.");
         log.markAsPrepared(message.getViewstamp());
 
         for (final GroupMember<PBFTCohort.Client> member : configProvider.getGroupMembers()) {
@@ -121,6 +127,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
                 @Override
                 public void run() {
                     try {
+                        LOG.info("Sending commit message to: " + member.getReplicaID());
                         member.getThriftConnection().commit(commitMessage);
                     } catch (TException e) {
                         e.printStackTrace();
@@ -142,7 +149,10 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
         if(!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) return;       // Validate signature
         if(message.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
         log.addCommitMessage(message);
+
+        LOG.info("Quorum size: " + configProvider.getQuorumSize());
         if(!log.readyToCommit(message, configProvider.getQuorumSize())) return;
+        LOG.info("Ready to commit!");
         log.commitEntry(message.getViewstamp());
 
         int lastCommited = log.getLastCommited();

@@ -7,6 +7,8 @@ import com.google.common.base.Optional;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.sun.istack.internal.Nullable;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import java.util.Collection;
 import java.util.Map;
@@ -19,6 +21,8 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * Created by andrew on 11/27/14.
  */
 public class Log<T> {
+    Logger LOG = LogManager.getLogger(Log.class);
+
     // {SequenceNumber => { ViewStamp => Transaction }}
     Map<Integer, Map<Viewstamp, Transaction<T>>> tentativeLogEntries = Maps.newHashMap();
     Map<Integer, Transaction<T>> committedLogEntries = Maps.newHashMap();
@@ -32,22 +36,26 @@ public class Log<T> {
         Lock writeLock = logLock.writeLock();
         writeLock.lock();
 
-        int sequenceNumber = value.getViewstamp().getSequenceNumber();
-        if (tentativeLogEntries.containsKey(sequenceNumber)) {
-            Map<Viewstamp, Transaction<T>> sequenceNumberTransactions = tentativeLogEntries.get(value.getViewstamp());
-            if (sequenceNumberTransactions.containsKey(value.getViewstamp()) && sequenceNumberTransactions.get(value.getViewstamp()) != value) {
-                throw new IllegalLogEntryException();
+        try {
+
+            int sequenceNumber = value.getViewstamp().getSequenceNumber();
+            if (tentativeLogEntries.containsKey(sequenceNumber)) {
+                Map<Viewstamp, Transaction<T>> sequenceNumberTransactions = tentativeLogEntries.get(value.getViewstamp());
+                if (sequenceNumberTransactions.containsKey(value.getViewstamp()) && sequenceNumberTransactions.get(value.getViewstamp()) != value) {
+                    throw new IllegalLogEntryException();
+                }
+                tentativeLogEntries.get(sequenceNumber).put(value.getViewstamp(), value);
+            } else {
+                Map<Viewstamp, Transaction<T>> map = Maps.newHashMap();
+                map.put(value.getViewstamp(), value);
+                tentativeLogEntries.put(sequenceNumber, map);
             }
-            tentativeLogEntries.get(sequenceNumber).put(value.getViewstamp(), value);
-        } else {
-            Map<Viewstamp, Transaction<T>> map = Maps.newHashMap();
-            map.put(value.getViewstamp(), value);
-            tentativeLogEntries.put(sequenceNumber, map);
+
+            transactions.put(value.getViewstamp(), value);
+
+        } finally {
+            writeLock.unlock();
         }
-
-        transactions.put(value.getViewstamp(), value);
-
-        writeLock.unlock();
     }
 
     public int getLastCommited() { return lastCommited; }
@@ -94,6 +102,8 @@ public class Log<T> {
         tentativeLogEntries.remove(id.getSequenceNumber());
         committedLogEntries.put(entry.getViewstamp().getSequenceNumber(), entry);
         entry.commit();
+
+        LOG.info("COMMITED ENTRY: " + id.toString());
 
         if (id.getSequenceNumber() == lastCommited + 1) {
             lastCommited++;
@@ -144,12 +154,24 @@ public class Log<T> {
     public boolean readyToCommit(CommitMessage message, int quorumSize) {
         Lock readLock = logLock.readLock();
         readLock.lock();
-        Transaction<T> transaction = transactions.get(message.getViewstamp());
-        if(!transaction.isPrepared() || transaction.isCommitted()) return false; // Not prepared yet or already committed => ignore
+        try {
+            LOG.info("Checking if we're ready to commit!");
+            Transaction<T> transaction = transactions.get(message.getViewstamp());
+            LOG.info("Prepared: " + (transaction != null && transaction.isPrepared()));
+            if (transaction == null || !transaction.isPrepared() || transaction.isCommitted())
+                return false; // Not prepared yet or already committed => ignore
 
-        boolean quorum = commitMessages.get(MultiKey.newKey(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()))).size() >= quorumSize - 1;
-        readLock.unlock();
-        return quorum;
+            MultiKey<Viewstamp, TransactionDigest> key = MultiKey.newKey(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()));
+            int commitMessagesReceived = commitMessages.get(key).size();
+            LOG.info(commitMessagesReceived);
+            boolean quorum = commitMessagesReceived >= quorumSize - 1;
+            for (CommitMessage m : commitMessages.get(key)) {
+                LOG.debug(m.getReplicaId());
+            }
+            return quorum;
+        } finally {
+            readLock.unlock();
+        }
     }
 
     @Override

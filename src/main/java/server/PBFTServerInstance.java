@@ -91,7 +91,7 @@ public class PBFTServerInstance implements Runnable {
     private void simple(PBFTCohort.Processor processor, InetSocketAddress address) {
         try {
             TServerTransport serverTransport = new TServerSocket(address);
-            TServer server = new TThreadPoolServer(new TThreadPoolServer.Args(serverTransport).processor(processor));
+            TServer server = new TThreadPoolServer(new TThreadPoolServer.Args(serverTransport).processor(processor).maxWorkerThreads(1000).minWorkerThreads(100));
 
             server.serve();
         } catch (Exception e) {
