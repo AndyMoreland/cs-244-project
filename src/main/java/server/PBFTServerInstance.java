@@ -34,12 +34,9 @@ public class PBFTServerInstance implements Runnable {
     public static final int INITIAL_VIEW_ID = 0;
     public static final String CONFIG_FILE = "cluster_config.json";
     private static final int REPLICA_ID_ARG_POS = 0;
-    private static final int PORT_ARG_POS = 1;
 
     public PBFTCohortHandler handler;
-
     public PBFTCohort.Processor processor;
-
     private GroupConfigProvider<PBFTCohort.Client> configProvider;
 
     private int replicaID;
@@ -64,7 +61,7 @@ public class PBFTServerInstance implements Runnable {
             configProvider = initializeConfigProvider(new File(CONFIG_FILE));
 
             final GroupMember<PBFTCohort.Client> me = configProvider.getGroupMember(this.replicaID);
-            configProvider.getGroupMembers().remove(me);
+            configProvider.getOtherGroupMembers().remove(me);
 
             configureLogging(me);
 
@@ -114,6 +111,7 @@ public class PBFTServerInstance implements Runnable {
         int leaderId = root.get("primary").getIntValue();
         Iterator<JsonNode> elements = servers.getElements();
 
+        GroupMember<PBFTCohort.Client> me = null;
         while (elements.hasNext()) {
             JsonNode server = elements.next();
 
@@ -122,10 +120,14 @@ public class PBFTServerInstance implements Runnable {
                 leader = client;
             }
 
+            if (client.getReplicaID() == replicaID) {
+                me = client;
+            }
+
             clients.add(client);
         }
 
-        return new StaticGroupConfigProvider<PBFTCohort.Client>(leader, clients, INITIAL_VIEW_ID);
+        return new StaticGroupConfigProvider<PBFTCohort.Client>(leader, me, clients, INITIAL_VIEW_ID);
     }
 
     private GroupMember<PBFTCohort.Client> serverNodeToClient(JsonNode server) throws NoSuchMethodException, UnknownHostException {
