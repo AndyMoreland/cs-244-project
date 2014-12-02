@@ -6,7 +6,7 @@ import gameengine.ChineseCheckersState;
 /**
  * Created by andrew on 11/30/14.
  */
-public class AddPlayer implements ChineseCheckersOperation {
+public class AddPlayer implements statemachine.Operation<ChineseCheckersState> {
     @Override
     public void apply(ChineseCheckersState state) {
         

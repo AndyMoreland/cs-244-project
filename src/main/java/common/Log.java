@@ -151,4 +151,17 @@ public class Log<T> {
         readLock.unlock();
         return quorum;
     }
+
+    @Override
+    public String toString() {
+        return "Log{" +
+                "tentativeLogEntries=" + tentativeLogEntries +
+                ", committedLogEntries=" + committedLogEntries +
+                ", transactions=" + transactions +
+                ", prepareMessages=" + prepareMessages +
+                ", commitMessages=" + commitMessages +
+                ", logLock=" + logLock +
+                ", lastCommited=" + lastCommited +
+                '}';
+    }
 }

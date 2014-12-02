@@ -1,6 +1,9 @@
 package common;
 
 import PBFT.Viewstamp;
+import gameengine.ChineseCheckersOperationFactory;
+import gameengine.ChineseCheckersState;
+import statemachine.Operation;
 
 /**
  * Created by andrew on 11/27/14.
@@ -32,9 +35,12 @@ public class Transaction<T> {
         return id;
     }
 
-    public static common.Transaction getTransactionForPBFTTransaction(PBFT.Transaction transaction) {
-        return null;
+    public static Transaction<Operation<ChineseCheckersState>> getTransactionForPBFTTransaction(PBFT.Transaction transaction) {
+        common.Transaction<statemachine.Operation<ChineseCheckersState>> commonTransaction = new Transaction<Operation<ChineseCheckersState>>(
+                transaction.viewstamp,
+                transaction.viewstamp.getSequenceNumber(),
+                ChineseCheckersOperationFactory.hydrate(transaction.getOperation()));
+
+        return commonTransaction;
     }
-
-
 }

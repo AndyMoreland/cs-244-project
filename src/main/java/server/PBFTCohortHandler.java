@@ -1,15 +1,16 @@
 package server;
 
 import PBFT.*;
-import PBFT.Transaction;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.sun.istack.internal.Nullable;
-import common.*;
+import common.CryptoUtil;
+import common.IllegalLogEntryException;
+import common.Log;
+import common.TransactionDigest;
 import config.GroupConfigProvider;
 import config.GroupMember;
-import gameengine.ChineseCheckersOperationFactory;
 import gameengine.ChineseCheckersState;
 import gameengine.operations.NoOp;
 import org.apache.log4j.LogManager;
@@ -57,7 +58,9 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     public void prePrepare(PrePrepareMessage message, Transaction transaction) throws TException {
         LOG.info("Entering prePrepare");
         if(!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) return;       // Validate signature
+        LOG.info("Validated signature");
         if(transaction.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
+        LOG.info("Successfully passed view id validation");
 
         common.Transaction<statemachine.Operation<ChineseCheckersState>> logTransaction
                 = common.Transaction.getTransactionForPBFTTransaction(transaction);
@@ -68,18 +71,20 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
             e.printStackTrace();
         }
 
+        LOG.info(log);
         multicastPrepare(CryptoUtil.computeTransactionDigest(logTransaction), transaction.viewstamp);
     }
 
-    private void multicastPrepare(TransactionDigest transactionDigest, Viewstamp viewstamp) {
+    private void multicastPrepare(TransactionDigest transactionDigest, Viewstamp viewstamp) throws TException {
         for (final GroupMember<PBFTCohort.Client> member : configProvider.getGroupMembers()) {
             final PrepareMessage prepareMessage = new PrepareMessage();
             prepareMessage.viewstamp = viewstamp;
             prepareMessage.replicaId = thisCohort.getReplicaID();
             prepareMessage.transactionDigest = ByteBuffer.wrap(transactionDigest.getBytes());
             prepareMessage.messageSignature = ByteBuffer.wrap(CryptoUtil.computeMessageSignature(prepareMessage, thisCohort.getPrivateKey()).getBytes());
-        }
 
+            member.getThriftConnection().prepare(prepareMessage);
+        }
     }
 
     private void sendPrepare(final PrepareMessage prepareMessage, final GroupMember<PBFTCohort.Client> target) {
@@ -98,8 +103,9 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     @Override
     public void prepare(PrepareMessage message) throws TException {
         LOG.info("Entering prepare");
-        if(!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) return;       // Validate signature
-        if(message.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
+        if(!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) throw new TException("Failed to validate signature.");       // Validate signature
+        LOG.info("Validated signature");
+        if(message.getViewstamp().getViewId() != this.configProvider.getViewID()) throw new TException("Failed to validate view number"); // Check we're in view v
         log.addPrepareMessage(message);
         if(!log.readyToPrepare(message, configProvider.getQuorumSize())) return;
         log.markAsPrepared(message.getViewstamp());

@@ -1,13 +1,14 @@
 package server;
 
-import PBFT.PBFTCohort;
+import PBFT.*;
 import com.google.common.collect.Maps;
 import common.CryptoUtil;
+import common.TransactionDigest;
 import config.GroupConfigProvider;
 import org.apache.log4j.*;
 import org.apache.thrift.TException;
-import org.apache.thrift.transport.TTransportException;
 
+import java.nio.ByteBuffer;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -27,7 +28,7 @@ public class PBFTCohortRunner {
         Map<Integer, PrivateKey> privateKeyMap = Maps.newHashMap();
         Map<Integer, PBFTServerInstance> servers = Maps.newHashMap();
 
-        for(int i = 1; i <= NUM_SERVERS; i++) {
+        for (int i = 1; i <= NUM_SERVERS; i++) {
             KeyPair keyPair = CryptoUtil.generateNewKeyPair();
             publicKeyMap.put(i, keyPair.getPublic());
             privateKeyMap.put(i, keyPair.getPrivate());
@@ -42,15 +43,39 @@ public class PBFTCohortRunner {
         GroupConfigProvider<PBFTCohort.Client> leaderConfigProvider = servers.get(1).getConfigProvider();
 
         try {
-            System.err.println("Attempting to get leader ocnnection");
-            PBFTCohort.Client leaderConnection = leaderConfigProvider.getLeader().getThriftConnection();
-            System.err.println("Attempting to ping");
-            leaderConnection.ping();
-            System.err.println("Pinged");
-        } catch (TTransportException e) {
-            e.printStackTrace();
+            testSystem(privateKeyMap, leaderConfigProvider);
         } catch (TException e) {
             e.printStackTrace();
+        }
+    }
+
+    private static void testSystem(Map<Integer, PrivateKey> privateKeyMap, GroupConfigProvider<PBFTCohort.Client> leaderConfigProvider) throws TException {
+        for (int i = 2; i <= 6; i++) {
+            int sendingReplicaID = leaderConfigProvider.getLeader().getReplicaID();
+            Transaction transaction = new Transaction(
+                    new Viewstamp(1, 0),
+                    new Operation(
+                            0,
+                            ChineseCheckersOperation.NO_OP.getValue(),
+                            "{}",
+                            sendingReplicaID
+                    ),
+                    sendingReplicaID
+            );
+
+            TransactionDigest transactionDigest = CryptoUtil.computeTransactionDigest(common.Transaction.getTransactionForPBFTTransaction(transaction));
+
+            PrePrepareMessage message = new PrePrepareMessage(
+                    new Viewstamp(1, 0),
+                    ByteBuffer.wrap(transactionDigest.getBytes()),
+                    sendingReplicaID,
+                    ByteBuffer.allocate(0)
+            );
+
+            message.setMessageSignature(CryptoUtil.computeMessageSignature(message, privateKeyMap.get(sendingReplicaID)).getBytes());
+
+            PBFTCohort.Client secondServer = leaderConfigProvider.getGroupMember(i).getThriftConnection();
+            secondServer.prePrepare(message, transaction);
         }
     }
 }

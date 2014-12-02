@@ -6,7 +6,7 @@ import gameengine.*;
 /**
  * Created by andrew on 11/30/14.
  */
-public class MovePiece implements ChineseCheckersOperation {
+public class MovePiece implements statemachine.Operation<ChineseCheckersState> {
 
     private final HexPoint start;
     private final HexPoint end;

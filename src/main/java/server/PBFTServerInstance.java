@@ -15,7 +15,6 @@ import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TServerTransport;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -72,9 +71,6 @@ public class PBFTServerInstance implements Runnable {
             configureLogging(me);
 
             LOG.info("Starting server on port: " + me.getAddress().getPort() + " with address: " + me.getAddress().getHostName());
-            LOG.info(configProvider.toString());
-            LOG.info("Leader id: " + configProvider.getLeader().getReplicaID());
-
 
             handler = new PBFTCohortHandler(configProvider, replicaID, me);
             processor = new PBFTCohort.Processor(handler);
@@ -105,7 +101,7 @@ public class PBFTServerInstance implements Runnable {
         }
     }
 
-    private GroupConfigProvider<PBFTCohort.Client> initializeConfigProvider(File file) throws NoSuchMethodException, IOException, JsonParseException, FileNotFoundException {
+    private GroupConfigProvider<PBFTCohort.Client> initializeConfigProvider(File file) throws NoSuchMethodException, IOException, FileNotFoundException {
         BufferedReader reader = new BufferedReader(new FileReader(file));
         JsonFactory factory = new JsonFactory();
         JsonParser jsonParser = factory.createJsonParser(reader);
