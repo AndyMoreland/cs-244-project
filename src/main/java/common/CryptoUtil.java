@@ -7,6 +7,7 @@ import org.codehaus.jackson.map.ObjectWriter;
 import org.codehaus.jackson.map.ser.FilterProvider;
 import org.codehaus.jackson.map.ser.impl.SimpleBeanPropertyFilter;
 import org.codehaus.jackson.map.ser.impl.SimpleFilterProvider;
+import statemachine.StateMachine;
 
 import java.io.IOException;
 import java.security.*;
@@ -53,7 +54,6 @@ public final class CryptoUtil {
 
         return null;
     }
-
 
     public static byte[] convertToJsonByteArray(Object message) {
         ObjectWriter writer = mapper.writer(FIELD_FILTER);
