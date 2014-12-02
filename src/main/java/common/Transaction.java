@@ -31,4 +31,10 @@ public class Transaction<T> {
     public Viewstamp getViewstamp() {
         return id;
     }
+
+    public static common.Transaction getTransactionForPBFTTransaction(PBFT.Transaction transaction) {
+        return null;
+    }
+
+
 }
