@@ -5,6 +5,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.Sets;
 import config.GroupConfigProvider;
 import config.GroupMember;
+import config.NetworkedGroupMember;
 import config.StaticGroupConfigProvider;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -136,7 +137,7 @@ public class PBFTServerInstance implements Runnable {
 
     private GroupMember<PBFTCohort.Client> serverNodeToClient(JsonNode server) throws NoSuchMethodException, UnknownHostException {
         int id = server.get("id").getIntValue();
-        return new GroupMember<PBFTCohort.Client>(
+        return new NetworkedGroupMember<PBFTCohort.Client>(
                 server.get("name").getTextValue(),
                 id,
                 new InetSocketAddress(server.get("hostname").getTextValue(), server.get("port").getIntValue()),
