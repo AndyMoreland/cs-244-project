@@ -11,7 +11,7 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.MDC;
 import org.apache.thrift.server.TServer;
-import org.apache.thrift.server.TSimpleServer;
+import org.apache.thrift.server.TThreadPoolServer;
 import org.apache.thrift.transport.TServerSocket;
 import org.apache.thrift.transport.TServerTransport;
 import org.codehaus.jackson.JsonFactory;
@@ -98,7 +98,7 @@ public class PBFTServerInstance implements Runnable {
     private void simple(PBFTCohort.Processor processor, InetSocketAddress address) {
         try {
             TServerTransport serverTransport = new TServerSocket(address);
-            TServer server = new TSimpleServer(new TServer.Args(serverTransport).processor(processor));
+            TServer server = new TThreadPoolServer(new TThreadPoolServer.Args(serverTransport).processor(processor));
 
             server.serve();
         } catch (Exception e) {
