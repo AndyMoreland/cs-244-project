@@ -1,5 +1,7 @@
 package config;
 
+import statemachine.StateMachine;
+
 import java.util.Set;
 
 /**
@@ -7,6 +9,7 @@ import java.util.Set;
  */
 public interface GroupConfigProvider<T extends org.apache.thrift.TServiceClient> {
 
+    StateMachine
     void setViewID(int viewID);
     int getViewID();
     int getQuorumSize();
