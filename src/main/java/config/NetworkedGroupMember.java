@@ -16,6 +16,7 @@ import java.security.*;
  * Created by andrew on 11/27/14.
  */
 public class NetworkedGroupMember<T extends org.apache.thrift.TServiceClient> implements GroupMember<T> {
+    public static final int TIMEOUT = 5000;
     private final Constructor<? extends T> clientCtor;
     private InetSocketAddress address;
     private final PublicKey publicKey;
@@ -43,7 +44,7 @@ public class NetworkedGroupMember<T extends org.apache.thrift.TServiceClient> im
 
     @Override
     public T getThriftConnection() throws TTransportException {
-        TSocket transport = new TSocket(address.getHostName(), address.getPort(), 5000);
+        TSocket transport = new TSocket(address.getHostName(), address.getPort(), TIMEOUT);
         transport.open();
 
         TProtocol protocol = new TBinaryProtocol(transport);

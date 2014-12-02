@@ -1,5 +1,7 @@
 package statemachine;
 
+import PBFT.TOperation;
+
 /**
  * Created by andrew on 11/30/14.
  */
@@ -8,5 +10,5 @@ public interface Operation<T> {
     boolean isValid(T state);
     void undo(T state);
 
-    PBFT.Operation serialize();
+    TOperation serialize();
 }

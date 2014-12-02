@@ -8,6 +8,7 @@ import com.sun.istack.internal.Nullable;
 import common.CryptoUtil;
 import common.IllegalLogEntryException;
 import common.Log;
+import common.Transaction;
 import common.TransactionDigest;
 import config.GroupConfigProvider;
 import config.GroupMember;
@@ -22,10 +23,12 @@ import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static PBFT.PBFTCohort.*;
+
 /**
  * Created by andrew on 11/27/14.
  */
-public class PBFTCohortHandler implements PBFTCohort.Iface {
+public class PBFTCohortHandler implements Iface {
     private static Logger LOG = LogManager.getLogger(PBFTCohortHandler.class);
     private final Log<statemachine.Operation<ChineseCheckersState>> log;
     private GroupConfigProvider<PBFTCohort.Client> configProvider;
@@ -38,7 +41,8 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     private static final int MIN_SEQ_NO = 0;
     private static final int MIN_VIEW_ID = 0;
     private static final byte[] NO_OP_TRANSACTION_DIGEST = CryptoUtil.computeTransactionDigest(
-            new common.Transaction(null, -1, new NoOp())).getBytes();
+            new common.Transaction(null, -1, new NoOp(),0)).getBytes();
+
     private static final int CHECKPOINT_INTERVAL = 100;
 
 
@@ -55,13 +59,15 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     }
 
     @Override
-    public void prePrepare(PrePrepareMessage message, Transaction transaction) throws TException {
+    public void prePrepare(PrePrepareMessage message, TTransaction transaction) throws TException {
         LOG.info("Entering prePrepare");
         if(!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) return;       // Validate signature
+        LOG.info("Validated signature");
         if(transaction.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
+        LOG.info("Successfully passed view id validation");
 
-        common.Transaction<statemachine.Operation<ChineseCheckersState>> logTransaction
-                = common.Transaction.getTransactionForPBFTTransaction(transaction);
+        Transaction<statemachine.Operation<ChineseCheckersState>> logTransaction
+                = Transaction.getTransactionForPBFTTransaction(transaction);
 
         try {
             log.addEntry(logTransaction);                                                     // Check sequence number
@@ -69,20 +75,22 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
             e.printStackTrace();
         }
 
+        LOG.info(log);
         multicastPrepare(CryptoUtil.computeTransactionDigest(logTransaction), transaction.viewstamp);
         prepareIfReady(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()));
         commitIfReady(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()));
     }
 
-    private void multicastPrepare(TransactionDigest transactionDigest, Viewstamp viewstamp) {
+    private void multicastPrepare(TransactionDigest transactionDigest, Viewstamp viewstamp) throws TException {
         for (final GroupMember<PBFTCohort.Client> member : configProvider.getGroupMembers()) {
             final PrepareMessage prepareMessage = new PrepareMessage();
             prepareMessage.viewstamp = viewstamp;
             prepareMessage.replicaId = thisCohort.getReplicaID();
             prepareMessage.transactionDigest = ByteBuffer.wrap(transactionDigest.getBytes());
             prepareMessage.messageSignature = ByteBuffer.wrap(CryptoUtil.computeMessageSignature(prepareMessage, thisCohort.getPrivateKey()).getBytes());
-        }
 
+            member.getThriftConnection().prepare(prepareMessage);
+        }
     }
 
     private void sendPrepare(final PrepareMessage prepareMessage, final GroupMember<PBFTCohort.Client> target) {
@@ -101,8 +109,9 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     @Override
     public void prepare(PrepareMessage message) throws TException {
         LOG.info("Entering prepare");
-        if(!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) return;       // Validate signature
-        if(message.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
+        if(!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) throw new TException("Failed to validate signature.");       // Validate signature
+        LOG.info("Validated signature");
+        if(message.getViewstamp().getViewId() != this.configProvider.getViewID()) throw new TException("Failed to validate view number"); // Check we're in view v
         log.addPrepareMessage(message);
         prepareIfReady(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()));
     }
@@ -110,6 +119,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     private void prepareIfReady(Viewstamp viewstamp, TransactionDigest transactionDigest){
         if(!log.readyToPrepare(viewstamp, transactionDigest, configProvider.getQuorumSize())) return;
         log.markAsPrepared(viewstamp);
+
 
         for (final GroupMember<PBFTCohort.Client> member : configProvider.getGroupMembers()) {
             final CommitMessage commitMessage = new CommitMessage();
@@ -122,6 +132,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
                 @Override
                 public void run() {
                     try {
+                        LOG.info("Sending commit message to: " + member.getReplicaID());
                         member.getThriftConnection().commit(commitMessage);
                     } catch (TException e) {
                         e.printStackTrace();
@@ -353,8 +364,9 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
                 // if we don't have this in our log already, we need to ask someone else for it
                 GroupMember<PBFTCohort.Client> target = getReplicaThatPreparedSeqno(message, viewstamp.getSequenceNumber());
                 Preconditions.checkNotNull(target);
+                TTransaction thriftTransaction = target.getThriftConnection().getTransaction(new AskForTransaction().setReplicaID(replicaID).setViewstamp(viewstamp));
                 common.Transaction<statemachine.Operation<ChineseCheckersState>> logTransaction = common.Transaction.getTransactionForPBFTTransaction(
-                        target.getThriftConnection().getTransaction(new AskForTransaction().setReplicaID(replicaID).setViewstamp(viewstamp)));
+                        thriftTransaction);
                 try {
                     log.addEntry(logTransaction);
                 } catch (IllegalLogEntryException e) {
@@ -393,7 +405,7 @@ public class PBFTCohortHandler implements PBFTCohort.Iface {
     }
 
     @Override
-    public Transaction getTransaction(AskForTransaction message) throws TException {
+    public TTransaction getTransaction(AskForTransaction message) throws TException {
         // return log.getTransaction(message.getViewstamp()).toThriftTransaction();
         return null;
     }

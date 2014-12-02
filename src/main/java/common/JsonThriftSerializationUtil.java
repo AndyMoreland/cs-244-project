@@ -1,5 +1,6 @@
 package common;
 
+import PBFT.TOperation;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import java.io.IOException;
@@ -10,9 +11,9 @@ import java.io.IOException;
 public final class JsonThriftSerializationUtil {
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    public static PBFT.Operation deserializeToThriftOperation(String jsonRep) {
+    public static TOperation deserializeToThriftOperation(String jsonRep) {
         try {
-            return mapper.readValue(jsonRep, PBFT.Operation.class);
+            return mapper.readValue(jsonRep, TOperation.class);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -20,7 +21,7 @@ public final class JsonThriftSerializationUtil {
     }
 
 
-    public static String serializeToJsonOperation(PBFT.Operation operation) {
+    public static String serializeToJsonOperation(TOperation operation) {
         try {
             return mapper.writeValueAsString(operation);
         } catch (IOException e) {

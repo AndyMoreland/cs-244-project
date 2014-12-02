@@ -1,13 +1,13 @@
 package gameengine;
 
-import gameengine.operations.ChineseCheckersOperation;
 import statemachine.InvalidStateMachineOperationException;
+import statemachine.Operation;
 import statemachine.StateMachine;
 
 /**
  * Created by andrew on 11/30/14.
  */
-public class ChineseCheckersStateMachine implements StateMachine<ChineseCheckersState, ChineseCheckersOperation> {
+public class ChineseCheckersStateMachine implements StateMachine<ChineseCheckersState, Operation<ChineseCheckersState>> {
 
     private ChineseCheckersState state;
 
@@ -20,7 +20,7 @@ public class ChineseCheckersStateMachine implements StateMachine<ChineseCheckers
     }
 
     @Override
-    public void applyOperation(ChineseCheckersOperation op) throws InvalidStateMachineOperationException {
+    public void applyOperation(Operation<ChineseCheckersState> op) throws InvalidStateMachineOperationException {
         if (!op.isValid(this.getState())) { throw new InvalidStateMachineOperationException(); }
 
         op.apply(this.getState());

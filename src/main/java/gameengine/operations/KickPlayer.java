@@ -1,12 +1,12 @@
 package gameengine.operations;
 
-import PBFT.Operation;
+import PBFT.TOperation;
 import gameengine.ChineseCheckersState;
 
 /**
  * Created by andrew on 11/30/14.
  */
-public class KickPlayer implements ChineseCheckersOperation {
+public class KickPlayer implements statemachine.Operation<ChineseCheckersState> {
     @Override
     public void apply(ChineseCheckersState state) {
         
@@ -23,7 +23,7 @@ public class KickPlayer implements ChineseCheckersOperation {
     }
 
     @Override
-    public Operation serialize() {
+    public TOperation serialize() {
         return null;
     }
 }
