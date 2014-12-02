@@ -4,37 +4,37 @@
     {
       "id": 1,
       "name": "server1",
-      "hostname": "localhost",
+      "hostname": "127.0.0.1",
       "port": 9001
     },
     {
       "id": 2,
       "name": "server2",
-      "hostname": "localhost",
+      "hostname": "127.0.0.1",
       "port": 9002
     },
     {
       "id": 3,
       "name": "server3",
-      "hostname": "localhost",
+      "hostname": "127.0.0.1",
       "port": 9003
     },
     {
       "id": 4,
       "name": "server4",
-      "hostname": "localhost",
+      "hostname": "127.0.0.1",
       "port": 9004
     },
     {
       "id": 5,
       "name": "server5",
-      "hostname": "localhost",
+      "hostname": "127.0.0.1",
       "port": 9005
     },
     {
       "id": 6,
       "name": "server6",
-      "hostname": "localhost",
+      "hostname": "127.0.0.1",
       "port": 9006
     }
   ]

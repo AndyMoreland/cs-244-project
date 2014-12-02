@@ -50,57 +50,53 @@ public class PBFTServerInstance implements Runnable {
     private final String[] args;
     private final PrivateKey privateKey;
     private final Map<Integer, PublicKey> publicKeys;
-    private String name;
-    private int port;
+
     public PBFTServerInstance(String[] args, PrivateKey privateKey, Map<Integer, PublicKey> publicKeys) {
         this.args = args;
         this.privateKey = privateKey;
         this.publicKeys = publicKeys;
     }
 
-    private void configureLogging() {
-        MDC.put("server-name", "[" + this.replicaID + "] " + this.name + ":" + this.port);
+    private void configureLogging(GroupMember<PBFTCohort.Client> me) {
+        MDC.put("server-name", "[" + this.replicaID + "] " + me.getName() + ":" + me.getAddress().getHostName() + "/" + me.getAddress().getPort());
     }
 
     public void run() {
         try {
             replicaID = Integer.parseInt(args[REPLICA_ID_ARG_POS]);
-            port = Integer.parseInt(args[PORT_ARG_POS]);
+            configProvider = initializeConfigProvider(new File(CONFIG_FILE));
 
-            GroupMember<PBFTCohort.Client> me = new GroupMember<PBFTCohort.Client>(
-                    replicaID,
-                    new InetSocketAddress("localhost", port),
-                    PBFTCohort.Client.class,
-                    publicKeys.get(replicaID),
-                    Optional.of(privateKey));
+            final GroupMember<PBFTCohort.Client> me = configProvider.getGroupMember(this.replicaID);
+            configProvider.getGroupMembers().remove(me);
 
-            configProvider = initializeConfigProvider(me, new File(CONFIG_FILE));
-            configureLogging();
+            configureLogging(me);
 
-            LOG.info("Starting server on port: " + port + " with address: " + "localhost");
+            LOG.info("Starting server on port: " + me.getAddress().getPort() + " with address: " + me.getAddress().getHostName());
             LOG.info(configProvider.toString());
-            LOG.info(configProvider.getLeader().getReplicaID());
+            LOG.info("Leader id: " + configProvider.getLeader().getReplicaID());
+
 
             handler = new PBFTCohortHandler(configProvider, replicaID, me);
             processor = new PBFTCohort.Processor(handler);
 
             Runnable simple = new Runnable() {
                 public void run() {
-                    simple(processor, port);
+                    simple(processor, me.getAddress());
                 }
             };
 
             new Thread(simple).start();
 
-            me.getThriftConnection().ping();
+            PBFTCohort.Client thriftConnection = me.getThriftConnection();
+            thriftConnection.getOutputProtocol().getTransport().close();
         } catch (Exception x) {
             x.printStackTrace();
         }
     }
 
-    public void simple(PBFTCohort.Processor processor, int port) {
+    private void simple(PBFTCohort.Processor processor, InetSocketAddress address) {
         try {
-            TServerTransport serverTransport = new TServerSocket(new InetSocketAddress("127.0.0.1", port));
+            TServerTransport serverTransport = new TServerSocket(address);
             TServer server = new TSimpleServer(new TServer.Args(serverTransport).processor(processor));
 
             server.serve();
@@ -109,54 +105,41 @@ public class PBFTServerInstance implements Runnable {
         }
     }
 
-    private GroupConfigProvider<PBFTCohort.Client> initializeConfigProvider(GroupMember<PBFTCohort.Client> me, File file) throws NoSuchMethodException {
-        try {
-            BufferedReader reader = new BufferedReader(new FileReader(file));
-            JsonFactory factory = new JsonFactory();
-            JsonParser jsonParser = factory.createJsonParser(reader);
-            ObjectMapper mapper = new ObjectMapper();
+    private GroupConfigProvider<PBFTCohort.Client> initializeConfigProvider(File file) throws NoSuchMethodException, IOException, JsonParseException, FileNotFoundException {
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+        JsonFactory factory = new JsonFactory();
+        JsonParser jsonParser = factory.createJsonParser(reader);
+        ObjectMapper mapper = new ObjectMapper();
 
-            JsonNode root = mapper.readTree(jsonParser);
-            JsonNode servers = root.get("servers");
+        JsonNode root = mapper.readTree(jsonParser);
+        JsonNode servers = root.get("servers");
 
-            GroupMember<PBFTCohort.Client> leader = null;
-            Set<GroupMember<PBFTCohort.Client>> clients = Sets.newHashSet();
+        GroupMember<PBFTCohort.Client> leader = null;
+        Set<GroupMember<PBFTCohort.Client>> clients = Sets.newHashSet();
 
-            int leaderId = root.get("primary").getIntValue();
-            Iterator<JsonNode> elements = servers.getElements();
+        int leaderId = root.get("primary").getIntValue();
+        Iterator<JsonNode> elements = servers.getElements();
 
-            while (elements.hasNext()) {
-                JsonNode server = elements.next();
+        while (elements.hasNext()) {
+            JsonNode server = elements.next();
 
-                GroupMember<PBFTCohort.Client> client = serverNodeToClient(server);
-                if (client.getReplicaID() == leaderId) {
-                    leader = client;
-                }
-
-                if (client.getReplicaID() != me.getReplicaID()) {
-                    clients.add(client);
-                } else {
-                    this.name = server.get("name").getTextValue();
-                }
+            GroupMember<PBFTCohort.Client> client = serverNodeToClient(server);
+            if (client.getReplicaID() == leaderId) {
+                leader = client;
             }
 
-            return new StaticGroupConfigProvider<PBFTCohort.Client>(leader, clients, INITIAL_VIEW_ID);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        } catch (JsonParseException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+            clients.add(client);
         }
 
-        return null;
+        return new StaticGroupConfigProvider<PBFTCohort.Client>(leader, clients, INITIAL_VIEW_ID);
     }
 
     private GroupMember<PBFTCohort.Client> serverNodeToClient(JsonNode server) throws NoSuchMethodException, UnknownHostException {
         int id = server.get("id").getIntValue();
         return new GroupMember<PBFTCohort.Client>(
+                server.get("name").getTextValue(),
                 id,
-                new InetSocketAddress("127.0.0.1", server.get("port").getIntValue()),
+                new InetSocketAddress(server.get("hostname").getTextValue(), server.get("port").getIntValue()),
                 PBFTCohort.Client.class,
                 publicKeys.get(id),
                 Optional.fromNullable(id == this.replicaID ? this.privateKey : null));

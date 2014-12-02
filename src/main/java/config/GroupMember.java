@@ -21,8 +21,10 @@ public class GroupMember<T extends org.apache.thrift.TServiceClient> {
     private final PublicKey publicKey;
     private final Optional<PrivateKey> privateKey;
     private final int id;
+    private final String name;
     
-    public GroupMember(int id, InetSocketAddress address, Class<? extends T> impl, PublicKey publicKey, Optional<PrivateKey> privateKey) throws NoSuchMethodException {
+    public GroupMember(String name, int id, InetSocketAddress address, Class<? extends T> impl, PublicKey publicKey, Optional<PrivateKey> privateKey) throws NoSuchMethodException {
+        this.name = name;
         this.publicKey = publicKey;
         this.id = id;
         this.privateKey = privateKey;
@@ -76,5 +78,13 @@ public class GroupMember<T extends org.apache.thrift.TServiceClient> {
         }
 
         return true;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public InetSocketAddress getAddress() {
+        return address;
     }
 }
