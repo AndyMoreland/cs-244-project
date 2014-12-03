@@ -1,0 +1,8 @@
+---
+
+- hosts: cornservers
+
+  tasks:
+
+    - name: Start Server
+      action: service: name=pbftcohort start=restarted

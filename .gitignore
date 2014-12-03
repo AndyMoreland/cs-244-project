@@ -34,3 +34,6 @@
 .idea
 *.pdf
 target
+keys
+out
+gen-java/META-INF

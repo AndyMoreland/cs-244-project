@@ -1,0 +1,19 @@
+---
+- hosts: corn
+  vars:
+  - deployRoot: /afs/ir.stanford.edu/users/a/n/andymo/cs244/
+  - localRoot: /home/andrew/cs244/
+  - jarLocation: /out/artifacts/cs244_jar/cs244.jar
+  - clusterConfig: cluster_config.json
+  - keyFolder: /keys/
+  - ansible_user: andymo
+
+  tasks:
+  - name: copy keys
+    synchronize: src={{localRoot}}{{keyFolder}} dest={{deployRoot}}{{keyFolder}}
+
+  - name: copy jar
+    synchronize: src={{localRoot}}{{jarLocation}} dest={{deployRoot}}cs244.jar
+
+  - name: copy cluster config
+    synchronize: src={{localRoot}}{{clusterConfig}} dest={{deployRoot}}{{clusterConfig}}

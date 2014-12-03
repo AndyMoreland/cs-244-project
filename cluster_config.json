@@ -4,38 +4,50 @@
     {
       "id": 1,
       "name": "server1",
-      "hostname": "127.0.0.1",
-      "port": 9001
+      "hostname": "corn01",
+      "port": 9001,
+      "public_key": "keys/server1_public_key",
+      "private_key": "keys/server1_private_key"
     },
     {
       "id": 2,
       "name": "server2",
-      "hostname": "127.0.0.1",
-      "port": 9002
+      "hostname": "corn02",
+      "port": 9002,
+      "public_key": "keys/server2_public_key",
+      "private_key": "keys/server2_private_key"
     },
     {
       "id": 3,
       "name": "server3",
-      "hostname": "127.0.0.1",
-      "port": 9003
+      "hostname": "corn03",
+      "port": 9003,
+      "public_key": "keys/server3_public_key",
+      "private_key": "keys/server3_private_key"
     },
     {
       "id": 4,
       "name": "server4",
-      "hostname": "127.0.0.1",
-      "port": 9004
+      "hostname": "corn04",
+      "port": 9004,
+      "public_key": "keys/server4_public_key",
+      "private_key": "keys/server4_private_key"
     },
     {
       "id": 5,
       "name": "server5",
-      "hostname": "127.0.0.1",
-      "port": 9005
+      "hostname": "corn05",
+      "port": 9005,
+      "public_key": "keys/server5_public_key",
+      "private_key": "keys/server5_private_key"
     },
     {
       "id": 6,
       "name": "server6",
-      "hostname": "127.0.0.1",
-      "port": 9006
+      "hostname": "corn06",
+      "port": 9006,
+      "public_key": "keys/server6_public_key",
+      "private_key": "keys/server6_private_key"
     }
   ]
 }

@@ -1,0 +1,9 @@
+---
+
+- hosts: corn
+  vars:
+    - deploy_root: /home/andrew/cs244/
+
+  tasks:
+    - name: Copy keys
+      action: copy: src={{deploy-root}}keys/ dest=/afs/ir.stanford.edu/users/a/n/andymo/cs244/keys/

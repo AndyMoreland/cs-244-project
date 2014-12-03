@@ -2,14 +2,11 @@ package common;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.ObjectWriter;
 import org.codehaus.jackson.map.ser.FilterProvider;
 import org.codehaus.jackson.map.ser.impl.SimpleBeanPropertyFilter;
 import org.codehaus.jackson.map.ser.impl.SimpleFilterProvider;
-import statemachine.StateMachine;
 
 import java.io.IOException;
 import java.security.*;
@@ -51,13 +48,7 @@ public final class CryptoUtil {
             ObjectWriter writer = mapper.writer();
             MessageDigest digest = MessageDigest.getInstance(DIGEST_TYPE);
             return new TransactionDigest(digest.digest(writer.writeValueAsString(transaction).getBytes()));
-        } catch (JsonMappingException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (JsonGenerationException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
+        } catch (NoSuchAlgorithmException | IOException e) {
             e.printStackTrace();
         }
 
@@ -99,9 +90,7 @@ public final class CryptoUtil {
             generator.initialize(1024, random);
 
             return generator.generateKeyPair();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchProviderException e) {
+        } catch (NoSuchAlgorithmException | NoSuchProviderException e) {
             e.printStackTrace();
         }
 
