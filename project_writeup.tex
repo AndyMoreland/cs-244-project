@@ -69,10 +69,33 @@ In this paper we present Pythia, a distributed multiplayer game engine that is r
 
 \section{Design Overview}
 
-\subsection{Goals}
+\subsection{Protocol for Byzantine Threats}
 
-(1) Low latency
-(2) Semi-byzantine threat model
+Our initial protocol was heavily based on \emph{Practical Byzantine Fault Tolerance}. In our setup, one player is a client and the primary (the “server”); all other players are simultaneously clients and replicas. We assume we have at least 4 players who know each other’s IP addresses, thrift ports, and public keys. (We assume there exists some trusted 3rd party who can provide us with this information.)
+
+\subsubsection{Submititng and Approving a Move}
+
+Client A sends signed move to server (this is the same as the client’s request in PBFT): $<MOVE, move_info, timestamp, clientID, signature>$. Move gets run through PBFT. If the move looks valid, clients should send a multicast COMMIT message indicating this. If not it should multicast an $<ACCUSE, viewno, seqno, digest(move_info), i, signature>$ message to indicate that $move_info$ (which should have the clientID of the client, A, it came from) is invalid. (Not that we can skip the last reply to the client in PBFT since our client is the same as one of the replicas.) A replica that obtains 2f+1 COMMIT messages should commit the move to its log. A replica that does not send an COMMIT message (because it does not think the move is valid) should send a $<MOVE, kick out A, timestamp, clientID, signature>$ as a request to the server and an ACCUSE message in lieu of the COMMIT message (so that other replicas know that it isn’t just not responding). To prevent many replicas from submitting a request to boot A at the same time, a replica should wait a randomized timeout before submitting this request. (We consider it not particularly important to boot cheating clients the instant they cheat, so the lag in booting A this causes is acceptable.) 
+
+Clients should number their moves 1, 2, 3, etc. No honest replica should apply a $M$th move from client A that before it has applied A’s $M-1$ move. 
+
+\subsubsection{Player Join}
+
+New player P sends public key to all players and then sends a $<MOVE, join, ...>$ to the server, which gets run through PBFT. Non-faulty clients should all approve this.
+
+\subsubsection{Player Leave}
+
+If the player P intends to leave, P should send a $<MOVE, leave,...>$ request to the server, which gets run through PBFT. Non-faulty clients should all approve this.
+
+If the server S claims has not heard from P in a while, it may be that (1) P has disconnected and should not longer be considered to be a part of the game or (2) the server is malicious. The server will run the request $<MOVE, kick out P, timestamp serverID, signature>$ through PBFT. In case (1), non-faulty clients will also not have heard from P, so they will vote for P’s removal. (Note that while is possible that network issues have partitioned P from the server but still allow it to contact other clients, thereby preventing the server from kicking out P, we don’t expect this to be the common case). In case (2), clients should vote against removal and remember that they refused a removal request from this server. Clients who voted against should initiate a view change. After the view change, some client that voted against removal of P (do this after a randomized timeout so we don’t get a bunch of these all at once) should issue a $<MOVE, kick out S, ...>$ request. All honest clients that voted against removal of P are expected to vote for this request.
+
+For the purposes of detecting if a player has abruptly disconnected, the clients/server should keep track of who they got a PREPARE (or COMMIT, or ACCUSE) message from even if they no longer need that PREPARE message to consider themselves PREPARED. 
+
+\subsubsection{Malicious Server}
+
+Due to moves needing to be signed by the players proposing them, no malicious server can ‘make up’ moves; it can only fail to send PRE-PREPARES for them or be very slow to send PRE-PREPARES for them. Clients can time how long it takes for moves to be considered committed-local and initiate view changes if the avg time (for example) is considered to be too long. They can also periodically request that they receive a reply (as specified in the original PBFT paper) back from all clients for some requests so they can time how long it takes for the move to be committed everywhere (i.e., they might take the average time of the 2f+1 fastest).  
+
+\subsection{Optimizations}
 
 \section{Implementation}
 
