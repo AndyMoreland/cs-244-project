@@ -21,7 +21,7 @@ public class NoOp implements statemachine.Operation<ChineseCheckersState> {
 
     @Override
     public boolean isValid(ChineseCheckersState state) {
-        return false;
+        return true;
     }
 
     @Override

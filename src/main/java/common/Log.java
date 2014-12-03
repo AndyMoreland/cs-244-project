@@ -10,11 +10,9 @@ import com.google.common.collect.Sets;
 import com.sun.istack.internal.Nullable;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import statemachine.InvalidStateMachineOperationException;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -23,17 +21,23 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * Created by andrew on 11/27/14.
  */
 public class Log<T> {
-    Logger LOG = LogManager.getLogger(Log.class);
+    private Logger LOG = LogManager.getLogger(Log.class);
+
+    private ReadWriteLock logLock = new ReentrantReadWriteLock();
+    private List<LogListener<T>> listeners = Lists.newArrayList();
 
     // {SequenceNumber => { ViewStamp => Transaction }}
-    Map<Integer, Map<Viewstamp, Transaction<T>>> tentativeLogEntries = Maps.newHashMap();
-    Map<Integer, Transaction<T>> committedLogEntries = Maps.newHashMap();
-    Map<Viewstamp, Transaction<T>> transactions = Maps.newConcurrentMap();
-    Map<MultiKey<Viewstamp, TransactionDigest>, Set<PrepareMessage>> prepareMessages = Maps.newConcurrentMap();
-    Map<MultiKey<Viewstamp, TransactionDigest>, Set<CommitMessage>> commitMessages = Maps.newConcurrentMap();
-    ReadWriteLock logLock = new ReentrantReadWriteLock();
-    int lastCommited = -1;
-    private List<LogListener<T>> listeners = Lists.newArrayList();
+    private Map<Integer, Map<Viewstamp, Transaction<T>>> tentativeLogEntries = Maps.newConcurrentMap();
+    private Map<Integer, Transaction<T>> committedLogEntries = Maps.newConcurrentMap();
+
+    private Map<Viewstamp, Transaction<T>> transactions = Maps.newConcurrentMap();
+    private Map<MultiKey<Viewstamp, TransactionDigest>, Set<PrepareMessage>> prepareMessages = Maps.newConcurrentMap();
+
+    private Map<MultiKey<Viewstamp, TransactionDigest>, Set<CommitMessage>> commitMessages = Maps.newConcurrentMap();
+    private int lastCommited = -1;
+
+    private Map<Integer, Transaction<T>> unappliedLogEntries = Maps.newConcurrentMap();
+    private Set<Transaction<T>> failedTransactions = Sets.newHashSet();
 
     public Log() {
 
@@ -51,7 +55,7 @@ public class Log<T> {
 
             int sequenceNumber = value.getViewstamp().getSequenceNumber();
             if (tentativeLogEntries.containsKey(sequenceNumber)) {
-                Map<Viewstamp, Transaction<T>> sequenceNumberTransactions = tentativeLogEntries.get(value.getViewstamp());
+                Map<Viewstamp, Transaction<T>> sequenceNumberTransactions = tentativeLogEntries.get(value.getViewstamp().getSequenceNumber());
                 if (sequenceNumberTransactions.containsKey(value.getViewstamp()) && sequenceNumberTransactions.get(value.getViewstamp()) != value) {
                     throw new IllegalLogEntryException();
                 }
@@ -103,29 +107,52 @@ public class Log<T> {
         return Optional.of(val);
     }
 
-    public void commitEntry(Viewstamp id) throws Exception {
+    public void commitEntry(Viewstamp id) {
         Lock writeLock = logLock.writeLock();
         writeLock.lock();
 
-        assert (tentativeLogEntries.containsKey(id));
+        assert (tentativeLogEntries.containsKey(id.getSequenceNumber()));
 
         Transaction<T> entry = transactions.get(id);
         tentativeLogEntries.remove(id.getSequenceNumber());
         committedLogEntries.put(entry.getViewstamp().getSequenceNumber(), entry);
+        unappliedLogEntries.put(entry.getViewstamp().getSequenceNumber(), entry);
         entry.commit();
 
         LOG.info("COMMITED ENTRY: " + id.toString());
 
         if (id.getSequenceNumber() == lastCommited + 1) {
             lastCommited++;
-        }
-
-        for (LogListener<T> listener : listeners) {
-            LOG.info("Notifying listeners");
-            listener.notifyOnCommit(entry);
+            flushUnappliedEntries();
         }
 
         writeLock.unlock();
+    }
+
+    private void flushUnappliedEntries() {
+        while (unappliedLogEntries.get(lastCommited) != null) {
+            Transaction<T> transaction = unappliedLogEntries.get(lastCommited);
+            boolean failed = false;
+            for (LogListener<T> listener : listeners) {
+                try {
+                    listener.notifyOnCommit(transaction);
+                } catch (InvalidStateMachineOperationException e) {
+                    failed = true;
+                } catch(Exception e) {
+                    LOG.warn("Failed to apply operation.");
+                    e.printStackTrace();
+                }
+            }
+
+            if (failed) {
+                LOG.warn("Invalid state machine operation caught");
+                failedTransactions.add(transaction);
+                /* FIXME: We need to handle this case. */
+            }
+
+            unappliedLogEntries.remove(lastCommited);
+            lastCommited++;
+        }
     }
 
     public void addPrepareMessage(PrepareMessage message) {
