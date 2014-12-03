@@ -120,6 +120,7 @@ public class Log<T> {
         entry.commit();
 
         LOG.info("COMMITED ENTRY: " + id.toString());
+        LOG.info(id.getSequenceNumber() + " " + lastCommited);
 
         if (id.getSequenceNumber() == lastCommited + 1) {
             lastCommited++;

@@ -1,7 +1,5 @@
 package config;
 
-import org.apache.thrift.transport.TTransportException;
-
 import java.net.InetSocketAddress;
 import java.security.PrivateKey;
 
@@ -13,7 +11,8 @@ public interface GroupMember<T extends org.apache.thrift.TServiceClient> {
 
     int getReplicaID();
 
-    T getThriftConnection() throws TTransportException;
+    T getThriftConnection() throws Exception;
+    void returnThriftConnection(T connection);
 
     boolean verifySignature(Object message, byte[] signatureToVerify);
 

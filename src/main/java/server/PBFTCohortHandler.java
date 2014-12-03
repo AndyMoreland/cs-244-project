@@ -15,7 +15,6 @@ import gameengine.operations.NoOp;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
-import statemachine.InvalidStateMachineOperationException;
 import statemachine.Operation;
 
 import java.nio.ByteBuffer;
@@ -96,7 +95,15 @@ public class PBFTCohortHandler implements Iface {
             prepareMessage.transactionDigest = ByteBuffer.wrap(transactionDigest.getBytes());
             prepareMessage.messageSignature = ByteBuffer.wrap(CryptoUtil.computeMessageSignature(prepareMessage, thisCohort.getPrivateKey()).getBytes());
 
-            member.getThriftConnection().prepare(prepareMessage);
+            PBFTCohort.Client thriftConnection = null;
+            try {
+                thriftConnection = member.getThriftConnection();
+                thriftConnection.prepare(prepareMessage);
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                member.returnThriftConnection(thriftConnection);
+            }
         }
     }
 
@@ -104,10 +111,16 @@ public class PBFTCohortHandler implements Iface {
         pool.execute(new Runnable() {
             @Override
             public void run() {
+                PBFTCohort.Client thriftConnection = null;
                 try {
-                    target.getThriftConnection().prepare(prepareMessage);
+                    thriftConnection = target.getThriftConnection();
+                    thriftConnection.prepare(prepareMessage);
                 } catch (TException e) {
                     e.printStackTrace();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    target.returnThriftConnection(thriftConnection);
                 }
             }
         });
@@ -140,11 +153,17 @@ public class PBFTCohortHandler implements Iface {
             pool.execute(new Runnable() {
                 @Override
                 public void run() {
+                    PBFTCohort.Client thriftConnection = null;
                     try {
                         LOG.info("Sending commit message to: " + member.getReplicaID());
-                        member.getThriftConnection().commit(commitMessage);
+                        thriftConnection = member.getThriftConnection();
+                        thriftConnection.commit(commitMessage);
                     } catch (TException e) {
                         e.printStackTrace();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    } finally {
+                        member.returnThriftConnection(thriftConnection);
                     }
                 }
             });
@@ -170,33 +189,40 @@ public class PBFTCohortHandler implements Iface {
         if (!log.readyToCommit(viewstamp, transactionDigest, configProvider.getQuorumSize())) return;
         try {
             log.commitEntry(viewstamp);
-        } catch (InvalidStateMachineOperationException e) {
-
         } catch (Exception e) {
-
+            e.printStackTrace();
         } finally {
             int lastCommited = log.getLastCommited();
             if (shouldCheckpoint(lastCommited)) {
                 // checkpoint and multicast a proof
-                TransactionDigest digest = null; // CryptoUtil.computeCheckpointDigest(); TODO need access to state machine
+                TransactionDigest digest = null; // CryptoUtil.computeCheckpointDigest(); TODO (Susan) need access to state machine
                 final CheckpointMessage checkpointMessage = new CheckpointMessage();
                 checkpointMessage.setSequenceNumber(lastCommited);
                 checkpointMessage.setCheckpointDigest(digest.getBytes());
                 checkpointMessage.setReplicaId(replicaID);
-                for (final GroupMember<PBFTCohort.Client> target : configProvider.getOtherGroupMembers())
-                    pool.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            try {
-                                target.getThriftConnection().checkpoint(checkpointMessage);
-                            } catch (TException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    });
-                thisCohort.getThriftConnection().checkpoint(checkpointMessage);
+
+                for (final GroupMember<PBFTCohort.Client> target : configProvider.getGroupMembers()) {
+                    pool.execute(buildAsyncCheckpointMessage(checkpointMessage, target));
+                }
             }
         }
+    }
+
+    private Runnable buildAsyncCheckpointMessage(final CheckpointMessage checkpointMessage, final GroupMember<PBFTCohort.Client> target) {
+        return new Runnable() {
+            @Override
+            public void run() {
+                PBFTCohort.Client thriftConnection = null;
+                try {
+                    thriftConnection = target.getThriftConnection();
+                    thriftConnection.checkpoint(checkpointMessage);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    target.returnThriftConnection(thriftConnection);
+                }
+            }
+        };
     }
 
     @Override
@@ -307,10 +333,16 @@ public class PBFTCohortHandler implements Iface {
                                 createPrePrepareForCurrentSeqno(newViewID, false, Lists.newArrayList(viewChangeMessages.get(newViewID))));
                         pool.execute(new Runnable() {
                             public void run() {
+                                PBFTCohort.Client thriftConnection = null;
                                 try {
-                                    groupMember.getThriftConnection().approveViewChange(newViewMessage);
+                                    thriftConnection = groupMember.getThriftConnection();
+                                    thriftConnection.approveViewChange(newViewMessage);
                                 } catch (TException e) {
                                     e.printStackTrace();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
+                                } finally {
+                                    groupMember.returnThriftConnection(thriftConnection);
                                 }
                             }
                         });
@@ -380,13 +412,20 @@ public class PBFTCohortHandler implements Iface {
                 // if we don't have this in our log already, we need to ask someone else for it
                 GroupMember<PBFTCohort.Client> target = getReplicaThatPreparedSeqno(message, viewstamp.getSequenceNumber());
                 Preconditions.checkNotNull(target);
-                TTransaction thriftTransaction = target.getThriftConnection().getTransaction(new AskForTransaction().setReplicaID(replicaID).setViewstamp(viewstamp));
-                common.Transaction<Operation<ChineseCheckersState>> logTransaction = common.Transaction.getTransactionForPBFTTransaction(
-                        thriftTransaction);
+
+                PBFTCohort.Client thriftConnection = null;
                 try {
+                    thriftConnection = target.getThriftConnection();
+                    TTransaction thriftTransaction = thriftConnection.getTransaction(new AskForTransaction().setReplicaID(replicaID).setViewstamp(viewstamp));
+                    common.Transaction<Operation<ChineseCheckersState>> logTransaction = common.Transaction.getTransactionForPBFTTransaction(
+                            thriftTransaction);
                     log.addEntry(logTransaction);
                 } catch (IllegalLogEntryException e) {
                     e.printStackTrace();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                } finally {
+                    target.returnThriftConnection(thriftConnection);
                 }
             }
         }

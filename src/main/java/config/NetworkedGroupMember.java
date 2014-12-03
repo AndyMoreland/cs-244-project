@@ -2,13 +2,12 @@ package config;
 
 import com.google.common.base.Optional;
 import common.CryptoUtil;
-import org.apache.thrift.protocol.TBinaryProtocol;
+import common.ThriftConnectionFactory;
+import org.apache.commons.pool2.impl.GenericObjectPool;
+import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.thrift.protocol.TProtocol;
-import org.apache.thrift.transport.TSocket;
-import org.apache.thrift.transport.TTransportException;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.net.InetSocketAddress;
 import java.security.*;
 
@@ -23,6 +22,7 @@ public class NetworkedGroupMember<T extends org.apache.thrift.TServiceClient> im
     private final Optional<PrivateKey> privateKey;
     private final int id;
     private final String name;
+    private final GenericObjectPool<T> clientPool;
     
     public NetworkedGroupMember(String name, int id, InetSocketAddress address, Class<? extends T> impl, PublicKey publicKey, Optional<PrivateKey> privateKey) throws NoSuchMethodException {
         this.name = name;
@@ -31,6 +31,15 @@ public class NetworkedGroupMember<T extends org.apache.thrift.TServiceClient> im
         this.privateKey = privateKey;
         this.clientCtor = impl.getConstructor(TProtocol.class);
         this.address = address;
+
+        GenericObjectPoolConfig genericObjectPoolConfig = new GenericObjectPoolConfig();
+        genericObjectPoolConfig.setBlockWhenExhausted(true);
+        genericObjectPoolConfig.setMinIdle(10);
+        genericObjectPoolConfig.setMaxIdle(20);
+        genericObjectPoolConfig.setBlockWhenExhausted(true);
+
+        this.clientPool = new GenericObjectPool<T>(new ThriftConnectionFactory<T>(getAddress(), TIMEOUT, clientCtor));
+        clientPool.setConfig(genericObjectPoolConfig);
     }
 
     @Override
@@ -43,23 +52,13 @@ public class NetworkedGroupMember<T extends org.apache.thrift.TServiceClient> im
     }
 
     @Override
-    public T getThriftConnection() throws TTransportException {
-        TSocket transport = new TSocket(address.getHostName(), address.getPort(), TIMEOUT);
-        transport.open();
+    public T getThriftConnection() throws Exception {
+        return clientPool.borrowObject();
+    }
 
-        TProtocol protocol = new TBinaryProtocol(transport);
-        T client = null;
-        try {
-            client = clientCtor.newInstance(protocol);
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
-            e.printStackTrace();
-        }
-
-        return client;
+    @Override
+    public void returnThriftConnection(T connection) {
+        clientPool.returnObject(connection);
     }
 
     @Override

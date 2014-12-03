@@ -77,9 +77,6 @@ public class PBFTServerInstance implements Runnable {
             };
 
             new Thread(simple).start();
-
-            PBFTCohort.Client thriftConnection = me.getThriftConnection();
-            thriftConnection.getOutputProtocol().getTransport().close();
         } catch (Exception x) {
             x.printStackTrace();
         }

@@ -5,6 +5,7 @@ import com.google.common.collect.Maps;
 import common.CryptoUtil;
 import common.TransactionDigest;
 import config.GroupConfigProvider;
+import config.GroupMember;
 import org.apache.log4j.*;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
@@ -73,8 +74,12 @@ public class PBFTCohortRunner {
 
             message.setMessageSignature(CryptoUtil.computeMessageSignature(message, privateKeyMap.get(sendingReplicaID)).getBytes());
 
+            GroupMember<PBFTCohort.Client> groupMember = null;
+            PBFTCohort.Client secondServer = null;
+
             try {
-                PBFTCohort.Client secondServer = leaderConfigProvider.getGroupMember(i).getThriftConnection();
+                groupMember = leaderConfigProvider.getGroupMember(i);
+                secondServer = groupMember.getThriftConnection();
                 secondServer.prePrepare(message, transaction);
             } catch (TTransportException e) {
                 System.err.println("Failed to send preprepare for server: " + i);
@@ -82,6 +87,10 @@ public class PBFTCohortRunner {
             } catch (TException e) {
                 System.err.println("Failed to send preprepare for server: " + i);
                 e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                groupMember.returnThriftConnection(secondServer);
             }
         }
     }
