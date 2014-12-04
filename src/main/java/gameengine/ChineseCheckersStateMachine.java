@@ -19,7 +19,7 @@ public class ChineseCheckersStateMachine implements StateMachine<ChineseCheckers
     }
 
     @Override
-    public void applyOperation(Operation<ChineseCheckersState> op) throws InvalidStateMachineOperationException {
+    synchronized public void applyOperation(Operation<ChineseCheckersState> op) throws InvalidStateMachineOperationException {
         LOG.info("Applying operation: " + op);
 
         if (!op.isValid(this.getState())) { throw new InvalidStateMachineOperationException(); }
@@ -27,11 +27,11 @@ public class ChineseCheckersStateMachine implements StateMachine<ChineseCheckers
         op.apply(this.getState());
     }
 
-    public ChineseCheckersState getState() {
+    synchronized public ChineseCheckersState getState() {
         return state;
     }
 
-    public void setState(ChineseCheckersState newState) {
+    synchronized public void setState(ChineseCheckersState newState) {
         state = newState;
     }
 }

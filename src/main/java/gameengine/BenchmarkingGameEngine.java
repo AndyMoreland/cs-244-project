@@ -1,11 +1,10 @@
 package gameengine;
 
-import com.google.common.collect.Maps;
 import common.Transaction;
 import config.GroupConfigProvider;
+import gameengine.operations.NoOp;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
-import server.PBFTServerInstance;
 import statemachine.InvalidStateMachineOperationException;
 import statemachine.Operation;
 
@@ -17,11 +16,9 @@ public class BenchmarkingGameEngine extends ChineseCheckersGameEngine {
 
     private long startTime;
     private static Logger LOG = LogManager.getLogger(BenchmarkingGameEngine.class);
-    private PBFTServerInstance serverInstance;
 
-    public BenchmarkingGameEngine(GroupConfigProvider configProvider, PBFTServerInstance serverInstance) {
+    public BenchmarkingGameEngine(GroupConfigProvider configProvider) {
         super(configProvider);
-        this.serverInstance = serverInstance;
     }
 
     // runner should call this
@@ -35,7 +32,16 @@ public class BenchmarkingGameEngine extends ChineseCheckersGameEngine {
     @Override
     public void notifyOnCommit(Transaction<Operation<ChineseCheckersState>> transaction) throws InvalidStateMachineOperationException {
         super.notifyOnCommit(transaction);
-        LOG.error("Time spent on last move: " + (System.currentTimeMillis() - startTime));
-        serverInstance.notifyOnNextTurn();
+        LOG.warn("Committed message on server: " + configProvider.getMe().getName());
+        LOG.warn("The transaction's replica ID is: " + transaction.getReplicaId());
+
+        if (transaction.getReplicaId() == configProvider.getMe().getReplicaID()) {
+            LOG.error("Time spent on last move: " + (System.currentTimeMillis() - startTime));
+        }
+
+        if ((transaction.getReplicaId() % configProvider.getGroupMembers().size()) + 1 == configProvider.getMe().getReplicaID()) {
+            requestCommit(new NoOp());
+        }
     }
 }
+

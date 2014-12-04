@@ -42,7 +42,7 @@ public class PBFTCohortHandler implements Iface {
             new common.Transaction(null, -1, new NoOp(), 0)).getBytes();
 
     private static final int CHECKPOINT_INTERVAL = 100;
-    private int sequenceNumber = 0;
+    private int sequenceNumber = -1;
 
 
     public PBFTCohortHandler(GroupConfigProvider<PBFTCohort.Client> configProvider, int replicaID, GroupMember<PBFTCohort.Client> thisCohort, LogListener toNotify) {
@@ -71,11 +71,11 @@ public class PBFTCohortHandler implements Iface {
         transaction.replicaId = message.getReplicaId();
         transaction.operation = message.operation;
 
-        LOG.debug("Attempting to transmit with sequence number: " + (sequenceNumber + 1));
+        LOG.info("Attempting to transmit with sequence number: " + (sequenceNumber + 1));
 
         sequenceNumber++;
 
-        for (final GroupMember<PBFTCohort.Client> member : configProvider.getOtherGroupMembers()) {
+        for (final GroupMember<PBFTCohort.Client> member : configProvider.getGroupMembers()) {
             final PrePrepareMessage prePrepareMessage = new PrePrepareMessage();
             prePrepareMessage.viewstamp = transaction.getViewstamp();
             prePrepareMessage.replicaId = thisCohort.getReplicaID();
@@ -98,23 +98,21 @@ public class PBFTCohortHandler implements Iface {
 
     @Override
     public void prePrepare(PrePrepareMessage message, ClientMessage clientMessage, TTransaction transaction) throws TException {
-        LOG.info("Entering prePrepare");
-        if (this.configProvider.getLeader().getReplicaID() != message.getReplicaId()) return;
-        if (!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature()))
-            return;       // Validate signature
-        LOG.info("Validated leader signature");
-        if(!this.configProvider.getGroupMember(clientMessage.getReplicaId()).verifySignature(clientMessage, clientMessage.getMessageSignature()))
-            return;
-        LOG.info("Validated client (sender) signature");
+        LOG.trace("Entering prePrepare");
+        if (this.configProvider.getLeader().getReplicaID() != message.getReplicaId()) throw new TException("Replica ID check failed");
+        if (!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) throw new TException("Preprepare message signature validation failed");       // Validate signature
+        LOG.trace("Validated leader signature");
+        if(!this.configProvider.getGroupMember(clientMessage.getReplicaId()).verifySignature(clientMessage, clientMessage.getMessageSignature())) throw new TException("Client message signature validation failed");
+        LOG.trace("Validated client (sender) signature");
 
-        if (transaction.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
-        LOG.info("Successfully passed view id validation");
+        if (transaction.getViewstamp().getViewId() != this.configProvider.getViewID()) throw new TException("View id validation failed"); // Check we're in view v
+        LOG.trace("Successfully passed view id validation");
 
         Transaction<Operation<ChineseCheckersState>> logTransaction
                 = Transaction.getTransactionForPBFTTransaction(transaction);
 
-        if(!transaction.getOperation().equals(clientMessage.getOperation())) return;
-        LOG.info("Leader is telling the truth about client's intentions");
+        if(!transaction.getOperation().equals(clientMessage.getOperation())) throw new TException("Leader is not telling the truth about the client's intentions");
+        LOG.trace("Leader is telling the truth about client's intentions");
 
         try {
             log.addEntry(logTransaction);                                                     // Check sequence number
@@ -122,14 +120,13 @@ public class PBFTCohortHandler implements Iface {
             e.printStackTrace();
         }
 
-        LOG.info(log);
         multicastPrepare(CryptoUtil.computeTransactionDigest(logTransaction), transaction.viewstamp);
         prepareIfReady(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()));
         commitIfReady(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()));
     }
 
     private void multicastPrepare(TransactionDigest transactionDigest, Viewstamp viewstamp) throws TException {
-        for (final GroupMember<PBFTCohort.Client> member : configProvider.getOtherGroupMembers()) {
+        for (final GroupMember<PBFTCohort.Client> member : configProvider.getGroupMembers()) {
             final PrepareMessage prepareMessage = new PrepareMessage();
             prepareMessage.viewstamp = viewstamp;
             prepareMessage.replicaId = thisCohort.getReplicaID();
@@ -169,10 +166,10 @@ public class PBFTCohortHandler implements Iface {
 
     @Override
     public void prepare(PrepareMessage message) throws TException {
-        LOG.info("Entering prepare");
+        LOG.trace("Entering prepare");
         if (!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature()))
             throw new TException("Failed to validate signature.");       // Validate signature
-        LOG.info("Validated signature");
+        LOG.trace("Validated signature");
         if (message.getViewstamp().getViewId() != this.configProvider.getViewID())
             throw new TException("Failed to validate view number"); // Check we're in view v
         log.addPrepareMessage(message);
@@ -184,7 +181,7 @@ public class PBFTCohortHandler implements Iface {
         log.markAsPrepared(viewstamp);
 
 
-        for (final GroupMember<PBFTCohort.Client> member : configProvider.getOtherGroupMembers()) {
+        for (final GroupMember<PBFTCohort.Client> member : configProvider.getGroupMembers()) {
             final CommitMessage commitMessage = new CommitMessage();
             commitMessage.viewstamp = viewstamp;
             commitMessage.replicaId = thisCohort.getReplicaID();
@@ -196,7 +193,7 @@ public class PBFTCohortHandler implements Iface {
                 public void run() {
                     PBFTCohort.Client thriftConnection = null;
                     try {
-                        LOG.info("Sending commit message to: " + member.getReplicaID());
+                        LOG.trace("Sending commit message to: " + member.getReplicaID());
                         thriftConnection = member.getThriftConnection();
                         thriftConnection.commit(commitMessage);
                     } catch (TException e) {
@@ -212,15 +209,14 @@ public class PBFTCohortHandler implements Iface {
     }
 
     private boolean shouldCheckpoint(int lastCommitted) {
-        return (lastCommitted % CHECKPOINT_INTERVAL == 0);
+        return false && (lastCommitted % CHECKPOINT_INTERVAL == 0); // TODO (Susan) UN-KILL THIS
     }
 
     @Override
     public void commit(CommitMessage message) throws TException {
-        LOG.info("Entering commit");
+        LOG.trace("Entering commit");
 
-        if (!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature()))
-            return;       // Validate signature
+        if (!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) return;       // Validate signature
         if (message.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
         log.addCommitMessage(message);
         commitIfReady(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()));
@@ -268,7 +264,7 @@ public class PBFTCohortHandler implements Iface {
 
     @Override
     public void checkpoint(CheckpointMessage message) throws TException {
-        LOG.info("Entering checkpoint");
+        LOG.trace("Entering checkpoint");
 
     }
 
