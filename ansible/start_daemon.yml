@@ -1,0 +1,27 @@
+---
+- hosts: cornservers
+  vars:
+  - deployRoot: /afs/ir.stanford.edu/users/a/n/andymo/cs244/
+  - jar: cs244.jar
+  - mainClass: server.PBFTServerInstanceRunner
+  - serverId: "{{ansible_hostname | regex_replace('corn0','')}}"
+  - templatePath: /home/andrew/cs244/ansible/templates/initdscrpt
+  - service_name: "server{{serverId}}"
+  - daemon: /usr/bin/java
+  - daemon_opts: "-cp {{deployRoot}}cs244.jar server/PBFTServerInstanceRunner {{deployRoot}}/keys/server{{serverId}}_private_key {{deployRoot}}cluster_config.json {{serverId}} {{deployRoot}}{{ansible_hostname}}"
+  - pidfile: "server{{serverId}}.pid"
+  - execution_root: "{{deployRoot}}"
+
+  tasks:
+  - name: copy initd script
+    template: src={{templatePath}} dest={{deployRoot}}daemonScript{{serverId}} mode=777
+
+  - name: stop instance servers
+    shell: "{{deployRoot}}daemonScript{{serverId}} stop"
+    args:
+      chdir: "{{deployRoot}}"
+
+  - name: start instance servers
+    shell: "{{deployRoot}}daemonScript{{serverId}} start"
+    args:
+      chdir: "{{deployRoot}}"

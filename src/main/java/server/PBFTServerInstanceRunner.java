@@ -4,6 +4,7 @@ import com.google.common.collect.Maps;
 import common.CryptoUtil;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.ConsoleAppender;
+import org.apache.log4j.FileAppender;
 import org.apache.log4j.PatternLayout;
 import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonNode;
@@ -30,11 +31,17 @@ public class PBFTServerInstanceRunner {
     private static final ObjectMapper mapper = new ObjectMapper();
     private static final int CONFIG_SERVER_ARG_POS = 1;
     private static final int CONFIG_SERVER_ID_POS = 2;
+    private static final int LOG_FILE_POS = 3;
 
-    public static void main(String args[]) {
-        BasicConfigurator.configure(new ConsoleAppender(new PatternLayout("{ %X{server-name} } " + PatternLayout.TTCC_CONVERSION_PATTERN)));
+    public static void main(String args[]) throws IOException {
+        if (args.length == 3) {
+            BasicConfigurator.configure(new ConsoleAppender(new PatternLayout("{ %X{server-name} } " + PatternLayout.TTCC_CONVERSION_PATTERN)));
+        } else if (args.length == 4) {
+            BasicConfigurator.configure(new FileAppender(new PatternLayout("{ %X{server-name} } " + PatternLayout.TTCC_CONVERSION_PATTERN), args[LOG_FILE_POS]));
+        }
 
         PBFTServerInstance instance = null;
+
         try {
             Map<Integer, File> publicKeyMap = readServerConfigForPublicKeys(new File(args[CONFIG_SERVER_ARG_POS]));
             instance = new PBFTServerInstance(
