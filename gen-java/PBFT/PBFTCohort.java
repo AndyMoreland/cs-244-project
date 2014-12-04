@@ -40,7 +40,9 @@ public class PBFTCohort {
    */
   public interface Iface {
 
-    public void prePrepare(PrePrepareMessage message, TTransaction transaction) throws org.apache.thrift.TException;
+    public void clientMessage(ClientMessage message) throws org.apache.thrift.TException;
+
+    public void prePrepare(PrePrepareMessage message, ClientMessage clientMessage, TTransaction transaction) throws org.apache.thrift.TException;
 
     public void prepare(PrepareMessage message) throws org.apache.thrift.TException;
 
@@ -62,7 +64,9 @@ public class PBFTCohort {
 
   public interface AsyncIface {
 
-    public void prePrepare(PrePrepareMessage message, TTransaction transaction, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException;
+    public void clientMessage(ClientMessage message, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException;
+
+    public void prePrepare(PrePrepareMessage message, ClientMessage clientMessage, TTransaction transaction, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException;
 
     public void prepare(PrepareMessage message, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException;
 
@@ -102,16 +106,37 @@ public class PBFTCohort {
       super(iprot, oprot);
     }
 
-    public void prePrepare(PrePrepareMessage message, TTransaction transaction) throws org.apache.thrift.TException
+    public void clientMessage(ClientMessage message) throws org.apache.thrift.TException
     {
-      send_prePrepare(message, transaction);
+      send_clientMessage(message);
+      recv_clientMessage();
+    }
+
+    public void send_clientMessage(ClientMessage message) throws org.apache.thrift.TException
+    {
+      clientMessage_args args = new clientMessage_args();
+      args.setMessage(message);
+      sendBase("clientMessage", args);
+    }
+
+    public void recv_clientMessage() throws org.apache.thrift.TException
+    {
+      clientMessage_result result = new clientMessage_result();
+      receiveBase(result, "clientMessage");
+      return;
+    }
+
+    public void prePrepare(PrePrepareMessage message, ClientMessage clientMessage, TTransaction transaction) throws org.apache.thrift.TException
+    {
+      send_prePrepare(message, clientMessage, transaction);
       recv_prePrepare();
     }
 
-    public void send_prePrepare(PrePrepareMessage message, TTransaction transaction) throws org.apache.thrift.TException
+    public void send_prePrepare(PrePrepareMessage message, ClientMessage clientMessage, TTransaction transaction) throws org.apache.thrift.TException
     {
       prePrepare_args args = new prePrepare_args();
       args.setMessage(message);
+      args.setClientMessage(clientMessage);
       args.setTransaction(transaction);
       sendBase("prePrepare", args);
     }
@@ -302,19 +327,53 @@ public class PBFTCohort {
       super(protocolFactory, clientManager, transport);
     }
 
-    public void prePrepare(PrePrepareMessage message, TTransaction transaction, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException {
+    public void clientMessage(ClientMessage message, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException {
       checkReady();
-      prePrepare_call method_call = new prePrepare_call(message, transaction, resultHandler, this, ___protocolFactory, ___transport);
+      clientMessage_call method_call = new clientMessage_call(message, resultHandler, this, ___protocolFactory, ___transport);
+      this.___currentMethod = method_call;
+      ___manager.call(method_call);
+    }
+
+    public static class clientMessage_call extends org.apache.thrift.async.TAsyncMethodCall {
+      private ClientMessage message;
+      public clientMessage_call(ClientMessage message, org.apache.thrift.async.AsyncMethodCallback resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+        super(client, protocolFactory, transport, resultHandler, false);
+        this.message = message;
+      }
+
+      public void write_args(org.apache.thrift.protocol.TProtocol prot) throws org.apache.thrift.TException {
+        prot.writeMessageBegin(new org.apache.thrift.protocol.TMessage("clientMessage", org.apache.thrift.protocol.TMessageType.CALL, 0));
+        clientMessage_args args = new clientMessage_args();
+        args.setMessage(message);
+        args.write(prot);
+        prot.writeMessageEnd();
+      }
+
+      public void getResult() throws org.apache.thrift.TException {
+        if (getState() != org.apache.thrift.async.TAsyncMethodCall.State.RESPONSE_READ) {
+          throw new IllegalStateException("Method call not finished!");
+        }
+        org.apache.thrift.transport.TMemoryInputTransport memoryTransport = new org.apache.thrift.transport.TMemoryInputTransport(getFrameBuffer().array());
+        org.apache.thrift.protocol.TProtocol prot = client.getProtocolFactory().getProtocol(memoryTransport);
+        (new Client(prot)).recv_clientMessage();
+      }
+    }
+
+    public void prePrepare(PrePrepareMessage message, ClientMessage clientMessage, TTransaction transaction, org.apache.thrift.async.AsyncMethodCallback resultHandler) throws org.apache.thrift.TException {
+      checkReady();
+      prePrepare_call method_call = new prePrepare_call(message, clientMessage, transaction, resultHandler, this, ___protocolFactory, ___transport);
       this.___currentMethod = method_call;
       ___manager.call(method_call);
     }
 
     public static class prePrepare_call extends org.apache.thrift.async.TAsyncMethodCall {
       private PrePrepareMessage message;
+      private ClientMessage clientMessage;
       private TTransaction transaction;
-      public prePrepare_call(PrePrepareMessage message, TTransaction transaction, org.apache.thrift.async.AsyncMethodCallback resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+      public prePrepare_call(PrePrepareMessage message, ClientMessage clientMessage, TTransaction transaction, org.apache.thrift.async.AsyncMethodCallback resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
         super(client, protocolFactory, transport, resultHandler, false);
         this.message = message;
+        this.clientMessage = clientMessage;
         this.transaction = transaction;
       }
 
@@ -322,6 +381,7 @@ public class PBFTCohort {
         prot.writeMessageBegin(new org.apache.thrift.protocol.TMessage("prePrepare", org.apache.thrift.protocol.TMessageType.CALL, 0));
         prePrepare_args args = new prePrepare_args();
         args.setMessage(message);
+        args.setClientMessage(clientMessage);
         args.setTransaction(transaction);
         args.write(prot);
         prot.writeMessageEnd();
@@ -600,6 +660,7 @@ public class PBFTCohort {
     }
 
     private static <I extends Iface> Map<String,  org.apache.thrift.ProcessFunction<I, ? extends  org.apache.thrift.TBase>> getProcessMap(Map<String,  org.apache.thrift.ProcessFunction<I, ? extends  org.apache.thrift.TBase>> processMap) {
+      processMap.put("clientMessage", new clientMessage());
       processMap.put("prePrepare", new prePrepare());
       processMap.put("prepare", new prepare());
       processMap.put("commit", new commit());
@@ -610,6 +671,26 @@ public class PBFTCohort {
       processMap.put("getTransaction", new getTransaction());
       processMap.put("ping", new ping());
       return processMap;
+    }
+
+    public static class clientMessage<I extends Iface> extends org.apache.thrift.ProcessFunction<I, clientMessage_args> {
+      public clientMessage() {
+        super("clientMessage");
+      }
+
+      public clientMessage_args getEmptyArgsInstance() {
+        return new clientMessage_args();
+      }
+
+      protected boolean isOneway() {
+        return false;
+      }
+
+      public clientMessage_result getResult(I iface, clientMessage_args args) throws org.apache.thrift.TException {
+        clientMessage_result result = new clientMessage_result();
+        iface.clientMessage(args.message);
+        return result;
+      }
     }
 
     public static class prePrepare<I extends Iface> extends org.apache.thrift.ProcessFunction<I, prePrepare_args> {
@@ -627,7 +708,7 @@ public class PBFTCohort {
 
       public prePrepare_result getResult(I iface, prePrepare_args args) throws org.apache.thrift.TException {
         prePrepare_result result = new prePrepare_result();
-        iface.prePrepare(args.message, args.transaction);
+        iface.prePrepare(args.message, args.clientMessage, args.transaction);
         return result;
       }
     }
@@ -805,6 +886,7 @@ public class PBFTCohort {
     }
 
     private static <I extends AsyncIface> Map<String,  org.apache.thrift.AsyncProcessFunction<I, ? extends  org.apache.thrift.TBase,?>> getProcessMap(Map<String,  org.apache.thrift.AsyncProcessFunction<I, ? extends  org.apache.thrift.TBase, ?>> processMap) {
+      processMap.put("clientMessage", new clientMessage());
       processMap.put("prePrepare", new prePrepare());
       processMap.put("prepare", new prepare());
       processMap.put("commit", new commit());
@@ -815,6 +897,56 @@ public class PBFTCohort {
       processMap.put("getTransaction", new getTransaction());
       processMap.put("ping", new ping());
       return processMap;
+    }
+
+    public static class clientMessage<I extends AsyncIface> extends org.apache.thrift.AsyncProcessFunction<I, clientMessage_args, Void> {
+      public clientMessage() {
+        super("clientMessage");
+      }
+
+      public clientMessage_args getEmptyArgsInstance() {
+        return new clientMessage_args();
+      }
+
+      public AsyncMethodCallback<Void> getResultHandler(final AsyncFrameBuffer fb, final int seqid) {
+        final org.apache.thrift.AsyncProcessFunction fcall = this;
+        return new AsyncMethodCallback<Void>() { 
+          public void onComplete(Void o) {
+            clientMessage_result result = new clientMessage_result();
+            try {
+              fcall.sendResponse(fb,result, org.apache.thrift.protocol.TMessageType.REPLY,seqid);
+              return;
+            } catch (Exception e) {
+              LOGGER.error("Exception writing to internal frame buffer", e);
+            }
+            fb.close();
+          }
+          public void onError(Exception e) {
+            byte msgType = org.apache.thrift.protocol.TMessageType.REPLY;
+            org.apache.thrift.TBase msg;
+            clientMessage_result result = new clientMessage_result();
+            {
+              msgType = org.apache.thrift.protocol.TMessageType.EXCEPTION;
+              msg = (org.apache.thrift.TBase)new org.apache.thrift.TApplicationException(org.apache.thrift.TApplicationException.INTERNAL_ERROR, e.getMessage());
+            }
+            try {
+              fcall.sendResponse(fb,msg,msgType,seqid);
+              return;
+            } catch (Exception ex) {
+              LOGGER.error("Exception writing to internal frame buffer", ex);
+            }
+            fb.close();
+          }
+        };
+      }
+
+      protected boolean isOneway() {
+        return false;
+      }
+
+      public void start(I iface, clientMessage_args args, org.apache.thrift.async.AsyncMethodCallback<Void> resultHandler) throws TException {
+        iface.clientMessage(args.message,resultHandler);
+      }
     }
 
     public static class prePrepare<I extends AsyncIface> extends org.apache.thrift.AsyncProcessFunction<I, prePrepare_args, Void> {
@@ -863,7 +995,7 @@ public class PBFTCohort {
       }
 
       public void start(I iface, prePrepare_args args, org.apache.thrift.async.AsyncMethodCallback<Void> resultHandler) throws TException {
-        iface.prePrepare(args.message, args.transaction,resultHandler);
+        iface.prePrepare(args.message, args.clientMessage, args.transaction,resultHandler);
       }
     }
 
@@ -1270,25 +1402,22 @@ public class PBFTCohort {
 
   }
 
-  public static class prePrepare_args implements org.apache.thrift.TBase<prePrepare_args, prePrepare_args._Fields>, java.io.Serializable, Cloneable, Comparable<prePrepare_args>   {
-    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("prePrepare_args");
+  public static class clientMessage_args implements org.apache.thrift.TBase<clientMessage_args, clientMessage_args._Fields>, java.io.Serializable, Cloneable, Comparable<clientMessage_args>   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("clientMessage_args");
 
     private static final org.apache.thrift.protocol.TField MESSAGE_FIELD_DESC = new org.apache.thrift.protocol.TField("message", org.apache.thrift.protocol.TType.STRUCT, (short)1);
-    private static final org.apache.thrift.protocol.TField TRANSACTION_FIELD_DESC = new org.apache.thrift.protocol.TField("transaction", org.apache.thrift.protocol.TType.STRUCT, (short)2);
 
     private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
     static {
-      schemes.put(StandardScheme.class, new prePrepare_argsStandardSchemeFactory());
-      schemes.put(TupleScheme.class, new prePrepare_argsTupleSchemeFactory());
+      schemes.put(StandardScheme.class, new clientMessage_argsStandardSchemeFactory());
+      schemes.put(TupleScheme.class, new clientMessage_argsTupleSchemeFactory());
     }
 
-    public PrePrepareMessage message; // required
-    public TTransaction transaction; // required
+    public ClientMessage message; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift.TFieldIdEnum {
-      MESSAGE((short)1, "message"),
-      TRANSACTION((short)2, "transaction");
+      MESSAGE((short)1, "message");
 
       private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -1305,7 +1434,620 @@ public class PBFTCohort {
         switch(fieldId) {
           case 1: // MESSAGE
             return MESSAGE;
-          case 2: // TRANSACTION
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+
+    // isset id assignments
+    public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      tmpMap.put(_Fields.MESSAGE, new org.apache.thrift.meta_data.FieldMetaData("message", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, ClientMessage.class)));
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(clientMessage_args.class, metaDataMap);
+    }
+
+    public clientMessage_args() {
+    }
+
+    public clientMessage_args(
+      ClientMessage message)
+    {
+      this();
+      this.message = message;
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public clientMessage_args(clientMessage_args other) {
+      if (other.isSetMessage()) {
+        this.message = new ClientMessage(other.message);
+      }
+    }
+
+    public clientMessage_args deepCopy() {
+      return new clientMessage_args(this);
+    }
+
+    @Override
+    public void clear() {
+      this.message = null;
+    }
+
+    public ClientMessage getMessage() {
+      return this.message;
+    }
+
+    public clientMessage_args setMessage(ClientMessage message) {
+      this.message = message;
+      return this;
+    }
+
+    public void unsetMessage() {
+      this.message = null;
+    }
+
+    /** Returns true if field message is set (has been assigned a value) and false otherwise */
+    public boolean isSetMessage() {
+      return this.message != null;
+    }
+
+    public void setMessageIsSet(boolean value) {
+      if (!value) {
+        this.message = null;
+      }
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      case MESSAGE:
+        if (value == null) {
+          unsetMessage();
+        } else {
+          setMessage((ClientMessage)value);
+        }
+        break;
+
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      case MESSAGE:
+        return getMessage();
+
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      case MESSAGE:
+        return isSetMessage();
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof clientMessage_args)
+        return this.equals((clientMessage_args)that);
+      return false;
+    }
+
+    public boolean equals(clientMessage_args that) {
+      if (that == null)
+        return false;
+
+      boolean this_present_message = true && this.isSetMessage();
+      boolean that_present_message = true && that.isSetMessage();
+      if (this_present_message || that_present_message) {
+        if (!(this_present_message && that_present_message))
+          return false;
+        if (!this.message.equals(that.message))
+          return false;
+      }
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return 0;
+    }
+
+    @Override
+    public int compareTo(clientMessage_args other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+
+      lastComparison = Boolean.valueOf(isSetMessage()).compareTo(other.isSetMessage());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (isSetMessage()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.message, other.message);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+      schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+    }
+
+    public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+      schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+    }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("clientMessage_args(");
+      boolean first = true;
+
+      sb.append("message:");
+      if (this.message == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.message);
+      }
+      first = false;
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift.TException {
+      // check for required fields
+      // check for sub-struct validity
+      if (message != null) {
+        message.validate();
+      }
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class clientMessage_argsStandardSchemeFactory implements SchemeFactory {
+      public clientMessage_argsStandardScheme getScheme() {
+        return new clientMessage_argsStandardScheme();
+      }
+    }
+
+    private static class clientMessage_argsStandardScheme extends StandardScheme<clientMessage_args> {
+
+      public void read(org.apache.thrift.protocol.TProtocol iprot, clientMessage_args struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            case 1: // MESSAGE
+              if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
+                struct.message = new ClientMessage();
+                struct.message.read(iprot);
+                struct.setMessageIsSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            default:
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+
+        // check for required fields of primitive type, which can't be checked in the validate method
+        struct.validate();
+      }
+
+      public void write(org.apache.thrift.protocol.TProtocol oprot, clientMessage_args struct) throws org.apache.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        if (struct.message != null) {
+          oprot.writeFieldBegin(MESSAGE_FIELD_DESC);
+          struct.message.write(oprot);
+          oprot.writeFieldEnd();
+        }
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class clientMessage_argsTupleSchemeFactory implements SchemeFactory {
+      public clientMessage_argsTupleScheme getScheme() {
+        return new clientMessage_argsTupleScheme();
+      }
+    }
+
+    private static class clientMessage_argsTupleScheme extends TupleScheme<clientMessage_args> {
+
+      @Override
+      public void write(org.apache.thrift.protocol.TProtocol prot, clientMessage_args struct) throws org.apache.thrift.TException {
+        TTupleProtocol oprot = (TTupleProtocol) prot;
+        BitSet optionals = new BitSet();
+        if (struct.isSetMessage()) {
+          optionals.set(0);
+        }
+        oprot.writeBitSet(optionals, 1);
+        if (struct.isSetMessage()) {
+          struct.message.write(oprot);
+        }
+      }
+
+      @Override
+      public void read(org.apache.thrift.protocol.TProtocol prot, clientMessage_args struct) throws org.apache.thrift.TException {
+        TTupleProtocol iprot = (TTupleProtocol) prot;
+        BitSet incoming = iprot.readBitSet(1);
+        if (incoming.get(0)) {
+          struct.message = new ClientMessage();
+          struct.message.read(iprot);
+          struct.setMessageIsSet(true);
+        }
+      }
+    }
+
+  }
+
+  public static class clientMessage_result implements org.apache.thrift.TBase<clientMessage_result, clientMessage_result._Fields>, java.io.Serializable, Cloneable, Comparable<clientMessage_result>   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("clientMessage_result");
+
+
+    private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+    static {
+      schemes.put(StandardScheme.class, new clientMessage_resultStandardSchemeFactory());
+      schemes.put(TupleScheme.class, new clientMessage_resultTupleSchemeFactory());
+    }
+
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+;
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          default:
+            return null;
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, throwing an exception
+       * if it is not found.
+       */
+      public static _Fields findByThriftIdOrThrow(int fieldId) {
+        _Fields fields = findByThriftId(fieldId);
+        if (fields == null) throw new IllegalArgumentException("Field " + fieldId + " doesn't exist!");
+        return fields;
+      }
+
+      /**
+       * Find the _Fields constant that matches name, or null if its not found.
+       */
+      public static _Fields findByName(String name) {
+        return byName.get(name);
+      }
+
+      private final short _thriftId;
+      private final String _fieldName;
+
+      _Fields(short thriftId, String fieldName) {
+        _thriftId = thriftId;
+        _fieldName = fieldName;
+      }
+
+      public short getThriftFieldId() {
+        return _thriftId;
+      }
+
+      public String getFieldName() {
+        return _fieldName;
+      }
+    }
+    public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
+    static {
+      Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
+      metaDataMap = Collections.unmodifiableMap(tmpMap);
+      org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(clientMessage_result.class, metaDataMap);
+    }
+
+    public clientMessage_result() {
+    }
+
+    /**
+     * Performs a deep copy on <i>other</i>.
+     */
+    public clientMessage_result(clientMessage_result other) {
+    }
+
+    public clientMessage_result deepCopy() {
+      return new clientMessage_result(this);
+    }
+
+    @Override
+    public void clear() {
+    }
+
+    public void setFieldValue(_Fields field, Object value) {
+      switch (field) {
+      }
+    }
+
+    public Object getFieldValue(_Fields field) {
+      switch (field) {
+      }
+      throw new IllegalStateException();
+    }
+
+    /** Returns true if field corresponding to fieldID is set (has been assigned a value) and false otherwise */
+    public boolean isSet(_Fields field) {
+      if (field == null) {
+        throw new IllegalArgumentException();
+      }
+
+      switch (field) {
+      }
+      throw new IllegalStateException();
+    }
+
+    @Override
+    public boolean equals(Object that) {
+      if (that == null)
+        return false;
+      if (that instanceof clientMessage_result)
+        return this.equals((clientMessage_result)that);
+      return false;
+    }
+
+    public boolean equals(clientMessage_result that) {
+      if (that == null)
+        return false;
+
+      return true;
+    }
+
+    @Override
+    public int hashCode() {
+      return 0;
+    }
+
+    @Override
+    public int compareTo(clientMessage_result other) {
+      if (!getClass().equals(other.getClass())) {
+        return getClass().getName().compareTo(other.getClass().getName());
+      }
+
+      int lastComparison = 0;
+
+      return 0;
+    }
+
+    public _Fields fieldForId(int fieldId) {
+      return _Fields.findByThriftId(fieldId);
+    }
+
+    public void read(org.apache.thrift.protocol.TProtocol iprot) throws org.apache.thrift.TException {
+      schemes.get(iprot.getScheme()).getScheme().read(iprot, this);
+    }
+
+    public void write(org.apache.thrift.protocol.TProtocol oprot) throws org.apache.thrift.TException {
+      schemes.get(oprot.getScheme()).getScheme().write(oprot, this);
+      }
+
+    @Override
+    public String toString() {
+      StringBuilder sb = new StringBuilder("clientMessage_result(");
+      boolean first = true;
+
+      sb.append(")");
+      return sb.toString();
+    }
+
+    public void validate() throws org.apache.thrift.TException {
+      // check for required fields
+      // check for sub-struct validity
+    }
+
+    private void writeObject(java.io.ObjectOutputStream out) throws java.io.IOException {
+      try {
+        write(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(out)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, ClassNotFoundException {
+      try {
+        read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
+      } catch (org.apache.thrift.TException te) {
+        throw new java.io.IOException(te);
+      }
+    }
+
+    private static class clientMessage_resultStandardSchemeFactory implements SchemeFactory {
+      public clientMessage_resultStandardScheme getScheme() {
+        return new clientMessage_resultStandardScheme();
+      }
+    }
+
+    private static class clientMessage_resultStandardScheme extends StandardScheme<clientMessage_result> {
+
+      public void read(org.apache.thrift.protocol.TProtocol iprot, clientMessage_result struct) throws org.apache.thrift.TException {
+        org.apache.thrift.protocol.TField schemeField;
+        iprot.readStructBegin();
+        while (true)
+        {
+          schemeField = iprot.readFieldBegin();
+          if (schemeField.type == org.apache.thrift.protocol.TType.STOP) { 
+            break;
+          }
+          switch (schemeField.id) {
+            default:
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+          }
+          iprot.readFieldEnd();
+        }
+        iprot.readStructEnd();
+
+        // check for required fields of primitive type, which can't be checked in the validate method
+        struct.validate();
+      }
+
+      public void write(org.apache.thrift.protocol.TProtocol oprot, clientMessage_result struct) throws org.apache.thrift.TException {
+        struct.validate();
+
+        oprot.writeStructBegin(STRUCT_DESC);
+        oprot.writeFieldStop();
+        oprot.writeStructEnd();
+      }
+
+    }
+
+    private static class clientMessage_resultTupleSchemeFactory implements SchemeFactory {
+      public clientMessage_resultTupleScheme getScheme() {
+        return new clientMessage_resultTupleScheme();
+      }
+    }
+
+    private static class clientMessage_resultTupleScheme extends TupleScheme<clientMessage_result> {
+
+      @Override
+      public void write(org.apache.thrift.protocol.TProtocol prot, clientMessage_result struct) throws org.apache.thrift.TException {
+        TTupleProtocol oprot = (TTupleProtocol) prot;
+      }
+
+      @Override
+      public void read(org.apache.thrift.protocol.TProtocol prot, clientMessage_result struct) throws org.apache.thrift.TException {
+        TTupleProtocol iprot = (TTupleProtocol) prot;
+      }
+    }
+
+  }
+
+  public static class prePrepare_args implements org.apache.thrift.TBase<prePrepare_args, prePrepare_args._Fields>, java.io.Serializable, Cloneable, Comparable<prePrepare_args>   {
+    private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("prePrepare_args");
+
+    private static final org.apache.thrift.protocol.TField MESSAGE_FIELD_DESC = new org.apache.thrift.protocol.TField("message", org.apache.thrift.protocol.TType.STRUCT, (short)1);
+    private static final org.apache.thrift.protocol.TField CLIENT_MESSAGE_FIELD_DESC = new org.apache.thrift.protocol.TField("clientMessage", org.apache.thrift.protocol.TType.STRUCT, (short)2);
+    private static final org.apache.thrift.protocol.TField TRANSACTION_FIELD_DESC = new org.apache.thrift.protocol.TField("transaction", org.apache.thrift.protocol.TType.STRUCT, (short)3);
+
+    private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
+    static {
+      schemes.put(StandardScheme.class, new prePrepare_argsStandardSchemeFactory());
+      schemes.put(TupleScheme.class, new prePrepare_argsTupleSchemeFactory());
+    }
+
+    public PrePrepareMessage message; // required
+    public ClientMessage clientMessage; // required
+    public TTransaction transaction; // required
+
+    /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
+    public enum _Fields implements org.apache.thrift.TFieldIdEnum {
+      MESSAGE((short)1, "message"),
+      CLIENT_MESSAGE((short)2, "clientMessage"),
+      TRANSACTION((short)3, "transaction");
+
+      private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
+
+      static {
+        for (_Fields field : EnumSet.allOf(_Fields.class)) {
+          byName.put(field.getFieldName(), field);
+        }
+      }
+
+      /**
+       * Find the _Fields constant that matches fieldId, or null if its not found.
+       */
+      public static _Fields findByThriftId(int fieldId) {
+        switch(fieldId) {
+          case 1: // MESSAGE
+            return MESSAGE;
+          case 2: // CLIENT_MESSAGE
+            return CLIENT_MESSAGE;
+          case 3: // TRANSACTION
             return TRANSACTION;
           default:
             return null;
@@ -1352,6 +2094,8 @@ public class PBFTCohort {
       Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
       tmpMap.put(_Fields.MESSAGE, new org.apache.thrift.meta_data.FieldMetaData("message", org.apache.thrift.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, PrePrepareMessage.class)));
+      tmpMap.put(_Fields.CLIENT_MESSAGE, new org.apache.thrift.meta_data.FieldMetaData("clientMessage", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, ClientMessage.class)));
       tmpMap.put(_Fields.TRANSACTION, new org.apache.thrift.meta_data.FieldMetaData("transaction", org.apache.thrift.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, TTransaction.class)));
       metaDataMap = Collections.unmodifiableMap(tmpMap);
@@ -1363,10 +2107,12 @@ public class PBFTCohort {
 
     public prePrepare_args(
       PrePrepareMessage message,
+      ClientMessage clientMessage,
       TTransaction transaction)
     {
       this();
       this.message = message;
+      this.clientMessage = clientMessage;
       this.transaction = transaction;
     }
 
@@ -1376,6 +2122,9 @@ public class PBFTCohort {
     public prePrepare_args(prePrepare_args other) {
       if (other.isSetMessage()) {
         this.message = new PrePrepareMessage(other.message);
+      }
+      if (other.isSetClientMessage()) {
+        this.clientMessage = new ClientMessage(other.clientMessage);
       }
       if (other.isSetTransaction()) {
         this.transaction = new TTransaction(other.transaction);
@@ -1389,6 +2138,7 @@ public class PBFTCohort {
     @Override
     public void clear() {
       this.message = null;
+      this.clientMessage = null;
       this.transaction = null;
     }
 
@@ -1413,6 +2163,30 @@ public class PBFTCohort {
     public void setMessageIsSet(boolean value) {
       if (!value) {
         this.message = null;
+      }
+    }
+
+    public ClientMessage getClientMessage() {
+      return this.clientMessage;
+    }
+
+    public prePrepare_args setClientMessage(ClientMessage clientMessage) {
+      this.clientMessage = clientMessage;
+      return this;
+    }
+
+    public void unsetClientMessage() {
+      this.clientMessage = null;
+    }
+
+    /** Returns true if field clientMessage is set (has been assigned a value) and false otherwise */
+    public boolean isSetClientMessage() {
+      return this.clientMessage != null;
+    }
+
+    public void setClientMessageIsSet(boolean value) {
+      if (!value) {
+        this.clientMessage = null;
       }
     }
 
@@ -1450,6 +2224,14 @@ public class PBFTCohort {
         }
         break;
 
+      case CLIENT_MESSAGE:
+        if (value == null) {
+          unsetClientMessage();
+        } else {
+          setClientMessage((ClientMessage)value);
+        }
+        break;
+
       case TRANSACTION:
         if (value == null) {
           unsetTransaction();
@@ -1465,6 +2247,9 @@ public class PBFTCohort {
       switch (field) {
       case MESSAGE:
         return getMessage();
+
+      case CLIENT_MESSAGE:
+        return getClientMessage();
 
       case TRANSACTION:
         return getTransaction();
@@ -1482,6 +2267,8 @@ public class PBFTCohort {
       switch (field) {
       case MESSAGE:
         return isSetMessage();
+      case CLIENT_MESSAGE:
+        return isSetClientMessage();
       case TRANSACTION:
         return isSetTransaction();
       }
@@ -1507,6 +2294,15 @@ public class PBFTCohort {
         if (!(this_present_message && that_present_message))
           return false;
         if (!this.message.equals(that.message))
+          return false;
+      }
+
+      boolean this_present_clientMessage = true && this.isSetClientMessage();
+      boolean that_present_clientMessage = true && that.isSetClientMessage();
+      if (this_present_clientMessage || that_present_clientMessage) {
+        if (!(this_present_clientMessage && that_present_clientMessage))
+          return false;
+        if (!this.clientMessage.equals(that.clientMessage))
           return false;
       }
 
@@ -1541,6 +2337,16 @@ public class PBFTCohort {
       }
       if (isSetMessage()) {
         lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.message, other.message);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = Boolean.valueOf(isSetClientMessage()).compareTo(other.isSetClientMessage());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (isSetClientMessage()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.clientMessage, other.clientMessage);
         if (lastComparison != 0) {
           return lastComparison;
         }
@@ -1583,6 +2389,14 @@ public class PBFTCohort {
       }
       first = false;
       if (!first) sb.append(", ");
+      sb.append("clientMessage:");
+      if (this.clientMessage == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.clientMessage);
+      }
+      first = false;
+      if (!first) sb.append(", ");
       sb.append("transaction:");
       if (this.transaction == null) {
         sb.append("null");
@@ -1599,6 +2413,9 @@ public class PBFTCohort {
       // check for sub-struct validity
       if (message != null) {
         message.validate();
+      }
+      if (clientMessage != null) {
+        clientMessage.validate();
       }
       if (transaction != null) {
         transaction.validate();
@@ -1648,7 +2465,16 @@ public class PBFTCohort {
                 org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
               }
               break;
-            case 2: // TRANSACTION
+            case 2: // CLIENT_MESSAGE
+              if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
+                struct.clientMessage = new ClientMessage();
+                struct.clientMessage.read(iprot);
+                struct.setClientMessageIsSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
+            case 3: // TRANSACTION
               if (schemeField.type == org.apache.thrift.protocol.TType.STRUCT) {
                 struct.transaction = new TTransaction();
                 struct.transaction.read(iprot);
@@ -1677,6 +2503,11 @@ public class PBFTCohort {
           struct.message.write(oprot);
           oprot.writeFieldEnd();
         }
+        if (struct.clientMessage != null) {
+          oprot.writeFieldBegin(CLIENT_MESSAGE_FIELD_DESC);
+          struct.clientMessage.write(oprot);
+          oprot.writeFieldEnd();
+        }
         if (struct.transaction != null) {
           oprot.writeFieldBegin(TRANSACTION_FIELD_DESC);
           struct.transaction.write(oprot);
@@ -1703,12 +2534,18 @@ public class PBFTCohort {
         if (struct.isSetMessage()) {
           optionals.set(0);
         }
-        if (struct.isSetTransaction()) {
+        if (struct.isSetClientMessage()) {
           optionals.set(1);
         }
-        oprot.writeBitSet(optionals, 2);
+        if (struct.isSetTransaction()) {
+          optionals.set(2);
+        }
+        oprot.writeBitSet(optionals, 3);
         if (struct.isSetMessage()) {
           struct.message.write(oprot);
+        }
+        if (struct.isSetClientMessage()) {
+          struct.clientMessage.write(oprot);
         }
         if (struct.isSetTransaction()) {
           struct.transaction.write(oprot);
@@ -1718,13 +2555,18 @@ public class PBFTCohort {
       @Override
       public void read(org.apache.thrift.protocol.TProtocol prot, prePrepare_args struct) throws org.apache.thrift.TException {
         TTupleProtocol iprot = (TTupleProtocol) prot;
-        BitSet incoming = iprot.readBitSet(2);
+        BitSet incoming = iprot.readBitSet(3);
         if (incoming.get(0)) {
           struct.message = new PrePrepareMessage();
           struct.message.read(iprot);
           struct.setMessageIsSet(true);
         }
         if (incoming.get(1)) {
+          struct.clientMessage = new ClientMessage();
+          struct.clientMessage.read(iprot);
+          struct.setClientMessageIsSet(true);
+        }
+        if (incoming.get(2)) {
           struct.transaction = new TTransaction();
           struct.transaction.read(iprot);
           struct.setTransactionIsSet(true);
