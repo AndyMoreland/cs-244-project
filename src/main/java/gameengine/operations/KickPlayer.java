@@ -12,6 +12,7 @@ public class KickPlayer implements statemachine.Operation<ChineseCheckersState> 
 
     @Override
     public void apply(ChineseCheckersState state) {
+
         
     }
 

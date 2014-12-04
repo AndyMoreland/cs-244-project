@@ -42,7 +42,11 @@ public class PBFTCohortRunner {
         }
 
         for (int i = 1; i <= numServers; i++) {
-            PBFTServerInstance server = new PBFTServerInstance(new String[]{String.valueOf(i), "900" + i}, privateKeyMap.get(i), publicKeyMap, args[CONFIG_FILE_POS]);
+            PBFTServerInstance server = new PBFTServerInstance(
+                    new String[]{String.valueOf(i), "900" + i},
+                    privateKeyMap.get(i),
+                    publicKeyMap,
+                    args[CONFIG_FILE_POS]);
             servers.put(i, server);
             server.run();
         }

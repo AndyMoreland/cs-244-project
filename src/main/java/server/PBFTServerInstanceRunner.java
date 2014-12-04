@@ -2,6 +2,9 @@ package server;
 
 import com.google.common.collect.Maps;
 import common.CryptoUtil;
+import gameengine.BenchmarkingGameEngine;
+import gameengine.ChineseCheckersState;
+import gameengine.GameEngine;
 import org.apache.log4j.BasicConfigurator;
 import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.FileAppender;
@@ -39,6 +42,9 @@ public class PBFTServerInstanceRunner {
         } else if (args.length == 4) {
             BasicConfigurator.configure(new FileAppender(new PatternLayout("{ %X{server-name} } " + PatternLayout.TTCC_CONVERSION_PATTERN), args[LOG_FILE_POS]));
         }
+
+        // make this arg configurable
+        GameEngine<ChineseCheckersState> gameEngine = new BenchmarkingGameEngine();
 
         PBFTServerInstance instance = null;
 

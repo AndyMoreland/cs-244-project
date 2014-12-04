@@ -48,7 +48,9 @@ public class PBFTServerInstance implements Runnable {
     private final PrivateKey privateKey;
     private final Map<Integer, PublicKey> publicKeys;
 
-    public PBFTServerInstance(String[] args, PrivateKey privateKey, Map<Integer, PublicKey> publicKeys, String configFile) {
+    public PBFTServerInstance(String[] args,
+                              PrivateKey privateKey, Map<Integer, PublicKey> publicKeys,
+                              String configFile) {
         this.args = args;
         this.privateKey = privateKey;
         this.publicKeys = publicKeys;
@@ -71,9 +73,10 @@ public class PBFTServerInstance implements Runnable {
 
             LOG.info("Starting server on port: " + me.getAddress().getPort() + " with address: " + me.getAddress().getHostName());
 
-            GameEngine<ChineseCheckersState> engine = new ChineseCheckersGameEngine(configProvider);
+            // GameEngine<ChineseCheckersState> engine = new ChineseCheckersGameEngine(configProvider);
+            GameEngine<ChineseCheckersState> benchmarkingEngine = new ChineseCheckersGameEngine(configProvider);
 
-            handler = new PBFTCohortHandler(configProvider, replicaID, me, engine);
+            handler = new PBFTCohortHandler(configProvider, replicaID, me, benchmarkingEngine);
             processor = new PBFTCohort.Processor(handler);
 
             Runnable simple = new Runnable() {
