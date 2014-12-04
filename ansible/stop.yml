@@ -1,0 +1,13 @@
+---
+- hosts: cornservers
+  vars:
+  - serverId: "{{ansible_hostname | regex_replace('corn0','')}}"
+  - deployRoot: /afs/ir.stanford.edu/users/a/n/andymo/cs244/
+
+  tasks:
+  - name: kill instance servers
+    shell: killall java
+
+  tasks:
+  - name: clear log files
+    file: path={{deployRoot}}corn0{{serverId}} state=absent

@@ -4,8 +4,10 @@
   - deployRoot: /afs/ir.stanford.edu/users/a/n/andymo/cs244/
   - jar: cs244.jar
   - mainClass: server.PBFTServerInstanceRunner
+  - serverId: "{{ansible_hostname | regex_replace('corn0','')}}"
+
   tasks:
   - name: start instance servers
-    shell: java -cp {{deployRoot}}{{jar}} {{mainClass}} {{deployRoot}}keys/server1_private_key {{deployRoot}}cluster_config.json 1 > {{ansible_hostname}}
+    shell: java -cp {{deployRoot}}{{jar}} {{mainClass}} {{deployRoot}}keys/server{{serverId}}_private_key {{deployRoot}}cluster_config.json {{serverId}} > {{ansible_hostname}}
     args:
       chdir: "{{deployRoot}}"
