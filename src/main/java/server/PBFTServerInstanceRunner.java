@@ -40,13 +40,24 @@ public class PBFTServerInstanceRunner {
             instance = new PBFTServerInstance(
                     new String[]{args[CONFIG_SERVER_ID_POS]},
                     readPrivateKeyFromFile(new File(args[PRIVATE_KEY_FILE])),
-                    readPublicKeysFromFile(publicKeyMap)
+                    readPublicKeysFromFile(publicKeyMap),
+                    args[CONFIG_SERVER_ARG_POS]
             );
         } catch (InvalidKeySpecException | NoSuchAlgorithmException | IOException e) {
             e.printStackTrace();
         }
 
         instance.run();
+    }
+
+    public static int readServerConfigForNumServers(File file) throws IOException {
+        BufferedReader reader = new BufferedReader(new FileReader(file));
+        JsonFactory factory = new JsonFactory();
+        JsonParser jsonParser = factory.createJsonParser(reader);
+        ObjectMapper mapper = new ObjectMapper();
+
+        JsonNode root = mapper.readTree(jsonParser);
+        return root.get("servers").size();
     }
 
     private static Map<Integer, File> readServerConfigForPublicKeys(File file) throws IOException {
