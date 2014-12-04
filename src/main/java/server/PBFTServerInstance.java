@@ -4,9 +4,11 @@ import PBFT.PBFTCohort;
 import com.google.common.base.Optional;
 import com.google.common.collect.Sets;
 import config.*;
+import gameengine.BenchmarkingGameEngine;
 import gameengine.ChineseCheckersGameEngine;
 import gameengine.ChineseCheckersState;
 import gameengine.GameEngine;
+import gameengine.operations.NoOp;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.MDC;
@@ -42,11 +44,13 @@ public class PBFTServerInstance implements Runnable {
     private GroupConfigProvider<PBFTCohort.Client> configProvider;
     public static  String configFile;
 
+
     private int replicaID;
 
     private final String[] args;
     private final PrivateKey privateKey;
     private final Map<Integer, PublicKey> publicKeys;
+    private GameEngine<ChineseCheckersState> gameEngine;
 
     public PBFTServerInstance(String[] args,
                               PrivateKey privateKey, Map<Integer, PublicKey> publicKeys,
@@ -55,6 +59,7 @@ public class PBFTServerInstance implements Runnable {
         this.privateKey = privateKey;
         this.publicKeys = publicKeys;
         this.configFile = configFile;
+        this.gameEngine = null;
     }
 
     private void configureLogging(GroupMember<PBFTCohort.Client> me) {
@@ -74,9 +79,9 @@ public class PBFTServerInstance implements Runnable {
             LOG.info("Starting server on port: " + me.getAddress().getPort() + " with address: " + me.getAddress().getHostName());
 
             // GameEngine<ChineseCheckersState> engine = new ChineseCheckersGameEngine(configProvider);
-            GameEngine<ChineseCheckersState> benchmarkingEngine = new ChineseCheckersGameEngine(configProvider);
+            this.gameEngine = new BenchmarkingGameEngine(configProvider, this);
 
-            handler = new PBFTCohortHandler(configProvider, replicaID, me, benchmarkingEngine);
+            handler = new PBFTCohortHandler(configProvider, replicaID, me, gameEngine);
             processor = new PBFTCohort.Processor(handler);
 
             Runnable simple = new Runnable() {
@@ -86,9 +91,15 @@ public class PBFTServerInstance implements Runnable {
             };
 
             new Thread(simple).start();
+
+            gameEngine.requestCommit(new NoOp());
         } catch (Exception x) {
             x.printStackTrace();
         }
+    }
+
+    public void notifyOnNextTurn() {
+        gameEngine.requestCommit(new NoOp());
     }
 
     private void simple(PBFTCohort.Processor processor, InetSocketAddress address) {

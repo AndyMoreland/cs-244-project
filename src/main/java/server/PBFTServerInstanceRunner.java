@@ -43,8 +43,6 @@ public class PBFTServerInstanceRunner {
             BasicConfigurator.configure(new FileAppender(new PatternLayout("{ %X{server-name} } " + PatternLayout.TTCC_CONVERSION_PATTERN), args[LOG_FILE_POS]));
         }
 
-        // make this arg configurable
-        GameEngine<ChineseCheckersState> gameEngine = new BenchmarkingGameEngine();
 
         PBFTServerInstance instance = null;
 
