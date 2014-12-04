@@ -2,7 +2,6 @@ package gameengine.operations;
 
 import PBFT.TChineseCheckersOperation;
 import PBFT.TOperation;
-import config.GroupConfigProvider;
 import gameengine.ChineseCheckersState;
 
 /**
@@ -34,7 +33,7 @@ public class NoOp implements statemachine.Operation<ChineseCheckersState> {
     public TOperation serialize() {
         TOperation tOperation = new TOperation();
         tOperation.setArguments("");
-        tOperation.setOperationType(TChineseCheckersOperation.MOVE_PIECE.getValue());
+        tOperation.setOperationType(TChineseCheckersOperation.NO_OP.getValue());
         return tOperation;
     }
 }
