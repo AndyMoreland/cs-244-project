@@ -1,9 +1,15 @@
 package gameengine;
 
+import PBFT.ClientMessage;
+import PBFT.PBFTCohort;
+import common.CryptoUtil;
 import common.Transaction;
 import config.GroupConfigProvider;
+import config.GroupMember;
 import statemachine.InvalidStateMachineOperationException;
 import statemachine.Operation;
+
+import java.nio.ByteBuffer;
 
 /**
  * Created by leo on 12/3/14.
@@ -23,8 +29,24 @@ public class ChineseCheckersGameEngine implements GameEngine<ChineseCheckersStat
     }
 
     @Override
-    public void requestCommit(Operation<ChineseCheckersState> transaction) {
+    public void requestCommit(Operation<ChineseCheckersState> operation) {
+        GroupMember<PBFTCohort.Client> leader = this.configProvider.getLeader();
+        GroupMember<PBFTCohort.Client> me = this.configProvider.getMe();
 
+        ClientMessage message = new ClientMessage();
+        message.operation = operation.serialize();
+        message.replicaId = me.getReplicaID();
+        message.messageSignature = ByteBuffer.wrap(CryptoUtil.computeMessageSignature(message, me.getPrivateKey()).getBytes());
+
+        PBFTCohort.Client thriftConnection = null;
+        try {
+            thriftConnection = leader.getThriftConnection();
+            thriftConnection.clientMessage(message);
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            leader.returnThriftConnection(thriftConnection);
+        }
     }
 
 }

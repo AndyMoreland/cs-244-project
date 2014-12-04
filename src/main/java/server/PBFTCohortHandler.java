@@ -58,16 +58,59 @@ public class PBFTCohortHandler implements Iface {
     }
 
     @Override
-    public void prePrepare(PrePrepareMessage message, TTransaction transaction) throws TException {
+    public void clientMessage(ClientMessage message) throws TException {
+        LOG.info("Got client message");
+        if(this.configProvider.getLeader().getReplicaID() == this.replicaID) return;
+        LOG.info("I'm the leader");
+        if (!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) return;
+        LOG.info("validated signature! multicasting prePrepares...");
+
+        TTransaction transaction = new TTransaction();
+        transaction.viewstamp = new Viewstamp(log.getLastCommited(), configProvider.getViewID()); // TODO this sequence number is not correct
+        transaction.replicaId = message.getReplicaId();
+        transaction.operation = message.operation;
+
+
+        for (final GroupMember<PBFTCohort.Client> member : configProvider.getOtherGroupMembers()) {
+            final PrePrepareMessage prePrepareMessage = new PrePrepareMessage();
+            prePrepareMessage.viewstamp = transaction.getViewstamp();
+            prePrepareMessage.replicaId = thisCohort.getReplicaID();
+            prePrepareMessage.transactionDigest = ByteBuffer.wrap(
+                    CryptoUtil.computeTransactionDigest(Transaction.getTransactionForPBFTTransaction(transaction)).getBytes()
+            );
+            prePrepareMessage.messageSignature = ByteBuffer.wrap(CryptoUtil.computeMessageSignature(prePrepareMessage, thisCohort.getPrivateKey()).getBytes());
+
+            PBFTCohort.Client thriftConnection = null;
+            try {
+                thriftConnection = member.getThriftConnection();
+                thriftConnection.prePrepare(prePrepareMessage, message, transaction);
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                member.returnThriftConnection(thriftConnection);
+            }
+        }
+    }
+
+    @Override
+    public void prePrepare(PrePrepareMessage message, ClientMessage clientMessage, TTransaction transaction) throws TException {
         LOG.info("Entering prePrepare");
+        if (this.configProvider.getLeader().getReplicaID() != message.getReplicaId()) return;
         if (!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature()))
             return;       // Validate signature
-        LOG.info("Validated signature");
+        LOG.info("Validated leader signature");
+        if(!this.configProvider.getGroupMember(clientMessage.getReplicaId()).verifySignature(clientMessage, clientMessage.getMessageSignature()))
+            return;
+        LOG.info("Validated client (sender) signature");
+
         if (transaction.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
         LOG.info("Successfully passed view id validation");
 
         Transaction<Operation<ChineseCheckersState>> logTransaction
                 = Transaction.getTransactionForPBFTTransaction(transaction);
+
+        if(!transaction.getOperation().equals(clientMessage.getOperation())) return;
+        LOG.info("Leader is telling the truth about client's intentions");
 
         try {
             log.addEntry(logTransaction);                                                     // Check sequence number

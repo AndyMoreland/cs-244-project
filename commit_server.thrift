@@ -94,6 +94,12 @@ struct TTransaction {
     3:i32 replicaId;
 }
 
+struct ClientMessage {
+    1:TOperation operation,
+    2:i32 replicaId,
+    3:Signature messageSignature;
+}
+
 struct PrePrepareMessage {
     1:Viewstamp viewstamp,
     2:Signature transactionDigest,
@@ -150,7 +156,8 @@ struct AskForTransaction {
  */
 
 service PBFTCohort {
-    void prePrepare(1:PrePrepareMessage message, 2:TTransaction transaction),
+    void clientMessage(1:ClientMessage message),
+    void prePrepare(1:PrePrepareMessage message, 2:ClientMessage clientMessage, 3:TTransaction transaction),
     void prepare(1:PrepareMessage message),
     void commit(1:CommitMessage message),
     void checkpoint(1:CheckpointMessage message),

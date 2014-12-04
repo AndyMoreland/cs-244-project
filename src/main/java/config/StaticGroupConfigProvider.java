@@ -75,6 +75,9 @@ public class StaticGroupConfigProvider<T extends org.apache.thrift.TServiceClien
     }
 
     @Override
+    public GroupMember getMe(){ return me; }
+
+    @Override
     public String toString() {
         return "StaticGroupConfigProvider{" +
                 "members=" + members +

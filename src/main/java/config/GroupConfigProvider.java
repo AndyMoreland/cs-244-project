@@ -20,4 +20,5 @@ public interface GroupConfigProvider<T extends org.apache.thrift.TServiceClient>
 
     void setLeader(GroupMember<T> leader);
 
+    GroupMember getMe();
 }
