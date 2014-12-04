@@ -34,7 +34,7 @@ public class Log<T> {
     private Map<MultiKey<Viewstamp, TransactionDigest>, Set<PrepareMessage>> prepareMessages = Maps.newConcurrentMap();
 
     private Map<MultiKey<Viewstamp, TransactionDigest>, Set<CommitMessage>> commitMessages = Maps.newConcurrentMap();
-    private int lastCommited = -1;
+    private int lastApplied = -1;
 
     private Map<Integer, Transaction<T>> unappliedLogEntries = Maps.newConcurrentMap();
     private Set<Transaction<T>> failedTransactions = Sets.newHashSet();
@@ -73,7 +73,9 @@ public class Log<T> {
         }
     }
 
-    public int getLastCommited() { return lastCommited; }
+    public int getLastApplied() { return lastApplied; }
+
+    public int getNextSequenceNumber() { return lastApplied + 1; } // FIXME: (andy or leo) this is incorrect. It should return the last commited + 1 but we don't track that.
 
     @Nullable
     public Transaction<T> getTransaction(Viewstamp viewstamp) {
@@ -120,10 +122,10 @@ public class Log<T> {
         entry.commit();
 
         LOG.info("COMMITED ENTRY: " + id.toString());
-        LOG.info(id.getSequenceNumber() + " " + lastCommited);
+        LOG.info(id.getSequenceNumber() + " " + lastApplied);
 
-        if (id.getSequenceNumber() == lastCommited + 1) {
-            lastCommited++;
+        if (id.getSequenceNumber() == lastApplied + 1) {
+            lastApplied++;
             flushUnappliedEntries();
         }
 
@@ -131,8 +133,8 @@ public class Log<T> {
     }
 
     private void flushUnappliedEntries() {
-        while (unappliedLogEntries.get(lastCommited) != null) {
-            Transaction<T> transaction = unappliedLogEntries.get(lastCommited);
+        while (unappliedLogEntries.get(lastApplied) != null) {
+            Transaction<T> transaction = unappliedLogEntries.get(lastApplied);
             boolean failed = false;
             for (LogListener<T> listener : listeners) {
                 try {
@@ -151,8 +153,8 @@ public class Log<T> {
                 /* FIXME: We need to handle this case. */
             }
 
-            unappliedLogEntries.remove(lastCommited);
-            lastCommited++;
+            unappliedLogEntries.remove(lastApplied);
+            lastApplied++;
         }
     }
 
@@ -219,7 +221,7 @@ public class Log<T> {
                 ", prepareMessages=" + prepareMessages +
                 ", commitMessages=" + commitMessages +
                 ", logLock=" + logLock +
-                ", lastCommited=" + lastCommited +
+                ", lastApplied=" + lastApplied +
                 '}';
     }
 
