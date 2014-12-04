@@ -6,32 +6,32 @@
       "name": "server1",
       "hostname": "localhost",
       "port": 9001,
-      "public_key": "keys/server1.pub",
-      "private_key": "keys/server1"
+      "public_key": "keys/server1_public_key",
+      "private_key": "keys/server1_private_key"
     },
     {
       "id": 2,
       "name": "server2",
       "hostname": "localhost",
       "port": 9002,
-      "public_key": "keys/server2.pub",
-      "private_key": "keys/server2"
+      "public_key": "keys/server2_public_key",
+      "private_key": "keys/server2_private_key"
     },
     {
       "id": 3,
       "name": "server3",
       "hostname": "localhost",
       "port": 9003,
-      "public_key": "keys/server3.pub",
-      "private_key": "keys/server3"
+      "public_key": "keys/server3_public_key",
+      "private_key": "keys/server3_private_key"
     },
     {
       "id": 4,
       "name": "server4",
       "hostname": "localhost",
       "port": 9004,
-      "public_key": "keys/server4.pub",
-      "private_key": "keys/server4"
+      "public_key": "keys/server4_public_key",
+      "private_key": "keys/server4_private_key"
     }
   ]
 }
