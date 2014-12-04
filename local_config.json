@@ -1,0 +1,37 @@
+{
+  "primary": 1,
+  "servers": [
+    {
+      "id": 1,
+      "name": "server1",
+      "hostname": "localhost",
+      "port": 9001,
+      "public_key": "keys/server1.pub",
+      "private_key": "keys/server1"
+    },
+    {
+      "id": 2,
+      "name": "server2",
+      "hostname": "localhost",
+      "port": 9002,
+      "public_key": "keys/server2.pub",
+      "private_key": "keys/server2"
+    },
+    {
+      "id": 3,
+      "name": "server3",
+      "hostname": "localhost",
+      "port": 9003,
+      "public_key": "keys/server3.pub",
+      "private_key": "keys/server3"
+    },
+    {
+      "id": 4,
+      "name": "server4",
+      "hostname": "localhost",
+      "port": 9004,
+      "public_key": "keys/server4.pub",
+      "private_key": "keys/server4"
+    }
+  ]
+}

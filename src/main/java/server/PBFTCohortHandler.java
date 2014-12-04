@@ -17,6 +17,7 @@ import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import statemachine.Operation;
 
+import javax.swing.text.View;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -231,6 +232,7 @@ public class PBFTCohortHandler implements Iface {
 
     }
 
+
     private List<PrePrepareMessage> createPrePrepareForCurrentSeqno(
             int newViewID,
             boolean verify,
@@ -301,9 +303,41 @@ public class PBFTCohortHandler implements Iface {
         return true;
     }
 
+    @Override
+    public void initiateViewChange() throws TException {
+        // some stuff empty for now
+        final ViewChangeMessage viewChangeMessage = new ViewChangeMessage();
+        viewChangeMessage.setSequenceNumber(MIN_SEQ_NO).setReplicaID(replicaID)
+                .setCheckpointProof(new ArrayList<CheckpointMessage>())
+                .setNewViewID(configProvider.getViewID() + 1)
+                .setPreparedGreaterThanSequenceNumber(new ArrayList<PrePrepareMessage>())
+                .setPrepareMessages(new ArrayList<Set<PrepareMessage>>());
+        viewChangeMessage.setMessageSignature(CryptoUtil.computeMessageSignature(viewChangeMessage, thisCohort.getPrivateKey()).getBytes());
+
+        for (final GroupMember<PBFTCohort.Client> groupMember : configProvider.getOtherGroupMembers()) {
+            pool.execute(new Runnable() {
+                public void run() {
+                    PBFTCohort.Client thriftConnection = null;
+                    try {
+                        thriftConnection = groupMember.getThriftConnection();
+                        LOG.info("initiating a view change to view " + (configProvider.getViewID() + 1));
+                        thriftConnection.startViewChange(viewChangeMessage);
+                    } catch (TException e) {
+                        e.printStackTrace();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    } finally {
+                        groupMember.returnThriftConnection(thriftConnection);
+                    }
+                }
+            });
+        }
+
+    }
 
     @Override
     public synchronized void startViewChange(ViewChangeMessage message) throws TException {
+        LOG.info("Replica " + replicaID + " received view-change message from " + message.getReplicaID() + " suggesting that we change to view " + message.getNewViewID());
         if (message.isSetNewViewID()) {
             int newViewID = message.getNewViewID();
             if (newViewID > configProvider.getViewID()) { // can only move to a higher view
@@ -319,18 +353,25 @@ public class PBFTCohortHandler implements Iface {
                 }
 
                 // if primary, check if you have enough to send NewViewMessage
-                if (configProvider.getLeader().getReplicaID() == replicaID
-                        && viewChangeMessages.get(newViewID).size() > configProvider.getQuorumSize()) {
+                LOG.info("new primary should be " + message.getNewViewID() % (configProvider.getGroupMembers().size()));
+                LOG.info("Replica " + replicaID + " has " + viewChangeMessages.get(newViewID).size() + "view change suggestions");
+                LOG.info("Replica " + replicaID + " thinks that quorum size is " + configProvider.getQuorumSize());
+                if (message.getNewViewID() % (configProvider.getGroupMembers().size()) == replicaID
+                        && (viewChangeMessages.get(newViewID).size()+1) >= configProvider.getQuorumSize()) {
+                    LOG.info("Replica " + replicaID + " will be the new primary ");
+                    configProvider.setViewID(message.getNewViewID());
                     // multicast NEW-VIEW message
                     Set<GroupMember<PBFTCohort.Client>> groupMembers = configProvider.getOtherGroupMembers();
                     for (final GroupMember<PBFTCohort.Client> groupMember : groupMembers) {
                         final NewViewMessage newViewMessage = new NewViewMessage();
+                        newViewMessage.setReplicaID(replicaID);
                         newViewMessage.setNewViewID(newViewID);
                         newViewMessage.setViewChangeMessages(viewChangeMessages.get(newViewID));
                         // copy the hashset here because the message could be sent after we leave this method
                         // and start modifying viewChangeMessages again
                         newViewMessage.setPrePrepareMessages(
                                 createPrePrepareForCurrentSeqno(newViewID, false, Lists.newArrayList(viewChangeMessages.get(newViewID))));
+                        newViewMessage.setMessageSignature(CryptoUtil.computeMessageSignature(newViewMessage, thisCohort.getPrivateKey()).getBytes());
                         pool.execute(new Runnable() {
                             public void run() {
                                 PBFTCohort.Client thriftConnection = null;
@@ -355,6 +396,7 @@ public class PBFTCohortHandler implements Iface {
 
     @Override
     public synchronized void approveViewChange(NewViewMessage message) throws TException {
+        LOG.info("Being told to approve to view change by " + message.getReplicaID() + " with message " + message);
         int senderReplicaID = message.getReplicaID();
         GroupMember<PBFTCohort.Client> sender = configProvider.getGroupMember(senderReplicaID);
 
@@ -401,6 +443,7 @@ public class PBFTCohortHandler implements Iface {
 
         // change to new view
         configProvider.setViewID(message.getNewViewID());
+        LOG.info("replica " + replicaID + " is in view " + message.getNewViewID());
 
         // send prepares for everything in script O
         for (PrePrepareMessage prePrepareMessage : message.getPrePrepareMessages()) {

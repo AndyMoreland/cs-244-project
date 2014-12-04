@@ -154,6 +154,7 @@ service PBFTCohort {
     void prepare(1:PrepareMessage message),
     void commit(1:CommitMessage message),
     void checkpoint(1:CheckpointMessage message),
+    void initiateViewChange(),
     void startViewChange(1:ViewChangeMessage message),
     void approveViewChange(1:NewViewMessage message),
     TTransaction getTransaction(1:AskForTransaction message),

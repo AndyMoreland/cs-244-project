@@ -29,6 +29,11 @@ public class StubbedThriftClient implements PBFTCohort.Iface {
     }
 
     @Override
+    public void initiateViewChange() throws TException {
+
+    }
+
+    @Override
     public void startViewChange(ViewChangeMessage message) throws TException {
 
     }
