@@ -54,12 +54,18 @@ public class PBFTCohortRunner {
         }
 
         testViewChange(leaderConfigProvider);
+        // not 100% reliable way to wait a bit for them to all to move to new view
+        // before trying another view change
+        Thread.sleep(1000);
+        testViewChange(leaderConfigProvider);
+        Thread.sleep(1000);
+        testViewChange(leaderConfigProvider);
     }
 
     private static void testViewChange(GroupConfigProvider<PBFTCohort.Client> leaderConfigProvider) {
 
         // make everyone multicast view-change messages
-        for (int i = 1; i <= numServers-1; i++) {
+        for (int i = 1; i <= numServers; i++) {
             GroupMember<PBFTCohort.Client> groupMember = null;
             PBFTCohort.Client server = null;
 

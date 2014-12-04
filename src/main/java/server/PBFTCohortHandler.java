@@ -320,6 +320,7 @@ public class PBFTCohortHandler implements Iface {
                     PBFTCohort.Client thriftConnection = null;
                     try {
                         thriftConnection = groupMember.getThriftConnection();
+                        LOG.info("initiating a view change to view " + (configProvider.getViewID() + 1));
                         thriftConnection.startViewChange(viewChangeMessage);
                     } catch (TException e) {
                         e.printStackTrace();
@@ -358,6 +359,7 @@ public class PBFTCohortHandler implements Iface {
                 if (message.getNewViewID() % (configProvider.getGroupMembers().size()) == replicaID
                         && (viewChangeMessages.get(newViewID).size()+1) >= configProvider.getQuorumSize()) {
                     LOG.info("Replica " + replicaID + " will be the new primary ");
+                    configProvider.setViewID(message.getNewViewID());
                     // multicast NEW-VIEW message
                     Set<GroupMember<PBFTCohort.Client>> groupMembers = configProvider.getOtherGroupMembers();
                     for (final GroupMember<PBFTCohort.Client> groupMember : groupMembers) {
