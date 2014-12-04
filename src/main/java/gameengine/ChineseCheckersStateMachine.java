@@ -14,10 +14,6 @@ public class ChineseCheckersStateMachine implements StateMachine<ChineseCheckers
 
     private ChineseCheckersState state;
 
-//    public ChineseCheckersStateMachine() {
-//        this.state = new ChineseCheckersState();
-//    }
-
     public ChineseCheckersStateMachine(ChineseCheckersState state) {
         this.state = state;
     }

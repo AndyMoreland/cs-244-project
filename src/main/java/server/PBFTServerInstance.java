@@ -4,6 +4,9 @@ import PBFT.PBFTCohort;
 import com.google.common.base.Optional;
 import com.google.common.collect.Sets;
 import config.*;
+import gameengine.ChineseCheckersGameEngine;
+import gameengine.ChineseCheckersState;
+import gameengine.GameEngine;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.log4j.MDC;
@@ -68,7 +71,9 @@ public class PBFTServerInstance implements Runnable {
 
             LOG.info("Starting server on port: " + me.getAddress().getPort() + " with address: " + me.getAddress().getHostName());
 
-            handler = new PBFTCohortHandler(configProvider, replicaID, me);
+            GameEngine<ChineseCheckersState> engine = new ChineseCheckersGameEngine(configProvider);
+
+            handler = new PBFTCohortHandler(configProvider, replicaID, me, engine);
             processor = new PBFTCohort.Processor(handler);
 
             Runnable simple = new Runnable() {

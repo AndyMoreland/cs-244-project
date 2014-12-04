@@ -2,6 +2,7 @@ package gameengine.operations;
 
 import PBFT.TChineseCheckersOperation;
 import PBFT.TOperation;
+import config.GroupConfigProvider;
 import gameengine.ChineseCheckersState;
 
 /**

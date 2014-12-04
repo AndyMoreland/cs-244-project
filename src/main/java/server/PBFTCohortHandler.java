@@ -8,16 +8,13 @@ import com.sun.istack.internal.Nullable;
 import common.*;
 import config.GroupConfigProvider;
 import config.GroupMember;
-import gameengine.ChineseCheckersLogListener;
 import gameengine.ChineseCheckersState;
-import gameengine.ChineseCheckersStateMachine;
 import gameengine.operations.NoOp;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.apache.thrift.TException;
 import statemachine.Operation;
 
-import javax.swing.text.View;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -36,7 +33,6 @@ public class PBFTCohortHandler implements Iface {
     private Map<Integer, List<ViewChangeMessage>> viewChangeMessages; // this should include your own messages
     private int replicaID;
     private final ExecutorService pool;
-    private final ChineseCheckersStateMachine stateMachine;
 
     private static final int POOL_SIZE = 10;
     private static final int LAST_CHECKPOINT = 0; // set to 0 for now; no checkpointing
@@ -48,18 +44,15 @@ public class PBFTCohortHandler implements Iface {
     private static final int CHECKPOINT_INTERVAL = 100;
 
 
-    public PBFTCohortHandler(GroupConfigProvider<PBFTCohort.Client> configProvider, int replicaID, GroupMember<PBFTCohort.Client> thisCohort) {
+    public PBFTCohortHandler(GroupConfigProvider<PBFTCohort.Client> configProvider, int replicaID, GroupMember<PBFTCohort.Client> thisCohort, LogListener toNotify) {
         this.configProvider = configProvider;
         viewChangeMessages = Maps.newHashMap();
         this.replicaID = replicaID;
         pool = Executors.newFixedThreadPool(POOL_SIZE);
         this.log = new Log<Operation<ChineseCheckersState>>();
         this.thisCohort = thisCohort;
-        this.stateMachine = new ChineseCheckersStateMachine(
-                ChineseCheckersState.buildGameForGroupMembers(configProvider.getGroupMembers())
-        );
 
-        this.log.addListener(new ChineseCheckersLogListener(stateMachine));
+        this.log.addListener(toNotify);
 
         LOG.info("Starting handler!");
     }
