@@ -60,7 +60,7 @@ public class PBFTCohortHandler implements Iface {
     @Override
     public void clientMessage(ClientMessage message) throws TException {
         LOG.info("Got client message");
-        if(this.configProvider.getLeader().getReplicaID() == this.replicaID) return;
+        if(this.configProvider.getLeader().getReplicaID() != this.replicaID) return;
         LOG.info("I'm the leader");
         if (!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) return;
         LOG.info("validated signature! multicasting prePrepares...");

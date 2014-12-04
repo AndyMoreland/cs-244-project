@@ -99,6 +99,7 @@ public class PBFTServerInstance implements Runnable {
     }
 
     public void notifyOnNextTurn() {
+        LOG.info("next turn");
         gameEngine.requestCommit(new NoOp());
     }
 

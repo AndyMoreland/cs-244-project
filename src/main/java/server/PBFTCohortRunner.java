@@ -126,7 +126,7 @@ public class PBFTCohortRunner {
             try {
                 groupMember = leaderConfigProvider.getGroupMember(i);
                 secondServer = groupMember.getThriftConnection();
-                secondServer.prePrepare(message, transaction);
+                secondServer.prePrepare(message, new ClientMessage(), transaction);
             } catch (TTransportException e) {
                 System.err.println("Failed to send preprepare for server: " + i);
                 e.printStackTrace();

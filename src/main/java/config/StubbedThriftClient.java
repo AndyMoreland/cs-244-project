@@ -9,7 +9,12 @@ import org.apache.thrift.TException;
 public class StubbedThriftClient implements PBFTCohort.Iface {
 
     @Override
-    public void prePrepare(PrePrepareMessage message, TTransaction transaction) throws TException {
+    public void clientMessage(ClientMessage message) throws TException {
+
+    }
+
+    @Override
+    public void prePrepare(PrePrepareMessage message, ClientMessage clientMessage, TTransaction transaction) throws TException {
 
     }
 
