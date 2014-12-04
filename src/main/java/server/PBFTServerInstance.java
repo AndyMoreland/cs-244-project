@@ -32,12 +32,12 @@ public class PBFTServerInstance implements Runnable {
     private static Logger LOG = LogManager.getLogger(PBFTServerInstance.class);
 
     public static final int INITIAL_VIEW_ID = 0;
-    public static final String CONFIG_FILE = "cluster_config.json";
     private static final int REPLICA_ID_ARG_POS = 0;
 
     public PBFTCohortHandler handler;
     public PBFTCohort.Processor processor;
     private GroupConfigProvider<PBFTCohort.Client> configProvider;
+    public static  String configFile;
 
     private int replicaID;
 
@@ -45,10 +45,11 @@ public class PBFTServerInstance implements Runnable {
     private final PrivateKey privateKey;
     private final Map<Integer, PublicKey> publicKeys;
 
-    public PBFTServerInstance(String[] args, PrivateKey privateKey, Map<Integer, PublicKey> publicKeys) {
+    public PBFTServerInstance(String[] args, PrivateKey privateKey, Map<Integer, PublicKey> publicKeys, String configFile) {
         this.args = args;
         this.privateKey = privateKey;
         this.publicKeys = publicKeys;
+        this.configFile = configFile;
     }
 
     private void configureLogging(GroupMember<PBFTCohort.Client> me) {
@@ -58,7 +59,7 @@ public class PBFTServerInstance implements Runnable {
     public void run() {
         try {
             replicaID = Integer.parseInt(args[REPLICA_ID_ARG_POS]);
-            configProvider = initializeConfigProvider(new File(CONFIG_FILE));
+            configProvider = initializeConfigProvider(new File(configFile));
 
             final GroupMember<PBFTCohort.Client> me = configProvider.getGroupMember(this.replicaID);
             configProvider.getOtherGroupMembers().remove(me);
