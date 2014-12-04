@@ -37,7 +37,7 @@ public class StaticGroupConfigProvider<T extends org.apache.thrift.TServiceClien
 
     @Override
     public int getQuorumSize() {
-        return (members.size() + 1) - (members.size())/3;
+        return members.size() - (members.size()-1)/3;
     }
 
     @Override

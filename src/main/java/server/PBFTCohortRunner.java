@@ -52,10 +52,41 @@ public class PBFTCohortRunner {
         for (int i = 1; i < 3; i++) {
             testSystem(privateKeyMap, leaderConfigProvider, i);
         }
+
+        testViewChange(leaderConfigProvider);
     }
 
-    private static void testSystem(Map<Integer, PrivateKey> privateKeyMap, GroupConfigProvider<PBFTCohort.Client> leaderConfigProvider, int sequenceNumber) {
-        for (int i = 1; i <= 6; i++) {
+    private static void testViewChange(GroupConfigProvider<PBFTCohort.Client> leaderConfigProvider) {
+
+        // make everyone multicast view-change messages
+        for (int i = 1; i <= numServers-1; i++) {
+            GroupMember<PBFTCohort.Client> groupMember = null;
+            PBFTCohort.Client server = null;
+
+            try {
+                groupMember = leaderConfigProvider.getGroupMember(i);
+                server = groupMember.getThriftConnection();
+                server.initiateViewChange();
+            } catch (TTransportException e) {
+                System.err.println("Failed to initiate view change from server: " + i);
+                e.printStackTrace();
+            } catch (TException e) {
+                System.err.println("Failed to initiate view change from server: " + i);
+                e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                groupMember.returnThriftConnection(server);
+            }
+        }
+    }
+
+    private static void testSystem(
+            Map<Integer, PrivateKey> privateKeyMap,
+            GroupConfigProvider<PBFTCohort.Client> leaderConfigProvider,
+            int sequenceNumber) {
+
+        for (int i = 1; i <= numServers; i++) {
             int sendingReplicaID = leaderConfigProvider.getLeader().getReplicaID();
             Viewstamp viewstamp = new Viewstamp(sequenceNumber, 0);
             TTransaction transaction = new TTransaction(
