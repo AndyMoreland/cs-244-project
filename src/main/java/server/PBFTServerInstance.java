@@ -5,7 +5,6 @@ import com.google.common.base.Optional;
 import com.google.common.collect.Sets;
 import config.*;
 import gameengine.BenchmarkingGameEngine;
-import gameengine.ChineseCheckersGameEngine;
 import gameengine.ChineseCheckersState;
 import gameengine.GameEngine;
 import gameengine.operations.NoOp;
@@ -29,6 +28,7 @@ import java.security.PublicKey;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CyclicBarrier;
 
 /**
  * Created by andrew on 12/1/14.
@@ -43,6 +43,7 @@ public class PBFTServerInstance implements Runnable {
     public PBFTCohort.Processor processor;
     private GroupConfigProvider<PBFTCohort.Client> configProvider;
     public static  String configFile;
+    private CyclicBarrier barrier;
 
 
     private int replicaID;
@@ -59,6 +60,7 @@ public class PBFTServerInstance implements Runnable {
         this.privateKey = privateKey;
         this.publicKeys = publicKeys;
         this.configFile = configFile;
+        this.barrier = barrier;
         this.gameEngine = null;
     }
 
@@ -92,10 +94,24 @@ public class PBFTServerInstance implements Runnable {
 
             new Thread(simple).start();
 
-            gameEngine.requestCommit(new NoOp());
+            executeNoOp();
         } catch (Exception x) {
             x.printStackTrace();
         }
+    }
+
+    private void executeNoOp() {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                gameEngine.requestCommit(new NoOp());
+            }
+        }).start();
     }
 
     public void notifyOnNextTurn() {

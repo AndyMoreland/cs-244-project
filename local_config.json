@@ -32,6 +32,22 @@
       "port": 9004,
       "public_key": "keys/server4_public_key",
       "private_key": "keys/server4_private_key"
+    },
+    {
+      "id": 5,
+      "name": "server5",
+      "hostname": "localhost",
+      "port": 9005,
+      "public_key": "keys/server5_public_key",
+      "private_key": "keys/server5_private_key"
+    },
+    {
+      "id": 6,
+      "name": "server6",
+      "hostname": "localhost",
+      "port": 9006,
+      "public_key": "keys/server6_public_key",
+      "private_key": "keys/server6_private_key"
     }
   ]
 }

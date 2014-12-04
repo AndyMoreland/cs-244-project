@@ -46,28 +46,20 @@ public class PBFTCohortRunner {
                     new String[]{String.valueOf(i), "900" + i},
                     privateKeyMap.get(i),
                     publicKeyMap,
-                    args[CONFIG_FILE_POS]);
+                    args[CONFIG_FILE_POS]
+            );
             servers.put(i, server);
             server.run();
         }
 
         GroupConfigProvider<PBFTCohort.Client> leaderConfigProvider = servers.get(1).getConfigProvider();
 
-        for (int i = 1; i < 3; i++) {
-            testSystem(privateKeyMap, leaderConfigProvider, i);
-        }
-
-        testViewChange(leaderConfigProvider);
-        // not 100% reliable way to wait a bit for them to all to move to new view
-        // before trying another view change
-        Thread.sleep(1000);
-        testViewChange(leaderConfigProvider);
-        Thread.sleep(1000);
-        testViewChange(leaderConfigProvider);
+//        for (int i = 1; i < 3; i++) {
+//            testSystem(privateKeyMap, leaderConfigProvider, i);
+//        }
     }
 
     private static void testViewChange(GroupConfigProvider<PBFTCohort.Client> leaderConfigProvider) {
-
         // make everyone multicast view-change messages
         for (int i = 1; i <= numServers; i++) {
             GroupMember<PBFTCohort.Client> groupMember = null;
@@ -96,6 +88,8 @@ public class PBFTCohortRunner {
             GroupConfigProvider<PBFTCohort.Client> leaderConfigProvider,
             int sequenceNumber) {
 
+        LOG.warn("Starting.");
+
         for (int i = 1; i <= numServers; i++) {
             int sendingReplicaID = leaderConfigProvider.getLeader().getReplicaID();
             Viewstamp viewstamp = new Viewstamp(sequenceNumber, 0);
@@ -111,14 +105,20 @@ public class PBFTCohortRunner {
 
             TransactionDigest transactionDigest = CryptoUtil.computeTransactionDigest(common.Transaction.getTransactionForPBFTTransaction(transaction));
 
-            PrePrepareMessage message = new PrePrepareMessage(
+            PrePrepareMessage prePrepareMessage = new PrePrepareMessage(
                     viewstamp,
                     ByteBuffer.wrap(transactionDigest.getBytes()),
                     sendingReplicaID,
                     ByteBuffer.allocate(0)
             );
 
-            message.setMessageSignature(CryptoUtil.computeMessageSignature(message, privateKeyMap.get(sendingReplicaID)).getBytes());
+
+            ClientMessage clientMessage = new ClientMessage(
+                    transaction.getOperation(), sendingReplicaID, null
+            );
+
+            clientMessage.setMessageSignature(CryptoUtil.computeMessageSignature(clientMessage, privateKeyMap.get(sendingReplicaID)).getBytes());
+            prePrepareMessage.setMessageSignature(CryptoUtil.computeMessageSignature(prePrepareMessage, privateKeyMap.get(sendingReplicaID)).getBytes());
 
             GroupMember<PBFTCohort.Client> groupMember = null;
             PBFTCohort.Client secondServer = null;
@@ -126,8 +126,7 @@ public class PBFTCohortRunner {
             try {
                 groupMember = leaderConfigProvider.getGroupMember(i);
                 secondServer = groupMember.getThriftConnection();
-                LOG.error("this is dead. don't use this.");
-//                secondServer.prePrepare(message, transaction);
+                secondServer.prePrepare(prePrepareMessage, clientMessage, transaction);
 
             } catch (TTransportException e) {
                 System.err.println("Failed to send preprepare for server: " + i);

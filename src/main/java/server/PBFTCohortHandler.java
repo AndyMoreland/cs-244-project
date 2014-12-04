@@ -42,6 +42,7 @@ public class PBFTCohortHandler implements Iface {
             new common.Transaction(null, -1, new NoOp(), 0)).getBytes();
 
     private static final int CHECKPOINT_INTERVAL = 100;
+    private int sequenceNumber = 0;
 
 
     public PBFTCohortHandler(GroupConfigProvider<PBFTCohort.Client> configProvider, int replicaID, GroupMember<PBFTCohort.Client> thisCohort, LogListener toNotify) {
@@ -58,7 +59,7 @@ public class PBFTCohortHandler implements Iface {
     }
 
     @Override
-    public void clientMessage(ClientMessage message) throws TException {
+    public synchronized void clientMessage(ClientMessage message) throws TException {
         LOG.info("Got client message");
         if(this.configProvider.getLeader().getReplicaID() != this.replicaID) return;
         LOG.info("I'm the leader");
@@ -66,10 +67,13 @@ public class PBFTCohortHandler implements Iface {
         LOG.info("validated signature! multicasting prePrepares...");
 
         TTransaction transaction = new TTransaction();
-        transaction.viewstamp = new Viewstamp(log.getNextSequenceNumber(), configProvider.getViewID()); // TODO this sequence number is not correct
+        transaction.viewstamp = new Viewstamp(sequenceNumber + 1, configProvider.getViewID());
         transaction.replicaId = message.getReplicaId();
         transaction.operation = message.operation;
 
+        LOG.debug("Attempting to transmit with sequence number: " + (sequenceNumber + 1));
+
+        sequenceNumber++;
 
         for (final GroupMember<PBFTCohort.Client> member : configProvider.getOtherGroupMembers()) {
             final PrePrepareMessage prePrepareMessage = new PrePrepareMessage();
