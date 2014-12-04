@@ -128,6 +128,7 @@ public class PBFTCohortRunner {
                 secondServer = groupMember.getThriftConnection();
                 LOG.error("this is dead. don't use this.");
 //                secondServer.prePrepare(message, transaction);
+
             } catch (TTransportException e) {
                 System.err.println("Failed to send preprepare for server: " + i);
                 e.printStackTrace();
