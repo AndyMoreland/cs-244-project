@@ -66,7 +66,7 @@ public class PBFTCohortHandler implements Iface {
         LOG.info("validated signature! multicasting prePrepares...");
 
         TTransaction transaction = new TTransaction();
-        transaction.viewstamp = new Viewstamp(log.getLastCommited(), configProvider.getViewID()); // TODO this sequence number is not correct
+        transaction.viewstamp = new Viewstamp(log.getNextSequenceNumber(), configProvider.getViewID()); // TODO this sequence number is not correct
         transaction.replicaId = message.getReplicaId();
         transaction.operation = message.operation;
 
@@ -229,7 +229,7 @@ public class PBFTCohortHandler implements Iface {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            int lastCommited = log.getLastCommited();
+            int lastCommited = log.getLastApplied();
             if (shouldCheckpoint(lastCommited)) {
                 // checkpoint and multicast a proof
                 TransactionDigest digest = null; // CryptoUtil.computeCheckpointDigest(); TODO (Susan) need access to state machine
