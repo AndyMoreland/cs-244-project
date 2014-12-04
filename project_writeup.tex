@@ -81,7 +81,7 @@ Clients should number their moves 1, 2, 3, etc. No honest replica should apply a
 
 \subsubsection{Player Join}
 
-New player P sends public key to all players and then sends a $<MOVE, join, ...>$ to the server, which gets run through PBFT. Non-faulty clients should all approve this.
+New player P sends public key to all players and then sends a $<MOVE, join, ...>$ to the server, which gets run through PBFT. Non-faulty clients should all approve this unless the game is full.
 
 \subsubsection{Player Leave}
 
