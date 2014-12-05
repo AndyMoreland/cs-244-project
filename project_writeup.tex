@@ -20,6 +20,13 @@
 \usepackage{hyperref}
 \newfloat{algorithm}{t}{lop}
 
+\AtBeginDocument{%
+  \mathchardef\mathcomma\mathcode`\,
+  \mathcode`\,="8000 
+}
+{\catcode`,=\active
+  \gdef,{\mathcomma\discretionary{}{}{}}
+}
 
 \DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
 \DeclarePairedDelimiter{\floor}{\lfloor}{\rfloor}
@@ -70,28 +77,28 @@ In this paper we present Leela, a distributed multiplayer game engine that is By
 \section{Design Overview}
 \subsection{Protocol for Byzantine Threats}
 
-Our protocol is heavily based on \emph{Practical Byzantine Fault Tolerance} (PBFT). In our setup, one player is simultaneously a client and the primary (also referred to as the server). All other players are simultaneously clients and replicas. We assume players can obtain each others' IP addresses, thrift ports, and public keys from some trusted 3rd party. (In the description below we assume $3f+1$ players, but our implementation correctly handles any number $n$ of players so that we can tolerate up to $\lfloor \frac{n-1}{3}\rfloor$ cheaters.)
+Our protocol is heavily based on \emph{Practical Byzantine Fault Tolerance} (PBFT). In our setup, one player is simultaneously a client and the primary (also referred to as the server). All other players are simultaneously clients and replicas. We assume players that the game starts with can obtain each others' IP addresses, thrift ports, and public keys from some trusted 3rd party. (In the description below we assume $3f+1$ players, but our implementation correctly handles any number $n$ of players so that we can tolerate up to $\lfloor \frac{n-1}{3}\rfloor$ cheaters.)
 \subsubsection{Submittng and Approving a Move}
 
-Suppose we have some client A who wants to play a move. Client A sends this signed move to server. (This signed move the same as the client’s request in \cite{castro}): $<MOVE, move_info, timestamp, A_ID, signature>$. This move is run through PBFT. If the move looks valid, clients should eventually multicast a $COMMIT$ message indicating this. If not it should multicast an $<ACCUSE, viewstamp, D(move_info), i, A_ID signature>$ message, where $D$ indicates a digest and $viewstamp$ refers to a pair of view number and sequence number. (Note that we can skip the last reply to the client in PBFT since our client is the same as one of the replicas, and PBFT guarantees that once a move commits at an honest replica, it will eventually commit on at least $f+1$ honest replicas.) A replica that obtains $2f+1$ $COMMIT$ messages should commit the move to its log. A replica that does not send an $COMMIT$ message (because it does not think the move is valid) should send a $<MOVE, kick out A, timestamp, clientID, signature>$ as a request to the server and an $ACCUSE$ message in lieu of the $COMMIT$ message (so that other replicas know that it isn’t just not responding). To prevent many replicas from submitting a request to boot A at the same time, a replica should wait a randomized timeout before submitting this request. (We consider it not particularly important to boot cheating clients the instant they cheat, so the lag that results from this timeout is acceptable.) 
+Suppose we have some client A who wants to play a move. Client A sends this signed move to server. (This signed move the same as the client’s request in \cite{castro}): $\langle MOVE, move_info, timestamp, A_ID, signature \rangle$. This move is run through PBFT. If the move looks valid, clients should eventually multicast a $COMMIT$ message indicating this. If not it should multicast an $\langle ACCUSE, viewstamp, D(move_info), i, A_ID signature\ra $ message, where $D$ indicates a digest and $viewstamp$ refers to a pair of view number and sequence number. (Note that we can skip the last reply to the client in PBFT since our client is the same as one of the replicas, and PBFT guarantees that once a move commits at an honest replica, it will eventually commit on at least $f+1$ honest replicas.) A replica that obtains $2f+1$ $COMMIT$ messages (counting its own) should commit the move to its log. A replica that does not send an $COMMIT$ message (because it does not think the move is valid) should send a $\langle MOVE, kick\ out\ A, timestamp, clientID, signature\ra $ as a request to the server and an $ACCUSE$ message in lieu of the $COMMIT$ message (so that other replicas know that it is not failed, byzantine, or network-partitioned). To prevent many replicas from submitting a request to boot A at the same time, a replica should wait a randomized timeout before submitting this request. (We consider it not particularly important to boot cheating clients the instant they cheat, so the lag that results from this timeout is acceptable.) 
 
-Clients should number their moves 1, 2, 3, etc. No honest replica should apply a $M$th move from client A that before it has applied A’s $M-1$ move. 
+Clients should number their moves 1, 2, 3, etc. No honest replica should apply the $m$th move from client A before it has applied A’s $m-1$th move. 
 
 \subsubsection{Player Join}
 
-New player P sends public key to all players and then sends a $<MOVE, join, ...>$ to the server, which gets run through PBFT. Non-faulty clients should all approve this unless the game is full.
+New player P sends public key to all players and then sends a $\la MOVE, join, ...\ra $ to the server, which is run through PBFT. Non-faulty clients should all approve this unless the game is full.
 
 \subsubsection{Player Leave}
 
-If the player P intends to leave, P should send a $<MOVE, leave,...>$ request to the server, which gets run through PBFT. Non-faulty clients should all approve this.
+If the player P intends to leave, P should send a $\la MOVE, leave,...\ra $ request to the server, which is run through PBFT. Non-faulty clients should all approve this.
 
-If the server S claims has not heard from P in a while, it may be that (1) P has disconnected and should not longer be considered to be a part of the game or (2) the server is malicious. The server will run the request $<MOVE, kick out P, timestamp serverID, signature>$ through PBFT. In case (1), non-faulty clients will also not have heard from P, so they will vote for P’s removal. (Note that while is possible that network issues have partitioned P from the server but still allow it to contact other clients, thereby preventing the server from kicking out P, we don’t expect this to be the common case). In case (2), clients should vote against removal and remember that they refused a removal request from this server. Clients who voted against should initiate a view change. After the view change, some client that voted against removal of P (do this after a randomized timeout so we don’t get a bunch of these all at once) should issue a $<MOVE, kick out S, ...>$ request. All honest clients that voted against removal of P are expected to vote for this request.
+If the server S claims to have not heard from P in a while, it may be that (1) P has disconnected and should not longer be considered to be a part of the game or (2) the server is malicious. The server will run the request $\la MOVE, kick\ out\ P, timestamp, S_ID, signature\ra $ through PBFT. In case (1), non-faulty clients will also not have heard from P, so they will vote for P’s removal. (Note that while is possible that network issues have partitioned P from the server but still allow it to contact other clients, thereby preventing the server from kicking out P, we don’t expect this to be the common case). In case (2), clients should vote against removal and remember that they refused a removal request from this server. Clients who voted against should initiate a view change. After the view change, some client that voted against removal of P should issue a $\la MOVE, kick\ out\ S, ...\ra $ request (clients should do this after a randomized timeout so that there are not many of these all at once). All honest clients that voted against removal of P are expected to vote for this request.
 
-For the purposes of detecting if a player has abruptly disconnected, the clients/server should keep track of who they got a PREPARE (or COMMIT, or ACCUSE) message from even if they no longer need that PREPARE message to consider themselves PREPARED. 
+For the purposes of voting against dishonest attempts to remove players who are still responsive, the clients/server should keep track of who they got a $PREPARE$ (or $COMMIT$, or $ACCUSE$) message from even if they no longer need that $PREPARE$ message to consider themselves $PREPARED$. 
 
 \subsubsection{Malicious Server}
 
-Due to moves needing to be signed by the players proposing them, no malicious server can ‘make up’ moves; it can only fail to send PRE-PREPARES for them or be very slow to send PRE-PREPARES for them. Clients can time how long it takes for moves to be considered committed-local and initiate view changes if the avg time (for example) is considered to be too long. They can also periodically request that they receive a reply (as specified in the original PBFT paper) back from all clients for some requests so they can time how long it takes for the move to be committed everywhere (i.e., they might take the average time of the 2f+1 fastest).  
+Due to moves needing to be signed by the players proposing them, a malicious server cannot spoof moves; it can only fail to send $PRE-PREPARES$ for them or be very slow to send $PRE-PREPARES$ for them. Clients can time how long it takes for moves to be considered committed-local and initiate view changes if the average time is considered to be too long. They can also periodically request that they receive a notification from all clients when some request has committed so they can time how long it takes for the move to be committed everywhere. (They take the average time of the $2f+1$ fastest.)
 
 \subsection{Optimizations}
 
@@ -106,12 +113,17 @@ Due to moves needing to be signed by the players proposing them, no malicious se
 
 Graphs!
 
+\section{Related Work} %% SUNDR, leaderless paxos, VR 
+We considered several other strategies for attaining correctness in the presence of Byzantine nodes. SUNDR \cite{li} is a network filesystem that allows clients to verify data they obtain from an untrusted server by comparing the history that the server presents to them with the histories that the server presents to other clients. As in PBFT, signing makes it impossible for the server to present spoof operations and insert them into the file history. It must also always present a client with that client's own operations; therefore a malicious server can only make a client miss operations from other clients, a type of attack that would be detected if clients compare histories. However, we chose not to base our implementation SUNDR because while SUNDR's advantage over BFS is to make attacks detectable without replication, we do in fact need replication of the game state at each client.    
 
-
+It is not clear how well it will work in practice, where it can be . 
+While \cite{lamport} notes that it may be difficult to distinguish malicious behavior from transient network problems in PBFT (perhaps leading to more view changes than necessary), in our case, since we don't want to .  
 \section{Conclusion}
 
 \begin{thebibliography}{9}
 
+\bibitem{castro} M. Castro and B. Liskov. Practical Byzantine Fault Tolerance. \emph{Proceedings of the Thirf Symposium on Operating System Design and Implementation}, 1999.
+\bibitem{li} J. Li, M. Krohn, D. Mazieres, and D. Shasha. M. Castro and B. Liskov. Secure Untrusted Data Repository (SUNDR). \emph{Proceedings of the 6th Symposium on Operating Systems Design and Implementation}, 2004.
 \bibitem{castro} M. Castro and B. Liskov. Practical Byzantine Fault Tolerance. \emph{Proceedings of the Thirf Symposium on Operating System Design and Implementation}, 1999.
 
 \end{thebibliography}
