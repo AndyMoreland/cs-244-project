@@ -122,30 +122,45 @@ public class Log<T> {
         entry.commit();
 
         LOG.info("COMMITED ENTRY: " + id.toString());
-        LOG.info(id.getSequenceNumber() + " " + lastApplied);
+        LOG.info("Sequence number: " + id.getSequenceNumber() + " " + " and last applied: " + lastApplied);
 
         if (id.getSequenceNumber() == lastApplied + 1) {
-            lastApplied++;
-            flushUnappliedEntries();
+            flushUnappliedEntries(writeLock);
         }
 
         writeLock.unlock();
     }
 
-    private void flushUnappliedEntries() {
-        while (unappliedLogEntries.get(lastApplied) != null) {
-            Transaction<T> transaction = unappliedLogEntries.get(lastApplied);
+    /* Assumes that a writelock is held. */
+    private void flushUnappliedEntries(Lock writeLock) {
+        List<Transaction<T>> unnotifiedLogEntries = Lists.newArrayList();
+
+        while (unappliedLogEntries.get(lastApplied + 1) != null) {
+            Transaction<T> transaction = unappliedLogEntries.get(lastApplied + 1);
+            unappliedLogEntries.remove(lastApplied + 1);
+            unnotifiedLogEntries.add(transaction);
+            lastApplied++;
+        }
+
+
+        writeLock.unlock();
+        for (Transaction<T> transaction: unnotifiedLogEntries) {
+
             boolean failed = false;
+
             for (LogListener<T> listener : listeners) {
                 try {
                     listener.notifyOnCommit(transaction);
                 } catch (InvalidStateMachineOperationException e) {
                     failed = true;
-                } catch(Exception e) {
+                    e.printStackTrace();
+                } catch (Exception e) {
                     LOG.warn("Failed to apply operation.");
                     e.printStackTrace();
                 }
             }
+
+            writeLock.lock();
 
             if (failed) {
                 LOG.warn("Invalid state machine operation caught");
@@ -153,9 +168,10 @@ public class Log<T> {
                 /* FIXME: We need to handle this case. */
             }
 
-            unappliedLogEntries.remove(lastApplied);
-            lastApplied++;
+            writeLock.unlock();
         }
+
+        writeLock.lock();
     }
 
     public void addPrepareMessage(PrepareMessage message) {
@@ -177,10 +193,13 @@ public class Log<T> {
     }
 
     public void markAsPrepared(Viewstamp id){
+        Lock writeLock = logLock.writeLock();
+        writeLock.lock();
         transactions.get(id).prepare();
+        writeLock.unlock();
     }
 
-    public boolean readyToPrepare(Viewstamp viewstamp, TransactionDigest mtd, int quorumSize){
+    public boolean readyToPrepare(Viewstamp viewstamp, TransactionDigest mtd, int quorumSize) {
         Lock readLock = logLock.readLock();
         readLock.lock();
         Transaction<T> transaction = transactions.get(viewstamp);

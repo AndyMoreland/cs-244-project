@@ -81,7 +81,7 @@ public class PBFTServerInstance implements Runnable {
             LOG.info("Starting server on port: " + me.getAddress().getPort() + " with address: " + me.getAddress().getHostName());
 
             // GameEngine<ChineseCheckersState> engine = new ChineseCheckersGameEngine(configProvider);
-            this.gameEngine = new BenchmarkingGameEngine(configProvider, this);
+            this.gameEngine = new BenchmarkingGameEngine(configProvider);
 
             handler = new PBFTCohortHandler(configProvider, replicaID, me, gameEngine);
             processor = new PBFTCohort.Processor(handler);
@@ -105,11 +105,15 @@ public class PBFTServerInstance implements Runnable {
             @Override
             public void run() {
                 try {
-                    Thread.sleep(2000);
+                    Thread.sleep(5000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                gameEngine.requestCommit(new NoOp());
+
+                LOG.info(configProvider.getMe().getReplicaID() + " " + 1);
+                if (configProvider.getMe().getReplicaID() == 1) {
+                    gameEngine.requestCommit(new NoOp());
+                }
             }
         }).start();
     }

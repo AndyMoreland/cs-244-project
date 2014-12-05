@@ -27,7 +27,9 @@ public class PBFTCohortRunner {
     private static final int CONFIG_FILE_POS = 0;
 
     public static void main(final String[] args) throws InterruptedException, IOException {
-        BasicConfigurator.configure(new ConsoleAppender(new PatternLayout("{ %X{server-name} } " + PatternLayout.TTCC_CONVERSION_PATTERN)));
+        ConsoleAppender appender = new ConsoleAppender(new PatternLayout("{ %X{server-name} } " + PatternLayout.TTCC_CONVERSION_PATTERN));
+        appender.setThreshold(Priority.ERROR);
+        BasicConfigurator.configure(appender);
 
         Map<Integer, PublicKey> publicKeyMap = Maps.newHashMap();
         Map<Integer, PrivateKey> privateKeyMap = Maps.newHashMap();

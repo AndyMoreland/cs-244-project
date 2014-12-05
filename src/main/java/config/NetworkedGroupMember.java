@@ -2,10 +2,10 @@ package config;
 
 import com.google.common.base.Optional;
 import common.CryptoUtil;
-import common.ThriftConnectionFactory;
-import org.apache.commons.pool2.impl.GenericObjectPool;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
+import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
+import org.apache.thrift.transport.TSocket;
 
 import java.lang.reflect.Constructor;
 import java.net.InetSocketAddress;
@@ -22,7 +22,7 @@ public class NetworkedGroupMember<T extends org.apache.thrift.TServiceClient> im
     private final Optional<PrivateKey> privateKey;
     private final int id;
     private final String name;
-    private final GenericObjectPool<T> clientPool;
+//    private final GenericObjectPool<T> clientPool;
     
     public NetworkedGroupMember(String name, int id, InetSocketAddress address, Class<? extends T> impl, PublicKey publicKey, Optional<PrivateKey> privateKey) throws NoSuchMethodException {
         this.name = name;
@@ -33,13 +33,12 @@ public class NetworkedGroupMember<T extends org.apache.thrift.TServiceClient> im
         this.address = address;
 
         GenericObjectPoolConfig genericObjectPoolConfig = new GenericObjectPoolConfig();
-        genericObjectPoolConfig.setBlockWhenExhausted(true);
         genericObjectPoolConfig.setMinIdle(10);
-        genericObjectPoolConfig.setMaxIdle(20);
+        genericObjectPoolConfig.setMaxIdle(200);
         genericObjectPoolConfig.setBlockWhenExhausted(true);
 
-        this.clientPool = new GenericObjectPool<T>(new ThriftConnectionFactory<T>(getAddress(), TIMEOUT, clientCtor));
-        clientPool.setConfig(genericObjectPoolConfig);
+//        this.clientPool = new GenericObjectPool<T>(new ThriftConnectionFactory<T>(getAddress(), TIMEOUT, clientCtor));
+//        clientPool.setConfig(genericObjectPoolConfig);
     }
 
     @Override
@@ -53,12 +52,15 @@ public class NetworkedGroupMember<T extends org.apache.thrift.TServiceClient> im
 
     @Override
     public T getThriftConnection() throws Exception {
-        return clientPool.borrowObject();
+        TSocket trans = new TSocket(address.getHostName(), address.getPort(), TIMEOUT);
+        trans.open();
+        return clientCtor.newInstance(new TBinaryProtocol(trans));
     }
 
     @Override
     public void returnThriftConnection(T connection) {
-        clientPool.returnObject(connection);
+        connection.getInputProtocol().getTransport().close();
+        connection.getOutputProtocol().getTransport().close();
     }
 
     @Override
