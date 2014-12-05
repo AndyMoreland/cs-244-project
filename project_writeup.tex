@@ -104,10 +104,15 @@ Due to moves needing to be signed by the players proposing them, a malicious ser
 
 \section{Implementation}
 
+We implemented the core logic of our distributed log and game engine in Java, using Apache Thrift\footnote{https://thrift.apache.org/} for Remote Procedure Calls.
+
+For message signatures, 
+
 \subsection{Layers of Abstraction}
 
-(1) Log replication
-(2) Game engine
+Game client: display, player I/O  \\
+Game engine: game state machine, writes moves to distributed log, reads other players' moves from log \\
+Replicated log: replicates log of game state changes across all players' machines
 
 \section{Benchmarking}
 
