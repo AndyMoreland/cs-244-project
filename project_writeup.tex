@@ -1,4 +1,4 @@
-\documentclass[12pt]{article}
+\documentclass[11pt]{article}
 \usepackage{cite}
 \usepackage{amsmath}
 % \usepackage{fullpage}
@@ -17,7 +17,9 @@
 \usepackage{algpseudocode}
 \usepackage{algorithm}
 \usepackage{float}
+\usepackage{hyperref}
 \newfloat{algorithm}{t}{lop}
+
 
 \DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
 \DeclarePairedDelimiter{\floor}{\lfloor}{\rfloor}
@@ -52,30 +54,26 @@
 \newtheorem{lemma}[theorem]{Lemma}
 \newtheorem{proposition}[theorem]{Proposition}
 
-\setlength{\columnsep}{0.1pc}
+\setlength{\columnsep}{1pc}
 
-\title{Pythia: Cheating-Resistant Distributed Game Engines}
-\author{Leo Martel, Susan Tu, Andy Moreland \\ \tt{\{lmartel, susanctu, andymo\}@stanford.edu} \\ Department of Computer Science}
+\title{Leela: Cheating-Resistant Distributed Game Engines}
+\author{Leo Martel, Susan Tu, Andy Moreland \\ \tt{\{lmartel, susanctu, andymo\}@stanford.edu}}
 \date{\today}
 \begin{document}
 
 \maketitle
 
+\begin{multicols}{2}
+
 \section{Abstract}
-
-In this paper we present Pythia, a distributed multiplayer game engine that is resiliant to faults in a restricted Byzantine model. Pythia allows games to be written with little regard for problems like move replication, cheat detection and player list changes. Pythia is based on the \emph{Practical Byzantine Fault Tolerance} paper but weakens the Byzantine threat model as a result of specific constraints of semi-real-time video games. We seek to minimize latency throughout our design and demonstrate that Pythia is a practical underpinning for multiplayer games.
-
-\section{Introduction}
-
+In this paper we present Leela, a distributed multiplayer game engine that is Byzantine fault-tolerant. Leela allows games to be written with little regard for issues such as move replication, rejection of cheating moves, allowing new players to join the game, allowing players to leave the game, and removing cheating or network-partitioned players from the game. Leela is based on \emph{Practical Byzantine Fault Tolerance} \cite{castro} and we seek to demonstrate through benchmarks that Leela is a practical underpinning for multiplayer games.
 \section{Design Overview}
-
 \subsection{Protocol for Byzantine Threats}
 
-Our initial protocol was heavily based on \emph{Practical Byzantine Fault Tolerance}. In our setup, one player is a client and the primary (the “server”); all other players are simultaneously clients and replicas. We assume we have at least 4 players who know each other’s IP addresses, thrift ports, and public keys. (We assume there exists some trusted 3rd party who can provide us with this information.)
+Our protocol is heavily based on \emph{Practical Byzantine Fault Tolerance} (PBFT). In our setup, one player is simultaneously a client and the primary (also referred to as the server). All other players are simultaneously clients and replicas. We assume players can obtain each others' IP addresses, thrift ports, and public keys from some trusted 3rd party. (In the description below we assume $3f+1$ players, but our implementation correctly handles any number $n$ of players so that we can tolerate up to $\lfloor \frac{n-1}{3}\rfloor$ cheaters.)
+\subsubsection{Submittng and Approving a Move}
 
-\subsubsection{Submititng and Approving a Move}
-
-Client A sends signed move to server (this is the same as the client’s request in PBFT): $<MOVE, move_info, timestamp, clientID, signature>$. Move gets run through PBFT. If the move looks valid, clients should send a multicast COMMIT message indicating this. If not it should multicast an $<ACCUSE, viewno, seqno, digest(move_info), i, signature>$ message to indicate that $move_info$ (which should have the clientID of the client, A, it came from) is invalid. (Not that we can skip the last reply to the client in PBFT since our client is the same as one of the replicas.) A replica that obtains 2f+1 COMMIT messages should commit the move to its log. A replica that does not send an COMMIT message (because it does not think the move is valid) should send a $<MOVE, kick out A, timestamp, clientID, signature>$ as a request to the server and an ACCUSE message in lieu of the COMMIT message (so that other replicas know that it isn’t just not responding). To prevent many replicas from submitting a request to boot A at the same time, a replica should wait a randomized timeout before submitting this request. (We consider it not particularly important to boot cheating clients the instant they cheat, so the lag in booting A this causes is acceptable.) 
+Suppose we have some client A who wants to play a move. Client A sends this signed move to server. (This signed move the same as the client’s request in \cite{castro}): $<MOVE, move_info, timestamp, A_ID, signature>$. This move is run through PBFT. If the move looks valid, clients should eventually multicast a $COMMIT$ message indicating this. If not it should multicast an $<ACCUSE, viewstamp, D(move_info), i, A_ID signature>$ message, where $D$ indicates a digest and $viewstamp$ refers to a pair of view number and sequence number. (Note that we can skip the last reply to the client in PBFT since our client is the same as one of the replicas, and PBFT guarantees that once a move commits at an honest replica, it will eventually commit on at least $f+1$ honest replicas.) A replica that obtains $2f+1$ $COMMIT$ messages should commit the move to its log. A replica that does not send an $COMMIT$ message (because it does not think the move is valid) should send a $<MOVE, kick out A, timestamp, clientID, signature>$ as a request to the server and an $ACCUSE$ message in lieu of the $COMMIT$ message (so that other replicas know that it isn’t just not responding). To prevent many replicas from submitting a request to boot A at the same time, a replica should wait a randomized timeout before submitting this request. (We consider it not particularly important to boot cheating clients the instant they cheat, so the lag that results from this timeout is acceptable.) 
 
 Clients should number their moves 1, 2, 3, etc. No honest replica should apply a $M$th move from client A that before it has applied A’s $M-1$ move. 
 
@@ -108,13 +106,20 @@ Due to moves needing to be signed by the players proposing them, no malicious se
 
 Graphs!
 
-~\cite{Nobody06}
+
 
 \section{Conclusion}
 
-\bibliography{references}{}
-\bibliographystyle{plain}
-\end{document}
+\begin{thebibliography}{9}
+
+\bibitem{castro} M. Castro and B. Liskov. Practical Byzantine Fault Tolerance. \emph{Proceedings of the Thirf Symposium on Operating System Design and Implementation}, 1999.
+
+\end{thebibliography}
+
+
+
+\end{multicols}
 
 
 \end{document}
+
