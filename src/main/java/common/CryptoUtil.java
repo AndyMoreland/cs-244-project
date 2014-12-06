@@ -15,6 +15,7 @@ import java.security.*;
  * Created by sctu on 11/30/14.
  */
 public final class CryptoUtil {
+    private static final boolean NO_CRYPTO = false;
     private static Logger LOG = LogManager.getLogger(CryptoUtil.class.getName());
 
     private static final ObjectMapper mapper = new ObjectMapper(); // thread-safe
@@ -33,6 +34,7 @@ public final class CryptoUtil {
     }
 
     private static byte[] computeSignature(byte[] byteRep, Signature sig) {
+        if (NO_CRYPTO) return new byte[10];
         try {
             sig.update(byteRep);
             return sig.sign();
@@ -44,6 +46,7 @@ public final class CryptoUtil {
     }
 
     public static TransactionDigest computeTransactionDigest(Transaction transaction) {
+        if (NO_CRYPTO) return new TransactionDigest(new byte[10]);
         try {
             ObjectWriter writer = mapper.writer();
             MessageDigest digest = MessageDigest.getInstance(DIGEST_TYPE);
@@ -67,6 +70,7 @@ public final class CryptoUtil {
 
     public static MessageSignature computeMessageSignature(Object message, PrivateKey privateKey) {
         Signature signature = null;
+        if (NO_CRYPTO) return new MessageSignature(new byte[10]);
         try {
             signature = Signature.getInstance(ALGORITHM, PROVIDER);
         } catch (NoSuchAlgorithmException e) {

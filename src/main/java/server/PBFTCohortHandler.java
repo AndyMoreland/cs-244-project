@@ -59,7 +59,7 @@ public class PBFTCohortHandler implements Iface {
     }
 
     @Override
-    public synchronized void clientMessage(ClientMessage message) throws TException {
+    synchronized public void clientMessage(ClientMessage message) throws TException {
         LOG.info("Got client message");
         if(this.configProvider.getLeader().getReplicaID() != this.replicaID) return;
         LOG.info("I'm the leader");

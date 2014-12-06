@@ -1,7 +1,7 @@
 package config;
 
+import PBFT.PBFTCohort;
 import com.google.common.base.Optional;
-import common.CryptoUtil;
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
@@ -9,12 +9,13 @@ import org.apache.thrift.transport.TSocket;
 
 import java.lang.reflect.Constructor;
 import java.net.InetSocketAddress;
-import java.security.*;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 
 /**
- * Created by andrew on 11/27/14.
+ * Created by andrew on 12/4/14.
  */
-public class NetworkedGroupMember<T extends org.apache.thrift.TServiceClient> implements GroupMember<T> {
+public class NetworkedNonSigningGroupMember<T extends PBFTCohort.Client> implements GroupMember<T> {
     public static final int TIMEOUT = 5000;
     private final Constructor<? extends T> clientCtor;
     private InetSocketAddress address;
@@ -23,8 +24,8 @@ public class NetworkedGroupMember<T extends org.apache.thrift.TServiceClient> im
     private final int id;
     private final String name;
 //    private final GenericObjectPool<T> clientPool;
-    
-    public NetworkedGroupMember(String name, int id, InetSocketAddress address, Class<? extends T> impl, PublicKey publicKey, Optional<PrivateKey> privateKey) throws NoSuchMethodException {
+
+    public NetworkedNonSigningGroupMember(String name, int id, InetSocketAddress address, Class<? extends T> impl, PublicKey publicKey, Optional<PrivateKey> privateKey) throws NoSuchMethodException {
         this.name = name;
         this.publicKey = publicKey;
         this.id = id;
@@ -45,6 +46,7 @@ public class NetworkedGroupMember<T extends org.apache.thrift.TServiceClient> im
     public PrivateKey getPrivateKey() {
         return privateKey.get();
     }
+
     @Override
     public int getReplicaID() {
         return id;
@@ -65,27 +67,27 @@ public class NetworkedGroupMember<T extends org.apache.thrift.TServiceClient> im
 
     @Override
     public boolean verifySignature(Object message, byte[] signatureToVerify) {
-//        return true;
-
-        try {
-            Signature newSig = Signature.getInstance(CryptoUtil.ALGORITHM, CryptoUtil.PROVIDER);
-            newSig.initVerify(publicKey);
-            byte[] byteRep = CryptoUtil.convertToJsonByteArray(message);
-            newSig.update(byteRep);
-            newSig.verify(signatureToVerify);
-
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchProviderException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        } catch (SignatureException e) {
-            e.printStackTrace();
-            return false;
-        }
-
         return true;
+
+//        try {
+//            Signature newSig = Signature.getInstance(CryptoUtil.ALGORITHM, CryptoUtil.PROVIDER);
+//            newSig.initVerify(publicKey);
+//            byte[] byteRep = CryptoUtil.convertToJsonByteArray(message);
+//            newSig.update(byteRep);
+//            newSig.verify(signatureToVerify);
+//
+//        } catch (NoSuchAlgorithmException e) {
+//            e.printStackTrace();
+//        } catch (NoSuchProviderException e) {
+//            e.printStackTrace();
+//        } catch (InvalidKeyException e) {
+//            e.printStackTrace();
+//        } catch (SignatureException e) {
+//            e.printStackTrace();
+//            return false;
+//        }
+//
+//        return true;
     }
 
     @Override

@@ -33,7 +33,7 @@ public class BenchmarkingGameEngine extends ChineseCheckersGameEngine {
     public void notifyOnCommit(Transaction<Operation<ChineseCheckersState>> transaction) throws InvalidStateMachineOperationException {
         super.notifyOnCommit(transaction);
         LOG.warn("Committed message on server: " + configProvider.getMe().getName());
-        LOG.warn("The transaction's replica ID is: " + transaction.getReplicaId());
+        LOG.error("The transaction's replica ID is: " + transaction.getReplicaId());
 
         if (transaction.getReplicaId() == configProvider.getMe().getReplicaID()) {
             LOG.error("Time spent on last move: " + (System.currentTimeMillis() - startTime));

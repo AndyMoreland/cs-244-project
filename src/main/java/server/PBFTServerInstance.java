@@ -28,7 +28,6 @@ import java.security.PublicKey;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CyclicBarrier;
 
 /**
  * Created by andrew on 12/1/14.
@@ -43,8 +42,6 @@ public class PBFTServerInstance implements Runnable {
     public PBFTCohort.Processor processor;
     private GroupConfigProvider<PBFTCohort.Client> configProvider;
     public static  String configFile;
-    private CyclicBarrier barrier;
-
 
     private int replicaID;
 
@@ -60,7 +57,6 @@ public class PBFTServerInstance implements Runnable {
         this.privateKey = privateKey;
         this.publicKeys = publicKeys;
         this.configFile = configFile;
-        this.barrier = barrier;
         this.gameEngine = null;
     }
 
@@ -171,7 +167,7 @@ public class PBFTServerInstance implements Runnable {
     private GroupMember<PBFTCohort.Client> serverNodeToClient(JsonNode server) throws NoSuchMethodException, UnknownHostException {
         int id = server.get("id").getIntValue();
         JsonNode isMock = server.get("mock");
-        if(isMock == null || !isMock.getBooleanValue()) return new NetworkedGroupMember<PBFTCohort.Client>(
+        if(isMock == null || !isMock.getBooleanValue()) return new NetworkedGroupMember<>(
                 server.get("name").getTextValue(),
                 id,
                 new InetSocketAddress(server.get("hostname").getTextValue(), server.get("port").getIntValue()),
