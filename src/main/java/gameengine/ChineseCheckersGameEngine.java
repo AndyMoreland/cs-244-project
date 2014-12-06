@@ -33,24 +33,33 @@ public class ChineseCheckersGameEngine implements GameEngine<ChineseCheckersStat
 
     @Override
     synchronized public void requestCommit(Operation<ChineseCheckersState> operation) {
-        GroupMember<PBFTCohort.Client> leader = this.configProvider.getLeader();
+        final GroupMember<PBFTCohort.Client> leader = this.configProvider.getLeader();
         GroupMember<PBFTCohort.Client> me = this.configProvider.getMe();
 
-        ClientMessage message = new ClientMessage();
+        final String name = configProvider.getMe().getName();
+
+        final ClientMessage message = new ClientMessage();
         message.operation = operation.serialize();
         message.replicaId = me.getReplicaID();
         message.messageSignature = ByteBuffer.wrap(CryptoUtil.computeMessageSignature(message, me.getPrivateKey()).getBytes());
 
-        PBFTCohort.Client thriftConnection = null;
-        try {
-            thriftConnection = leader.getThriftConnection();
-            thriftConnection.clientMessage(message);
-        } catch (Exception e) {
-            LOG.error(this.configProvider.getMe().getName());
-            e.printStackTrace();
-        } finally {
-            leader.returnThriftConnection(thriftConnection);
-        }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+
+                PBFTCohort.Client thriftConnection = null;
+                try {
+                    thriftConnection = leader.getThriftConnection();
+                    thriftConnection.clientMessage(message);
+                } catch (Exception e) {
+                    LOG.error(name);
+                    e.printStackTrace();
+                } finally {
+                    leader.returnThriftConnection(thriftConnection);
+                }
+
+            }
+        }).start();
     }
 
 }

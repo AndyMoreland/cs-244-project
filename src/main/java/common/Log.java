@@ -224,7 +224,8 @@ public class Log<T> {
         if(transaction == null || !transaction.isPrepared() || transaction.isCommitted()){
             quorum = false; // Not (pre)prepared yet or already committed => ignore
         } else {
-            quorum = commitMessages.get(MultiKey.newKey(viewstamp, mtd)).size() >= quorumSize - 1;
+            Set<CommitMessage> commitsReceived = commitMessages.get(MultiKey.newKey(viewstamp, mtd));
+            quorum = commitsReceived != null && commitsReceived.size() >= quorumSize - 1;
         }
 
         readLock.unlock();

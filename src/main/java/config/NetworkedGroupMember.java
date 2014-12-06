@@ -2,7 +2,6 @@ package config;
 
 import com.google.common.base.Optional;
 import common.CryptoUtil;
-import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.apache.thrift.protocol.TBinaryProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TSocket;
@@ -15,7 +14,7 @@ import java.security.*;
  * Created by andrew on 11/27/14.
  */
 public class NetworkedGroupMember<T extends org.apache.thrift.TServiceClient> implements GroupMember<T> {
-    public static final int TIMEOUT = 5000;
+    public static final int TIMEOUT = 30000;
     private final Constructor<? extends T> clientCtor;
     private InetSocketAddress address;
     private final PublicKey publicKey;
@@ -32,10 +31,10 @@ public class NetworkedGroupMember<T extends org.apache.thrift.TServiceClient> im
         this.clientCtor = impl.getConstructor(TProtocol.class);
         this.address = address;
 
-        GenericObjectPoolConfig genericObjectPoolConfig = new GenericObjectPoolConfig();
-        genericObjectPoolConfig.setMinIdle(10);
-        genericObjectPoolConfig.setMaxIdle(200);
-        genericObjectPoolConfig.setBlockWhenExhausted(true);
+//        GenericObjectPoolConfig genericObjectPoolConfig = new GenericObjectPoolConfig();
+//        genericObjectPoolConfig.setMinIdle(10);
+//        genericObjectPoolConfig.setMaxIdle(200);
+//        genericObjectPoolConfig.setBlockWhenExhausted(true);
 
 //        this.clientPool = new GenericObjectPool<T>(new ThriftConnectionFactory<T>(getAddress(), TIMEOUT, clientCtor));
 //        clientPool.setConfig(genericObjectPoolConfig);

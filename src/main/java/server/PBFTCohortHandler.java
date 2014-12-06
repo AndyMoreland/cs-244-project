@@ -46,6 +46,7 @@ public class PBFTCohortHandler implements Iface {
 
 
     public PBFTCohortHandler(GroupConfigProvider<PBFTCohort.Client> configProvider, int replicaID, GroupMember<PBFTCohort.Client> thisCohort, LogListener toNotify) {
+        Thread.currentThread().setName("{SERVER ID: " + replicaID + "} " + Thread.currentThread().getName());
         this.configProvider = configProvider;
         viewChangeMessages = Maps.newHashMap();
         this.replicaID = replicaID;
@@ -59,14 +60,14 @@ public class PBFTCohortHandler implements Iface {
     }
 
     @Override
-    synchronized public void clientMessage(ClientMessage message) throws TException {
+    synchronized public void clientMessage(final ClientMessage message) throws TException {
         LOG.info("Got client message");
         if(this.configProvider.getLeader().getReplicaID() != this.replicaID) return;
         LOG.info("I'm the leader");
         if (!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) return;
         LOG.info("validated signature! multicasting prePrepares...");
 
-        TTransaction transaction = new TTransaction();
+        final TTransaction transaction = new TTransaction();
         transaction.viewstamp = new Viewstamp(sequenceNumber + 1, configProvider.getViewID());
         transaction.replicaId = message.getReplicaId();
         transaction.operation = message.operation;
@@ -76,23 +77,28 @@ public class PBFTCohortHandler implements Iface {
         sequenceNumber++;
 
         for (final GroupMember<PBFTCohort.Client> member : configProvider.getGroupMembers()) {
-            final PrePrepareMessage prePrepareMessage = new PrePrepareMessage();
-            prePrepareMessage.viewstamp = transaction.getViewstamp();
-            prePrepareMessage.replicaId = thisCohort.getReplicaID();
-            prePrepareMessage.transactionDigest = ByteBuffer.wrap(
-                    CryptoUtil.computeTransactionDigest(Transaction.getTransactionForPBFTTransaction(transaction)).getBytes()
-            );
-            prePrepareMessage.messageSignature = ByteBuffer.wrap(CryptoUtil.computeMessageSignature(prePrepareMessage, thisCohort.getPrivateKey()).getBytes());
+            pool.execute(new Runnable() {
+                @Override
+                public void run() {
+                    final PrePrepareMessage prePrepareMessage = new PrePrepareMessage();
+                    prePrepareMessage.viewstamp = transaction.getViewstamp();
+                    prePrepareMessage.replicaId = thisCohort.getReplicaID();
+                    prePrepareMessage.transactionDigest = ByteBuffer.wrap(
+                            CryptoUtil.computeTransactionDigest(Transaction.getTransactionForPBFTTransaction(transaction)).getBytes()
+                    );
+                    prePrepareMessage.messageSignature = ByteBuffer.wrap(CryptoUtil.computeMessageSignature(prePrepareMessage, thisCohort.getPrivateKey()).getBytes());
 
-            PBFTCohort.Client thriftConnection = null;
-            try {
-                thriftConnection = member.getThriftConnection();
-                thriftConnection.prePrepare(prePrepareMessage, message, transaction);
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-                member.returnThriftConnection(thriftConnection);
-            }
+                    PBFTCohort.Client thriftConnection = null;
+                    try {
+                        thriftConnection = member.getThriftConnection();
+                        thriftConnection.prePrepare(prePrepareMessage, message, transaction);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    } finally {
+                        member.returnThriftConnection(thriftConnection);
+                    }
+                }
+            });
         }
     }
 
