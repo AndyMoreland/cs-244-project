@@ -23,7 +23,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class Log<T> {
     private Logger LOG = LogManager.getLogger(Log.class);
 
-    private ReadWriteLock logLock = new ReentrantReadWriteLock();
+    private ReadWriteLock logLock = new ReentrantReadWriteLock(true);
     private List<LogListener<T>> listeners = Lists.newArrayList();
 
     // {SequenceNumber => { ViewStamp => Transaction }}
