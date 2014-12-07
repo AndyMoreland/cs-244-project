@@ -66,8 +66,8 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
     @Override
     public void clientMessage(final ClientMessage message) throws TException {
             final TTransaction transaction = new TTransaction();
-           // synchronized (undergoingViewChange) {
-           //     synchronized (sequenceNumber) {
+            synchronized (undergoingViewChange) {
+                synchronized (sequenceNumber) {
                     LOG.info("Got client message");
                     if (this.configProvider.getLeader().getReplicaID() != this.replicaID) return;
                     LOG.info("I'm the leader");
@@ -81,8 +81,8 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
                     LOG.info("Attempting to transmit with sequence number: " + (sequenceNumber + 1));
 
                     sequenceNumber++;
-               // }
-            //}
+                }
+            }
 
             for (final GroupMember<PBFTCohort.Client> member : configProvider.getGroupMembers()) {
                 pool.execute(new Runnable() {
@@ -113,7 +113,7 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
     @Override
     public void prePrepare(PrePrepareMessage message, ClientMessage clientMessage, TTransaction transaction) throws TException {
         Transaction<Operation<ChineseCheckersState>> logTransaction;
-       // synchronized (undergoingViewChange) {
+        synchronized (undergoingViewChange) {
             if (undergoingViewChange) return;
             LOG.trace("Entering prePrepare");
             if (this.configProvider.getLeader().getReplicaID() != message.getReplicaId())
@@ -141,7 +141,7 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
             } catch (IllegalLogEntryException e) {
                 e.printStackTrace();
             }
-      //  }
+        }
 
         multicastPrepare(CryptoUtil.computeDigest(logTransaction), transaction.viewstamp);
         prepareIfReady(message.getViewstamp(), new Digest(message.getTransactionDigest()));
@@ -170,7 +170,7 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
 
     @Override
     public void prepare(PrepareMessage message) throws TException {
-    //    synchronized (undergoingViewChange) {
+        synchronized (undergoingViewChange) {
             if (undergoingViewChange) return;
             LOG.trace("Entering prepare");
             if (!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature()))
@@ -180,7 +180,7 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
                 return; // Check we're in view v
             log.addPrepareMessage(message);
             prepareIfReady(message.getViewstamp(), new Digest(message.getTransactionDigest()));
-    //    }
+        }
     }
 
     private void prepareIfReady(Viewstamp viewstamp, Digest transactionDigest) {
@@ -217,7 +217,7 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
 
     @Override
     public void commit(CommitMessage message) throws TException {
-     //   synchronized (undergoingViewChange) {
+        synchronized (undergoingViewChange) {
             if (undergoingViewChange) return;
             LOG.trace("Entering commit");
             if (!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature()))
@@ -225,7 +225,7 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
             if (message.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
             log.addCommitMessage(message);
             commitIfReady(message.getViewstamp(), new Digest(message.getTransactionDigest()));
-      //  }
+        }
     }
 
     private void commitIfReady(Viewstamp viewstamp, Digest transactionDigest) throws TException {
@@ -239,7 +239,7 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
 
     @Override
     public void checkpoint(CheckpointMessage message) throws TException {
-     //   synchronized (undergoingViewChange) {
+        synchronized (undergoingViewChange) {
             if (undergoingViewChange) return;
             LOG.trace("Got a checkpoint message");
             if (!thisCohort.verifySignature(message, message.getMessageSignature())) return;
@@ -247,7 +247,7 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
             // don't bother adding old checkpoint messages
             if (log.getLastStableCheckpoint() >= message.getSequenceNumber()) return;
             log.addCheckpointMessage(message, configProvider.getQuorumSize());
-     //   }
+        }
     }
 
     private List<PrePrepareMessage> createPrePreparesToFillPreparedSeqnoHoles(
