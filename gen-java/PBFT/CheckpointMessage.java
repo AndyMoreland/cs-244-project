@@ -38,6 +38,7 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
   private static final org.apache.thrift.protocol.TField SEQUENCE_NUMBER_FIELD_DESC = new org.apache.thrift.protocol.TField("sequenceNumber", org.apache.thrift.protocol.TType.I32, (short)1);
   private static final org.apache.thrift.protocol.TField CHECKPOINT_DIGEST_FIELD_DESC = new org.apache.thrift.protocol.TField("checkpointDigest", org.apache.thrift.protocol.TType.STRING, (short)2);
   private static final org.apache.thrift.protocol.TField REPLICA_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("replicaId", org.apache.thrift.protocol.TType.I32, (short)3);
+  private static final org.apache.thrift.protocol.TField MESSAGE_SIGNATURE_FIELD_DESC = new org.apache.thrift.protocol.TField("messageSignature", org.apache.thrift.protocol.TType.STRING, (short)4);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -48,12 +49,14 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
   public int sequenceNumber; // required
   public ByteBuffer checkpointDigest; // required
   public int replicaId; // required
+  public ByteBuffer messageSignature; // required
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
     SEQUENCE_NUMBER((short)1, "sequenceNumber"),
     CHECKPOINT_DIGEST((short)2, "checkpointDigest"),
-    REPLICA_ID((short)3, "replicaId");
+    REPLICA_ID((short)3, "replicaId"),
+    MESSAGE_SIGNATURE((short)4, "messageSignature");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -74,6 +77,8 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
           return CHECKPOINT_DIGEST;
         case 3: // REPLICA_ID
           return REPLICA_ID;
+        case 4: // MESSAGE_SIGNATURE
+          return MESSAGE_SIGNATURE;
         default:
           return null;
       }
@@ -126,6 +131,8 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING        , "Signature")));
     tmpMap.put(_Fields.REPLICA_ID, new org.apache.thrift.meta_data.FieldMetaData("replicaId", org.apache.thrift.TFieldRequirementType.DEFAULT, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
+    tmpMap.put(_Fields.MESSAGE_SIGNATURE, new org.apache.thrift.meta_data.FieldMetaData("messageSignature", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING        , "Signature")));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(CheckpointMessage.class, metaDataMap);
   }
@@ -136,7 +143,8 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
   public CheckpointMessage(
     int sequenceNumber,
     ByteBuffer checkpointDigest,
-    int replicaId)
+    int replicaId,
+    ByteBuffer messageSignature)
   {
     this();
     this.sequenceNumber = sequenceNumber;
@@ -144,6 +152,7 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
     this.checkpointDigest = checkpointDigest;
     this.replicaId = replicaId;
     setReplicaIdIsSet(true);
+    this.messageSignature = messageSignature;
   }
 
   /**
@@ -156,6 +165,9 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
       this.checkpointDigest = other.checkpointDigest;
     }
     this.replicaId = other.replicaId;
+    if (other.isSetMessageSignature()) {
+      this.messageSignature = other.messageSignature;
+    }
   }
 
   public CheckpointMessage deepCopy() {
@@ -169,6 +181,7 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
     this.checkpointDigest = null;
     setReplicaIdIsSet(false);
     this.replicaId = 0;
+    this.messageSignature = null;
   }
 
   public int getSequenceNumber() {
@@ -251,6 +264,40 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
     __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __REPLICAID_ISSET_ID, value);
   }
 
+  public byte[] getMessageSignature() {
+    setMessageSignature(org.apache.thrift.TBaseHelper.rightSize(messageSignature));
+    return messageSignature == null ? null : messageSignature.array();
+  }
+
+  public ByteBuffer bufferForMessageSignature() {
+    return messageSignature;
+  }
+
+  public CheckpointMessage setMessageSignature(byte[] messageSignature) {
+    setMessageSignature(messageSignature == null ? (ByteBuffer)null : ByteBuffer.wrap(messageSignature));
+    return this;
+  }
+
+  public CheckpointMessage setMessageSignature(ByteBuffer messageSignature) {
+    this.messageSignature = messageSignature;
+    return this;
+  }
+
+  public void unsetMessageSignature() {
+    this.messageSignature = null;
+  }
+
+  /** Returns true if field messageSignature is set (has been assigned a value) and false otherwise */
+  public boolean isSetMessageSignature() {
+    return this.messageSignature != null;
+  }
+
+  public void setMessageSignatureIsSet(boolean value) {
+    if (!value) {
+      this.messageSignature = null;
+    }
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case SEQUENCE_NUMBER:
@@ -277,6 +324,14 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
       }
       break;
 
+    case MESSAGE_SIGNATURE:
+      if (value == null) {
+        unsetMessageSignature();
+      } else {
+        setMessageSignature((ByteBuffer)value);
+      }
+      break;
+
     }
   }
 
@@ -290,6 +345,9 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
 
     case REPLICA_ID:
       return Integer.valueOf(getReplicaId());
+
+    case MESSAGE_SIGNATURE:
+      return getMessageSignature();
 
     }
     throw new IllegalStateException();
@@ -308,6 +366,8 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
       return isSetCheckpointDigest();
     case REPLICA_ID:
       return isSetReplicaId();
+    case MESSAGE_SIGNATURE:
+      return isSetMessageSignature();
     }
     throw new IllegalStateException();
   }
@@ -349,6 +409,15 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
       if (!(this_present_replicaId && that_present_replicaId))
         return false;
       if (this.replicaId != that.replicaId)
+        return false;
+    }
+
+    boolean this_present_messageSignature = true && this.isSetMessageSignature();
+    boolean that_present_messageSignature = true && that.isSetMessageSignature();
+    if (this_present_messageSignature || that_present_messageSignature) {
+      if (!(this_present_messageSignature && that_present_messageSignature))
+        return false;
+      if (!this.messageSignature.equals(that.messageSignature))
         return false;
     }
 
@@ -398,6 +467,16 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
         return lastComparison;
       }
     }
+    lastComparison = Boolean.valueOf(isSetMessageSignature()).compareTo(other.isSetMessageSignature());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (isSetMessageSignature()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.messageSignature, other.messageSignature);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
     return 0;
   }
 
@@ -432,6 +511,14 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
     if (!first) sb.append(", ");
     sb.append("replicaId:");
     sb.append(this.replicaId);
+    first = false;
+    if (!first) sb.append(", ");
+    sb.append("messageSignature:");
+    if (this.messageSignature == null) {
+      sb.append("null");
+    } else {
+      sb.append(this.messageSignature);
+    }
     first = false;
     sb.append(")");
     return sb.toString();
@@ -502,6 +589,14 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
+          case 4: // MESSAGE_SIGNATURE
+            if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
+              struct.messageSignature = iprot.readBinary();
+              struct.setMessageSignatureIsSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
           default:
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
         }
@@ -528,6 +623,11 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
       oprot.writeFieldBegin(REPLICA_ID_FIELD_DESC);
       oprot.writeI32(struct.replicaId);
       oprot.writeFieldEnd();
+      if (struct.messageSignature != null) {
+        oprot.writeFieldBegin(MESSAGE_SIGNATURE_FIELD_DESC);
+        oprot.writeBinary(struct.messageSignature);
+        oprot.writeFieldEnd();
+      }
       oprot.writeFieldStop();
       oprot.writeStructEnd();
     }
@@ -555,7 +655,10 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
       if (struct.isSetReplicaId()) {
         optionals.set(2);
       }
-      oprot.writeBitSet(optionals, 3);
+      if (struct.isSetMessageSignature()) {
+        optionals.set(3);
+      }
+      oprot.writeBitSet(optionals, 4);
       if (struct.isSetSequenceNumber()) {
         oprot.writeI32(struct.sequenceNumber);
       }
@@ -565,12 +668,15 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
       if (struct.isSetReplicaId()) {
         oprot.writeI32(struct.replicaId);
       }
+      if (struct.isSetMessageSignature()) {
+        oprot.writeBinary(struct.messageSignature);
+      }
     }
 
     @Override
     public void read(org.apache.thrift.protocol.TProtocol prot, CheckpointMessage struct) throws org.apache.thrift.TException {
       TTupleProtocol iprot = (TTupleProtocol) prot;
-      BitSet incoming = iprot.readBitSet(3);
+      BitSet incoming = iprot.readBitSet(4);
       if (incoming.get(0)) {
         struct.sequenceNumber = iprot.readI32();
         struct.setSequenceNumberIsSet(true);
@@ -582,6 +688,10 @@ public class CheckpointMessage implements org.apache.thrift.TBase<CheckpointMess
       if (incoming.get(2)) {
         struct.replicaId = iprot.readI32();
         struct.setReplicaIdIsSet(true);
+      }
+      if (incoming.get(3)) {
+        struct.messageSignature = iprot.readBinary();
+        struct.setMessageSignatureIsSet(true);
       }
     }
   }

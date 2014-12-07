@@ -124,13 +124,14 @@ struct CommitMessage {
 struct CheckpointMessage {
     1:i32 sequenceNumber,
     2:Signature checkpointDigest,
-    3:i32 replicaId;
+    3:i32 replicaId,
+    4:Signature messageSignature;
 }
 
 struct ViewChangeMessage { // need 2f+1 distinct ones, distinct = distinct newViewID, replicaID
     1:i32 newViewID,
     2:i32 sequenceNumber,
-    3:list<CheckpointMessage> checkpointProof,
+    3:set<CheckpointMessage> checkpointProof,
     4:list<PrePrepareMessage> preparedGreaterThanSequenceNumber,
     5:list<set<PrepareMessage>> prepareMessages, // this is just proof for 4
     6:i32 replicaID, // sender of message

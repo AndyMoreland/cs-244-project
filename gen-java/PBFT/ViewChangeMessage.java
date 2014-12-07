@@ -37,7 +37,7 @@ public class ViewChangeMessage implements org.apache.thrift.TBase<ViewChangeMess
 
   private static final org.apache.thrift.protocol.TField NEW_VIEW_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("newViewID", org.apache.thrift.protocol.TType.I32, (short)1);
   private static final org.apache.thrift.protocol.TField SEQUENCE_NUMBER_FIELD_DESC = new org.apache.thrift.protocol.TField("sequenceNumber", org.apache.thrift.protocol.TType.I32, (short)2);
-  private static final org.apache.thrift.protocol.TField CHECKPOINT_PROOF_FIELD_DESC = new org.apache.thrift.protocol.TField("checkpointProof", org.apache.thrift.protocol.TType.LIST, (short)3);
+  private static final org.apache.thrift.protocol.TField CHECKPOINT_PROOF_FIELD_DESC = new org.apache.thrift.protocol.TField("checkpointProof", org.apache.thrift.protocol.TType.SET, (short)3);
   private static final org.apache.thrift.protocol.TField PREPARED_GREATER_THAN_SEQUENCE_NUMBER_FIELD_DESC = new org.apache.thrift.protocol.TField("preparedGreaterThanSequenceNumber", org.apache.thrift.protocol.TType.LIST, (short)4);
   private static final org.apache.thrift.protocol.TField PREPARE_MESSAGES_FIELD_DESC = new org.apache.thrift.protocol.TField("prepareMessages", org.apache.thrift.protocol.TType.LIST, (short)5);
   private static final org.apache.thrift.protocol.TField REPLICA_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("replicaID", org.apache.thrift.protocol.TType.I32, (short)6);
@@ -51,7 +51,7 @@ public class ViewChangeMessage implements org.apache.thrift.TBase<ViewChangeMess
 
   public int newViewID; // required
   public int sequenceNumber; // required
-  public List<CheckpointMessage> checkpointProof; // required
+  public Set<CheckpointMessage> checkpointProof; // required
   public List<PrePrepareMessage> preparedGreaterThanSequenceNumber; // required
   public List<Set<PrepareMessage>> prepareMessages; // required
   public int replicaID; // required
@@ -146,7 +146,7 @@ public class ViewChangeMessage implements org.apache.thrift.TBase<ViewChangeMess
     tmpMap.put(_Fields.SEQUENCE_NUMBER, new org.apache.thrift.meta_data.FieldMetaData("sequenceNumber", org.apache.thrift.TFieldRequirementType.DEFAULT, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
     tmpMap.put(_Fields.CHECKPOINT_PROOF, new org.apache.thrift.meta_data.FieldMetaData("checkpointProof", org.apache.thrift.TFieldRequirementType.DEFAULT, 
-        new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST, 
+        new org.apache.thrift.meta_data.SetMetaData(org.apache.thrift.protocol.TType.SET, 
             new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, CheckpointMessage.class))));
     tmpMap.put(_Fields.PREPARED_GREATER_THAN_SEQUENCE_NUMBER, new org.apache.thrift.meta_data.FieldMetaData("preparedGreaterThanSequenceNumber", org.apache.thrift.TFieldRequirementType.DEFAULT, 
         new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST, 
@@ -169,7 +169,7 @@ public class ViewChangeMessage implements org.apache.thrift.TBase<ViewChangeMess
   public ViewChangeMessage(
     int newViewID,
     int sequenceNumber,
-    List<CheckpointMessage> checkpointProof,
+    Set<CheckpointMessage> checkpointProof,
     List<PrePrepareMessage> preparedGreaterThanSequenceNumber,
     List<Set<PrepareMessage>> prepareMessages,
     int replicaID,
@@ -196,7 +196,7 @@ public class ViewChangeMessage implements org.apache.thrift.TBase<ViewChangeMess
     this.newViewID = other.newViewID;
     this.sequenceNumber = other.sequenceNumber;
     if (other.isSetCheckpointProof()) {
-      List<CheckpointMessage> __this__checkpointProof = new ArrayList<CheckpointMessage>(other.checkpointProof.size());
+      Set<CheckpointMessage> __this__checkpointProof = new HashSet<CheckpointMessage>(other.checkpointProof.size());
       for (CheckpointMessage other_element : other.checkpointProof) {
         __this__checkpointProof.add(new CheckpointMessage(other_element));
       }
@@ -300,16 +300,16 @@ public class ViewChangeMessage implements org.apache.thrift.TBase<ViewChangeMess
 
   public void addToCheckpointProof(CheckpointMessage elem) {
     if (this.checkpointProof == null) {
-      this.checkpointProof = new ArrayList<CheckpointMessage>();
+      this.checkpointProof = new HashSet<CheckpointMessage>();
     }
     this.checkpointProof.add(elem);
   }
 
-  public List<CheckpointMessage> getCheckpointProof() {
+  public Set<CheckpointMessage> getCheckpointProof() {
     return this.checkpointProof;
   }
 
-  public ViewChangeMessage setCheckpointProof(List<CheckpointMessage> checkpointProof) {
+  public ViewChangeMessage setCheckpointProof(Set<CheckpointMessage> checkpointProof) {
     this.checkpointProof = checkpointProof;
     return this;
   }
@@ -486,7 +486,7 @@ public class ViewChangeMessage implements org.apache.thrift.TBase<ViewChangeMess
       if (value == null) {
         unsetCheckpointProof();
       } else {
-        setCheckpointProof((List<CheckpointMessage>)value);
+        setCheckpointProof((Set<CheckpointMessage>)value);
       }
       break;
 
@@ -864,18 +864,18 @@ public class ViewChangeMessage implements org.apache.thrift.TBase<ViewChangeMess
             }
             break;
           case 3: // CHECKPOINT_PROOF
-            if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
+            if (schemeField.type == org.apache.thrift.protocol.TType.SET) {
               {
-                org.apache.thrift.protocol.TList _list0 = iprot.readListBegin();
-                struct.checkpointProof = new ArrayList<CheckpointMessage>(_list0.size);
-                for (int _i1 = 0; _i1 < _list0.size; ++_i1)
+                org.apache.thrift.protocol.TSet _set0 = iprot.readSetBegin();
+                struct.checkpointProof = new HashSet<CheckpointMessage>(2*_set0.size);
+                for (int _i1 = 0; _i1 < _set0.size; ++_i1)
                 {
                   CheckpointMessage _elem2;
                   _elem2 = new CheckpointMessage();
                   _elem2.read(iprot);
                   struct.checkpointProof.add(_elem2);
                 }
-                iprot.readListEnd();
+                iprot.readSetEnd();
               }
               struct.setCheckpointProofIsSet(true);
             } else { 
@@ -970,12 +970,12 @@ public class ViewChangeMessage implements org.apache.thrift.TBase<ViewChangeMess
       if (struct.checkpointProof != null) {
         oprot.writeFieldBegin(CHECKPOINT_PROOF_FIELD_DESC);
         {
-          oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, struct.checkpointProof.size()));
+          oprot.writeSetBegin(new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.STRUCT, struct.checkpointProof.size()));
           for (CheckpointMessage _iter12 : struct.checkpointProof)
           {
             _iter12.write(oprot);
           }
-          oprot.writeListEnd();
+          oprot.writeSetEnd();
         }
         oprot.writeFieldEnd();
       }
@@ -1119,9 +1119,9 @@ public class ViewChangeMessage implements org.apache.thrift.TBase<ViewChangeMess
       }
       if (incoming.get(2)) {
         {
-          org.apache.thrift.protocol.TList _list20 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.checkpointProof = new ArrayList<CheckpointMessage>(_list20.size);
-          for (int _i21 = 0; _i21 < _list20.size; ++_i21)
+          org.apache.thrift.protocol.TSet _set20 = new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.checkpointProof = new HashSet<CheckpointMessage>(2*_set20.size);
+          for (int _i21 = 0; _i21 < _set20.size; ++_i21)
           {
             CheckpointMessage _elem22;
             _elem22 = new CheckpointMessage();

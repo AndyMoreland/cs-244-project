@@ -33,8 +33,7 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
     private final Log<Operation<ChineseCheckersState>> log;
     private GroupConfigProvider<PBFTCohort.Client> configProvider;
     private final GroupMember<PBFTCohort.Client> thisCohort;
-    // view # =>
-    private Map<Integer, Set<ViewChangeMessage>> viewChangeMessages; // this should include your own messages
+
     private int replicaID;
     private final ExecutorService pool;
 
@@ -45,19 +44,16 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
     private static final byte[] NO_OP_TRANSACTION_DIGEST = CryptoUtil.computeDigest(
             new common.Transaction(null, -1, new NoOp(), 0)).getBytes();
 
-    private static final int CHECKPOINT_INTERVAL = 100;
     private int sequenceNumber = -1;
     private StateMachine stateMachine; // we want to ask it for its most recent checkpoint for view change
 
     public PBFTCohortHandler(GroupConfigProvider<PBFTCohort.Client> configProvider, int replicaID, GroupMember<PBFTCohort.Client> thisCohort, GameEngine toNotify) {
         Thread.currentThread().setName("{SERVER ID: " + replicaID + "} " + Thread.currentThread().getName());
         this.configProvider = configProvider;
-        viewChangeMessages = Maps.newHashMap();
         this.replicaID = replicaID;
         pool = Executors.newFixedThreadPool(POOL_SIZE);
         this.log = new Log<>();
         this.thisCohort = thisCohort;
-
         this.log.addListener(toNotify);
         this.stateMachine = toNotify.getStateMachine();
         this.stateMachine.addCheckpointListener(this);
@@ -127,7 +123,7 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
         LOG.trace("Leader is telling the truth about client's intentions");
 
         try {
-            log.addEntry(logTransaction);                                                     // Check sequence number
+            log.addEntry(logTransaction, message);                                                     // Check sequence number
         } catch (IllegalLogEntryException e) {
             e.printStackTrace();
         }
@@ -204,7 +200,6 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
     @Override
     public void commit(CommitMessage message) throws TException {
         LOG.trace("Entering commit");
-
         if (!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) return;       // Validate signature
         if (message.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
         log.addCommitMessage(message);
@@ -220,10 +215,14 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
         }
     }
 
-
     @Override
-    public void checkpoint(CheckpointMessage message) throws TException {
-        LOG.info("Got a checkpoint message");
+    synchronized public void checkpoint(CheckpointMessage message) throws TException {
+        LOG.trace("Got a checkpoint message");
+        if (!thisCohort.verifySignature(message, message.getMessageSignature())) return;
+        LOG.trace("Verified checkpoint message");
+        // don't bother adding old checkpoint messages
+        if (log.getLastStableCheckpoint() >= message.getSequenceNumber()) return;
+        log.addCheckpointMessage(message, configProvider.getQuorumSize());
     }
 
     private List<PrePrepareMessage> createPrePreparesToFillPreparedSeqnoHoles(
@@ -245,41 +244,47 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
             }
         }
 
-        // TODO (Susan): this is wrong, should be min stable checkpoint in script V,
-        // not this cohort's last stable checkpoint
-        for (int n = LAST_STABLE_CHECKPOINT; n < lastCheckpointInViewChangeMessages; ++n) {
-            int highestViewID = MIN_VIEW_ID - 1;
-            byte[] digest = null;
-            for (ViewChangeMessage viewChangeMessage : viewChangeMessages) {
-                for (PrePrepareMessage prePrepareMessage : viewChangeMessage.getPreparedGreaterThanSequenceNumber()) {
-                    if (prePrepareMessage.getViewstamp().getSequenceNumber() == n) {
-                        if (highestViewID < prePrepareMessage.getViewstamp().getViewId()) {
-                            highestViewID = prePrepareMessage.getViewstamp().getViewId();
-                            digest = prePrepareMessage.getTransactionDigest();
-                        }
-                    }
-                }
-            }
-
-            PrePrepareMessage prePrepareMessage = new PrePrepareMessage();
-            prePrepareMessage.getViewstamp().setViewId(newViewID);
-            prePrepareMessage.getViewstamp().setSequenceNumber(n);
-            if (highestViewID >= MIN_VIEW_ID) {
-                prePrepareMessage.setTransactionDigest(digest);
-            } else {
-                prePrepareMessage.setTransactionDigest(NO_OP_TRANSACTION_DIGEST);
-            }
-
-            if (!verify) {
-                prePrepareMessage.setMessageSignature(CryptoUtil.computeMessageSignature(prePrepareMessage, thisCohort.getPrivateKey()).getBytes());
-            }
-            prePrepareMessages.add(prePrepareMessage);
+        for (int n = lastCheckpointInViewChangeMessages; n < max_seqno; ++n) {
+            prePrepareMessages.add(
+                    createPrePrepareToFillHole(n, viewChangeMessages, newViewID, verify));
         }
         return prePrepareMessages;
     }
 
+    private PrePrepareMessage createPrePrepareToFillHole(
+            int seqno,
+            Set<ViewChangeMessage> viewChangeMessages,
+            int newViewID,
+            boolean verify) {
+        int highestViewID = MIN_VIEW_ID - 1;
+        byte[] digest = null;
+        for (ViewChangeMessage viewChangeMessage : viewChangeMessages) {
+            for (PrePrepareMessage prePrepareMessage : viewChangeMessage.getPreparedGreaterThanSequenceNumber()) {
+                if (prePrepareMessage.getViewstamp().getSequenceNumber() == seqno) {
+                    if (highestViewID < prePrepareMessage.getViewstamp().getViewId()) {
+                        highestViewID = prePrepareMessage.getViewstamp().getViewId();
+                        digest = prePrepareMessage.getTransactionDigest();
+                    }
+                }
+            }
+        }
+
+        PrePrepareMessage prePrepareMessage = new PrePrepareMessage();
+        prePrepareMessage.getViewstamp().setViewId(newViewID);
+        prePrepareMessage.getViewstamp().setSequenceNumber(seqno);
+        if (highestViewID >= MIN_VIEW_ID) {
+            prePrepareMessage.setTransactionDigest(digest);
+        } else {
+            prePrepareMessage.setTransactionDigest(NO_OP_TRANSACTION_DIGEST);
+        }
+
+        if (!verify) {
+            prePrepareMessage.setMessageSignature(CryptoUtil.computeMessageSignature(prePrepareMessage, thisCohort.getPrivateKey()).getBytes());
+        }
+        return prePrepareMessage;
+    }
+
     private boolean prePrepareSetValid(List<PrePrepareMessage> prePrepareMessages, List<Set<PrepareMessage>> prepareMessages) {
-        Map<ByteBuffer, Integer> numPrepares = new HashMap<ByteBuffer, Integer>();
         for (int i = 0; i < prePrepareMessages.size(); ++i) {
             GroupMember<PBFTCohort.Client> sender = configProvider.getGroupMember(prePrepareMessages.get(i).getReplicaId());
             if (!sender.verifySignature(prePrepareMessages.get(i), prePrepareMessages.get(i).getMessageSignature())) {
@@ -298,21 +303,22 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
         return true;
     }
 
-    private Map<PrePrepareMessage,Set<PrepareMessage>> createPreparesAfterLastCheckPoint() {
-        Map<PrePrepareMessage,Set<PrepareMessage>> preparedSinceLastCheckpoint = Maps.newHashMap();
-        // TODO once checkpointing is done
-        return null;
-    }
 
     @Override
-    public void initiateViewChange() throws TException {
-        // some stuff empty for now
+    synchronized public void initiateViewChange() throws TException {
+        //  TODO (Susan): once you do this, until you finish the view change you should ignore all other messages
+        // note that checkpoint proof may be for a later checkpoint than prePrepares and proof, but I think that's ok
+
+        Map<PrePrepareMessage, Set<PrepareMessage>> prePreparesAndProof = Maps.newHashMap();
+        Set<CheckpointMessage> checkPointProof = Sets.newHashSet();
+        int lastStableCheckpoint = log.getPreparesCheckpointProofAndLastStableCheckpoint(prePreparesAndProof, checkPointProof);
+
         final ViewChangeMessage viewChangeMessage = new ViewChangeMessage();
-        viewChangeMessage.setSequenceNumber(MIN_SEQ_NO).setReplicaID(replicaID)
-                .setCheckpointProof(new ArrayList<CheckpointMessage>())
+        viewChangeMessage.setSequenceNumber(lastStableCheckpoint).setReplicaID(replicaID)
+                .setCheckpointProof(checkPointProof)
                 .setNewViewID(configProvider.getViewID() + 1)
-                .setPreparedGreaterThanSequenceNumber(new ArrayList<PrePrepareMessage>())
-                .setPrepareMessages(new ArrayList<Set<PrepareMessage>>());
+                .setPreparedGreaterThanSequenceNumber(new ArrayList<>(prePreparesAndProof.keySet())) // TODO (Susan): fix this
+                .setPrepareMessages(new ArrayList<>(prePreparesAndProof.values())); // TODO (Susan) same as above
         viewChangeMessage.setMessageSignature(CryptoUtil.computeMessageSignature(viewChangeMessage, thisCohort.getPrivateKey()).getBytes());
 
         for (final GroupMember<PBFTCohort.Client> groupMember : configProvider.getOtherGroupMembers()) {
@@ -336,63 +342,104 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
 
     }
 
+    private boolean verifyCheckPointMessages(int seqno, Set<CheckpointMessage> checkpointMessages) {
+        for (CheckpointMessage checkpointMessage : checkpointMessages) {
+            GroupMember<PBFTCohort.Client> sender = configProvider.getGroupMember(checkpointMessage.getReplicaId());
+            if (checkpointMessage.getSequenceNumber() != seqno ||
+                    !sender.verifySignature(checkpointMessage, checkpointMessage.getMessageSignature())) {
+                return false;
+            }
+        }
+        LOG.trace("Checkpoint messages are valid.");
+        return true;
+    }
+
     @Override
     public synchronized void startViewChange(ViewChangeMessage message) throws TException {
         LOG.info("Replica " + replicaID + " received view-change message from " + message.getReplicaID() + " suggesting that we change to view " + message.getNewViewID());
         if (message.isSetNewViewID()) {
             int newViewID = message.getNewViewID();
             if (newViewID > configProvider.getViewID()) { // can only move to a higher view
-                // TODO: verify of checkpoint messages
-                if (!prePrepareSetValid(message.getPreparedGreaterThanSequenceNumber(), message.getPrepareMessages())) {
+
+                if (!verifyCheckPointMessages(message.getSequenceNumber(), message.getCheckpointProof())
+                        || !prePrepareSetValid(message.getPreparedGreaterThanSequenceNumber(), message.getPrepareMessages())) {
                     return;
                 }
 
-                if (viewChangeMessages.containsKey(newViewID)) {
-                    viewChangeMessages.get(newViewID).add(message);
-                } else {
-                    viewChangeMessages.put(newViewID, Sets.newHashSet(message));
-                }
+                log.addViewChangeMessage(message);
 
                 // if primary, check if you have enough to send NewViewMessage
                 LOG.info("new primary should be " + message.getNewViewID() % (configProvider.getGroupMembers().size()));
-                LOG.info("Replica " + replicaID + " has " + viewChangeMessages.get(newViewID).size() + "view change suggestions");
-                LOG.info("Replica " + replicaID + " thinks that quorum size is " + configProvider.getQuorumSize());
                 if (message.getNewViewID() % (configProvider.getGroupMembers().size()) == replicaID
-                        && (viewChangeMessages.get(newViewID).size()+1) >= configProvider.getQuorumSize()) {
+                        && log.readyToSendNewView(message.getNewViewID(),configProvider.getQuorumSize())) {
                     LOG.info("Replica " + replicaID + " will be the new primary ");
-                    configProvider.setViewID(message.getNewViewID());
                     // multicast NEW-VIEW message
-                    Set<GroupMember<PBFTCohort.Client>> groupMembers = configProvider.getOtherGroupMembers();
-                    for (final GroupMember<PBFTCohort.Client> groupMember : groupMembers) {
-                        final NewViewMessage newViewMessage = new NewViewMessage();
-                        newViewMessage.setReplicaID(replicaID);
-                        newViewMessage.setNewViewID(newViewID);
-                        newViewMessage.setViewChangeMessages(viewChangeMessages.get(newViewID));
-                        // copy the hashset here because the message could be sent after we leave this method
-                        // and start modifying viewChangeMessages again
-                        newViewMessage.setPrePrepareMessages(
-                                createPrePreparesToFillPreparedSeqnoHoles(newViewID, false, Sets.newHashSet(viewChangeMessages.get(newViewID))));
-                        newViewMessage.setMessageSignature(CryptoUtil.computeMessageSignature(newViewMessage, thisCohort.getPrivateKey()).getBytes());
-                        pool.execute(new Runnable() {
-                            public void run() {
-                                PBFTCohort.Client thriftConnection = null;
-                                try {
-                                    thriftConnection = groupMember.getThriftConnection();
-                                    thriftConnection.approveViewChange(newViewMessage);
-                                } catch (TException e) {
-                                    e.printStackTrace();
-                                } catch (Exception e) {
-                                    e.printStackTrace();
-                                } finally {
-                                    groupMember.returnThriftConnection(thriftConnection);
-                                }
-                            }
-                        });
-
-                    }
+                    Set<ViewChangeMessage> scriptV = log.getViewChangeMessages(newViewID);
+                    final NewViewMessage newViewMessage = new NewViewMessage();
+                    newViewMessage.setReplicaID(replicaID);
+                    newViewMessage.setNewViewID(newViewID);
+                    newViewMessage.setViewChangeMessages(scriptV);
+                    newViewMessage.setPrePrepareMessages(
+                            createPrePreparesToFillPreparedSeqnoHoles(newViewID, false, scriptV));
+                    newViewMessage.setMessageSignature(
+                            CryptoUtil.computeMessageSignature(newViewMessage, thisCohort.getPrivateKey()).getBytes());
+                    multicastNewView(newViewMessage);
                 }
             }
         }
+    }
+
+    private void multicastNewView(final NewViewMessage message) {
+        for (final GroupMember<PBFTCohort.Client> groupMember : configProvider.getGroupMembers()) {
+            pool.execute(new Runnable() {
+                public void run() {
+                    PBFTCohort.Client thriftConnection = null;
+                    try {
+                        thriftConnection = groupMember.getThriftConnection();
+                        thriftConnection.approveViewChange(message);
+                    } catch (TException e) {
+                        e.printStackTrace();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    } finally {
+                        groupMember.returnThriftConnection(thriftConnection);
+                    }
+                }
+            });
+
+        }
+    }
+
+    private boolean verifyHoleFillingPreprepares(NewViewMessage message) {
+        GroupMember<PBFTCohort.Client> sender;
+        // verify the preprepares
+        List<PrePrepareMessage> recomputedPrePrepareMessages = createPrePreparesToFillPreparedSeqnoHoles(
+                message.getNewViewID(), true, message.getViewChangeMessages());
+        // should be the same length
+        if (recomputedPrePrepareMessages.size() != message.getPrePrepareMessages().size()) {
+            return false;
+        }
+
+        for (int i = 0; i < recomputedPrePrepareMessages.size(); ++i) {
+            PrePrepareMessage received = message.getPrePrepareMessages().get(i);
+            PrePrepareMessage recomputed = recomputedPrePrepareMessages.get(i);
+            sender = configProvider.getGroupMember(recomputed.getReplicaId());
+
+            // check that recomputed contents are the same
+            if (!received.getTransactionDigest().equals(recomputed.getTransactionDigest())
+                    || !received.getViewstamp().equals(recomputed.getViewstamp())
+                    || received.getReplicaId() != recomputed.getReplicaId()) {
+                return false;
+            }
+
+            // verify signatures
+            if (!sender.verifySignature(message.getPrePrepareMessages().get(i), message.getPrePrepareMessages().get(i).getMessageSignature())) {
+                return false;
+            }
+        }
+
+        LOG.trace("Hole filling preprepares verified");
+        return true;
     }
 
     @Override
@@ -408,39 +455,18 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
 
         // verify the ViewChangeMessages
         for (ViewChangeMessage viewChangeMessage : message.getViewChangeMessages()) {
+            // actually for the right view
             if (viewChangeMessage.getNewViewID() != message.getNewViewID()) {
                 return;
             }
             sender = configProvider.getGroupMember(viewChangeMessage.getReplicaID());
+            // signatures are right
             if (!sender.verifySignature(viewChangeMessage, viewChangeMessage.getMessageSignature())) {
                 return;
             }
         }
 
-        // verify the preprepares
-        List<PrePrepareMessage> recomputedPrePrepareMessages = createPrePreparesToFillPreparedSeqnoHoles(
-                message.getNewViewID(), true, message.getViewChangeMessages());
-        // should be the same length
-        if (recomputedPrePrepareMessages.size() != message.getPrePrepareMessages().size()) {
-            return;
-        }
-
-        for (int i = 0; i < recomputedPrePrepareMessages.size(); ++i) {
-            PrePrepareMessage received = message.getPrePrepareMessages().get(i);
-            PrePrepareMessage recomputed = recomputedPrePrepareMessages.get(i);
-            sender = configProvider.getGroupMember(recomputed.getReplicaId());
-            // check that recomputed contents are the same
-            if (!received.getTransactionDigest().equals(recomputed.getTransactionDigest())
-                    || !received.getViewstamp().equals(recomputed.getViewstamp())
-                    || received.getReplicaId() != recomputed.getReplicaId()) {
-                return;
-            }
-
-            // verify signatures
-            if (!sender.verifySignature(message.getPrePrepareMessages().get(i), message.getPrePrepareMessages().get(i).getMessageSignature())) {
-                return;
-            }
-        }
+        if (!verifyHoleFillingPreprepares(message)) return;
 
         // change to new view
         configProvider.setViewID(message.getNewViewID());
@@ -448,40 +474,51 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
 
         // send prepares for everything in script O
         for (PrePrepareMessage prePrepareMessage : message.getPrePrepareMessages()) {
-            Digest transactionDigest = new Digest(prePrepareMessage.getTransactionDigest());
-            Viewstamp viewstamp = new Viewstamp(
-                    prePrepareMessage.getViewstamp().getSequenceNumber(), configProvider.getViewID());
-            multicastPrepare(transactionDigest, viewstamp);
-            if (log.getTransaction(viewstamp) == null) {
-                // if we don't have this in our log already, we need to ask someone else for it
-                GroupMember<PBFTCohort.Client> target = getReplicaThatPreparedSeqno(message, viewstamp.getSequenceNumber());
-                Preconditions.checkNotNull(target);
 
-                PBFTCohort.Client thriftConnection = null;
+            Digest transactionDigest = new Digest(prePrepareMessage.getTransactionDigest());
+            Viewstamp viewstamp = prePrepareMessage.getViewstamp();
+            multicastPrepare(transactionDigest, viewstamp);
+            pool.execute(asyncEnsureTransactionInLog(prePrepareMessage));
+        }
+
+        log.markViewChangeCompleted(configProvider.getViewID());
+    }
+
+    private Runnable asyncEnsureTransactionInLog(final PrePrepareMessage prePrepareMessage) {
+        return new Runnable() {
+            @Override
+            public void run() {
+                common.Transaction<Operation<ChineseCheckersState>> logTransaction
+                        = log.getTransaction(prePrepareMessage.getViewstamp());
+                if (logTransaction == null) {
+                    // if we don't have this in our log already, we need to ask someone else for it
+                    // TODO (Susan) : may have to ask many people
+                    GroupMember<PBFTCohort.Client> target = configProvider.getGroupMember(prePrepareMessage.getReplicaId());
+                    Preconditions.checkNotNull(target);
+                    PBFTCohort.Client thriftConnection = null;
+                    try {
+                        thriftConnection = target.getThriftConnection();
+                        TTransaction thriftTransaction = thriftConnection.getTransaction(
+                                new AskForTransaction()
+                                        .setReplicaID(replicaID)
+                                        .setViewstamp(prePrepareMessage.getViewstamp()));
+                        logTransaction = common.Transaction.getTransactionForPBFTTransaction(
+                                thriftTransaction);
+                        log.addEntry(logTransaction, prePrepareMessage);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    } finally {
+                        target.returnThriftConnection(thriftConnection);
+                    }
+                }
+
                 try {
-                    thriftConnection = target.getThriftConnection();
-                    TTransaction thriftTransaction = thriftConnection.getTransaction(new AskForTransaction().setReplicaID(replicaID).setViewstamp(viewstamp));
-                    common.Transaction<Operation<ChineseCheckersState>> logTransaction = common.Transaction.getTransactionForPBFTTransaction(
-                            thriftTransaction);
-                    log.addEntry(logTransaction);
+                    log.addEntry(logTransaction, prePrepareMessage);
                 } catch (IllegalLogEntryException e) {
                     e.printStackTrace();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    target.returnThriftConnection(thriftConnection);
                 }
             }
-        }
-
-        // clear old entries for old views out from viewChangeMessages
-        for (Iterator<Map.Entry<Integer, Set<ViewChangeMessage>>> it
-                     = viewChangeMessages.entrySet().iterator(); it.hasNext(); ) {
-            Map.Entry<Integer, Set<ViewChangeMessage>> entry = it.next();
-            if (entry.getKey().compareTo(configProvider.getViewID()) <= 0) {
-                it.remove();
-            }
-        }
+        };
     }
 
     @Nullable
@@ -520,6 +557,8 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
                 .setCheckpointDigest(digest.getBytes())
                 .setReplicaId(thisCohort.getReplicaID())
                 .setSequenceNumber(seqNo);
+        checkpointMessage.setMessageSignature(
+                CryptoUtil.computeMessageSignature(checkpointMessage, thisCohort.getPrivateKey()).getBytes());
         // multicast checkpoint message
         for (final GroupMember<PBFTCohort.Client> member : configProvider.getGroupMembers()) {
             pool.execute(new Runnable() {
