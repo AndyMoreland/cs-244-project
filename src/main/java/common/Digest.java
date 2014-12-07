@@ -5,11 +5,11 @@ import java.util.Arrays;
 /**
  * Created by leo on 12/1/14.
  */
-public class TransactionDigest {
+public class Digest {
 
     private final byte[] bytes;
 
-    public TransactionDigest(byte[] bytes){
+    public Digest(byte[] bytes){
         this.bytes = bytes;
     }
 
@@ -22,7 +22,7 @@ public class TransactionDigest {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        TransactionDigest that = (TransactionDigest) o;
+        Digest that = (Digest) o;
 
         if (!Arrays.equals(bytes, that.bytes)) return false;
 

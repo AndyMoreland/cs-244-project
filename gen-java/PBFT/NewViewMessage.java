@@ -36,7 +36,7 @@ public class NewViewMessage implements org.apache.thrift.TBase<NewViewMessage, N
   private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("NewViewMessage");
 
   private static final org.apache.thrift.protocol.TField NEW_VIEW_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("newViewID", org.apache.thrift.protocol.TType.I32, (short)1);
-  private static final org.apache.thrift.protocol.TField VIEW_CHANGE_MESSAGES_FIELD_DESC = new org.apache.thrift.protocol.TField("viewChangeMessages", org.apache.thrift.protocol.TType.LIST, (short)2);
+  private static final org.apache.thrift.protocol.TField VIEW_CHANGE_MESSAGES_FIELD_DESC = new org.apache.thrift.protocol.TField("viewChangeMessages", org.apache.thrift.protocol.TType.SET, (short)2);
   private static final org.apache.thrift.protocol.TField PRE_PREPARE_MESSAGES_FIELD_DESC = new org.apache.thrift.protocol.TField("prePrepareMessages", org.apache.thrift.protocol.TType.LIST, (short)3);
   private static final org.apache.thrift.protocol.TField REPLICA_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("replicaID", org.apache.thrift.protocol.TType.I32, (short)5);
   private static final org.apache.thrift.protocol.TField MESSAGE_SIGNATURE_FIELD_DESC = new org.apache.thrift.protocol.TField("messageSignature", org.apache.thrift.protocol.TType.STRING, (short)6);
@@ -48,7 +48,7 @@ public class NewViewMessage implements org.apache.thrift.TBase<NewViewMessage, N
   }
 
   public int newViewID; // required
-  public List<ViewChangeMessage> viewChangeMessages; // required
+  public Set<ViewChangeMessage> viewChangeMessages; // required
   public List<PrePrepareMessage> prePrepareMessages; // required
   public int replicaID; // required
   public ByteBuffer messageSignature; // required
@@ -133,7 +133,7 @@ public class NewViewMessage implements org.apache.thrift.TBase<NewViewMessage, N
     tmpMap.put(_Fields.NEW_VIEW_ID, new org.apache.thrift.meta_data.FieldMetaData("newViewID", org.apache.thrift.TFieldRequirementType.DEFAULT, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
     tmpMap.put(_Fields.VIEW_CHANGE_MESSAGES, new org.apache.thrift.meta_data.FieldMetaData("viewChangeMessages", org.apache.thrift.TFieldRequirementType.DEFAULT, 
-        new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST, 
+        new org.apache.thrift.meta_data.SetMetaData(org.apache.thrift.protocol.TType.SET, 
             new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, ViewChangeMessage.class))));
     tmpMap.put(_Fields.PRE_PREPARE_MESSAGES, new org.apache.thrift.meta_data.FieldMetaData("prePrepareMessages", org.apache.thrift.TFieldRequirementType.DEFAULT, 
         new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST, 
@@ -151,7 +151,7 @@ public class NewViewMessage implements org.apache.thrift.TBase<NewViewMessage, N
 
   public NewViewMessage(
     int newViewID,
-    List<ViewChangeMessage> viewChangeMessages,
+    Set<ViewChangeMessage> viewChangeMessages,
     List<PrePrepareMessage> prePrepareMessages,
     int replicaID,
     ByteBuffer messageSignature)
@@ -173,7 +173,7 @@ public class NewViewMessage implements org.apache.thrift.TBase<NewViewMessage, N
     __isset_bitfield = other.__isset_bitfield;
     this.newViewID = other.newViewID;
     if (other.isSetViewChangeMessages()) {
-      List<ViewChangeMessage> __this__viewChangeMessages = new ArrayList<ViewChangeMessage>(other.viewChangeMessages.size());
+      Set<ViewChangeMessage> __this__viewChangeMessages = new HashSet<ViewChangeMessage>(other.viewChangeMessages.size());
       for (ViewChangeMessage other_element : other.viewChangeMessages) {
         __this__viewChangeMessages.add(new ViewChangeMessage(other_element));
       }
@@ -240,16 +240,16 @@ public class NewViewMessage implements org.apache.thrift.TBase<NewViewMessage, N
 
   public void addToViewChangeMessages(ViewChangeMessage elem) {
     if (this.viewChangeMessages == null) {
-      this.viewChangeMessages = new ArrayList<ViewChangeMessage>();
+      this.viewChangeMessages = new HashSet<ViewChangeMessage>();
     }
     this.viewChangeMessages.add(elem);
   }
 
-  public List<ViewChangeMessage> getViewChangeMessages() {
+  public Set<ViewChangeMessage> getViewChangeMessages() {
     return this.viewChangeMessages;
   }
 
-  public NewViewMessage setViewChangeMessages(List<ViewChangeMessage> viewChangeMessages) {
+  public NewViewMessage setViewChangeMessages(Set<ViewChangeMessage> viewChangeMessages) {
     this.viewChangeMessages = viewChangeMessages;
     return this;
   }
@@ -379,7 +379,7 @@ public class NewViewMessage implements org.apache.thrift.TBase<NewViewMessage, N
       if (value == null) {
         unsetViewChangeMessages();
       } else {
-        setViewChangeMessages((List<ViewChangeMessage>)value);
+        setViewChangeMessages((Set<ViewChangeMessage>)value);
       }
       break;
 
@@ -681,18 +681,18 @@ public class NewViewMessage implements org.apache.thrift.TBase<NewViewMessage, N
             }
             break;
           case 2: // VIEW_CHANGE_MESSAGES
-            if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
+            if (schemeField.type == org.apache.thrift.protocol.TType.SET) {
               {
-                org.apache.thrift.protocol.TList _list32 = iprot.readListBegin();
-                struct.viewChangeMessages = new ArrayList<ViewChangeMessage>(_list32.size);
-                for (int _i33 = 0; _i33 < _list32.size; ++_i33)
+                org.apache.thrift.protocol.TSet _set32 = iprot.readSetBegin();
+                struct.viewChangeMessages = new HashSet<ViewChangeMessage>(2*_set32.size);
+                for (int _i33 = 0; _i33 < _set32.size; ++_i33)
                 {
                   ViewChangeMessage _elem34;
                   _elem34 = new ViewChangeMessage();
                   _elem34.read(iprot);
                   struct.viewChangeMessages.add(_elem34);
                 }
-                iprot.readListEnd();
+                iprot.readSetEnd();
               }
               struct.setViewChangeMessagesIsSet(true);
             } else { 
@@ -755,12 +755,12 @@ public class NewViewMessage implements org.apache.thrift.TBase<NewViewMessage, N
       if (struct.viewChangeMessages != null) {
         oprot.writeFieldBegin(VIEW_CHANGE_MESSAGES_FIELD_DESC);
         {
-          oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, struct.viewChangeMessages.size()));
+          oprot.writeSetBegin(new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.STRUCT, struct.viewChangeMessages.size()));
           for (ViewChangeMessage _iter38 : struct.viewChangeMessages)
           {
             _iter38.write(oprot);
           }
-          oprot.writeListEnd();
+          oprot.writeSetEnd();
         }
         oprot.writeFieldEnd();
       }
@@ -857,9 +857,9 @@ public class NewViewMessage implements org.apache.thrift.TBase<NewViewMessage, N
       }
       if (incoming.get(1)) {
         {
-          org.apache.thrift.protocol.TList _list42 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.viewChangeMessages = new ArrayList<ViewChangeMessage>(_list42.size);
-          for (int _i43 = 0; _i43 < _list42.size; ++_i43)
+          org.apache.thrift.protocol.TSet _set42 = new org.apache.thrift.protocol.TSet(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.viewChangeMessages = new HashSet<ViewChangeMessage>(2*_set42.size);
+          for (int _i43 = 0; _i43 < _set42.size; ++_i43)
           {
             ViewChangeMessage _elem44;
             _elem44 = new ViewChangeMessage();

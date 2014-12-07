@@ -31,9 +31,9 @@ public class Log<T> {
     private Map<Integer, Transaction<T>> committedLogEntries = Maps.newConcurrentMap();
 
     private Map<Viewstamp, Transaction<T>> transactions = Maps.newConcurrentMap();
-    private Map<MultiKey<Viewstamp, TransactionDigest>, Set<PrepareMessage>> prepareMessages = Maps.newConcurrentMap();
+    private Map<MultiKey<Viewstamp, Digest>, Set<PrepareMessage>> prepareMessages = Maps.newConcurrentMap();
 
-    private Map<MultiKey<Viewstamp, TransactionDigest>, Set<CommitMessage>> commitMessages = Maps.newConcurrentMap();
+    private Map<MultiKey<Viewstamp, Digest>, Set<CommitMessage>> commitMessages = Maps.newConcurrentMap();
     private int lastApplied = -1;
 
     private Map<Integer, Transaction<T>> unappliedLogEntries = Maps.newConcurrentMap();
@@ -177,7 +177,7 @@ public class Log<T> {
     public void addPrepareMessage(PrepareMessage message) {
         Lock writeLock = logLock.writeLock();
         writeLock.lock();
-        MultiKey<Viewstamp, TransactionDigest> key = MultiKey.newKey(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()));
+        MultiKey<Viewstamp, Digest> key = MultiKey.newKey(message.getViewstamp(), new Digest(message.getTransactionDigest()));
         if(!prepareMessages.containsKey(key)) prepareMessages.put(key, Sets.<PrepareMessage>newHashSet());
         prepareMessages.get(key).add(message);
         writeLock.unlock();
@@ -186,7 +186,7 @@ public class Log<T> {
     public void addCommitMessage(CommitMessage message) {
         Lock writeLock = logLock.writeLock();
         writeLock.lock();
-        MultiKey<Viewstamp, TransactionDigest> key = MultiKey.newKey(message.getViewstamp(), new TransactionDigest(message.getTransactionDigest()));
+        MultiKey<Viewstamp, Digest> key = MultiKey.newKey(message.getViewstamp(), new Digest(message.getTransactionDigest()));
         if(!commitMessages.containsKey(key)) commitMessages.put(key, Sets.<CommitMessage>newHashSet());
         commitMessages.get(key).add(message);
         writeLock.unlock();
@@ -199,14 +199,14 @@ public class Log<T> {
         writeLock.unlock();
     }
 
-    public boolean readyToPrepare(Viewstamp viewstamp, TransactionDigest mtd, int quorumSize) {
+    public boolean readyToPrepare(Viewstamp viewstamp, Digest mtd, int quorumSize) {
         Lock readLock = logLock.readLock();
         readLock.lock();
         Transaction<T> transaction = transactions.get(viewstamp);
         boolean quorum;
 
         // Haven't seen this viewstamp, or have already processed, or haven't prepared this request
-        if(transaction == null || transaction.isPrepared() || !CryptoUtil.computeTransactionDigest(transaction).equals(mtd)){
+        if(transaction == null || transaction.isPrepared() || !CryptoUtil.computeDigest(transaction).equals(mtd)){
             quorum = false;
         } else {
             Set<PrepareMessage> previouslyReceivedPrepareMessages = prepareMessages.get(MultiKey.newKey(viewstamp, mtd));
@@ -216,7 +216,7 @@ public class Log<T> {
         return quorum;
     }
 
-    public boolean readyToCommit(Viewstamp viewstamp, TransactionDigest mtd, int quorumSize) {
+    public boolean readyToCommit(Viewstamp viewstamp, Digest mtd, int quorumSize) {
         Lock readLock = logLock.readLock();
         readLock.lock();
         Transaction<T> transaction = transactions.get(viewstamp);

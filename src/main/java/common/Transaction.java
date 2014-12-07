@@ -51,7 +51,7 @@ public class Transaction<T> {
         return commonTransaction;
     }
 
-    public static TTransaction serialize(Transaction<Operation> transaction) {
+    public static TTransaction serialize(Transaction<Operation<ChineseCheckersState>> transaction) {
         TTransaction thriftTransaction = new TTransaction();
         thriftTransaction.setReplicaId(transaction.getReplicaId());
         thriftTransaction.setViewstamp(transaction.getViewstamp());

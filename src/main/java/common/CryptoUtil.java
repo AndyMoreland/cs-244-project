@@ -7,6 +7,7 @@ import org.codehaus.jackson.map.ObjectWriter;
 import org.codehaus.jackson.map.ser.FilterProvider;
 import org.codehaus.jackson.map.ser.impl.SimpleBeanPropertyFilter;
 import org.codehaus.jackson.map.ser.impl.SimpleFilterProvider;
+import statemachine.StateMachine;
 
 import java.io.IOException;
 import java.security.*;
@@ -45,12 +46,12 @@ public final class CryptoUtil {
         }
     }
 
-    public static TransactionDigest computeTransactionDigest(Transaction transaction) {
-        if (NO_CRYPTO) return new TransactionDigest(new byte[10]);
+    public static Digest computeDigest(Object value) {
+        if (NO_CRYPTO) return new Digest(new byte[10]);
         try {
             ObjectWriter writer = mapper.writer();
             MessageDigest digest = MessageDigest.getInstance(DIGEST_TYPE);
-            return new TransactionDigest(digest.digest(writer.writeValueAsString(transaction).getBytes()));
+            return new Digest(digest.digest(writer.writeValueAsString(value).getBytes()));
         } catch (NoSuchAlgorithmException | IOException e) {
             e.printStackTrace();
         }

@@ -27,8 +27,13 @@ public class ChineseCheckersGameEngine implements GameEngine<ChineseCheckersStat
         this.stateMachine = new ChineseCheckersStateMachine(ChineseCheckersState.buildGameForGroupMembers(configProvider.getGroupMembers()));
     }
     @Override
-    synchronized public void notifyOnCommit(Transaction<Operation<ChineseCheckersState>> transaction) throws InvalidStateMachineOperationException {
+    synchronized public void notifyOnCommit(Transaction<Operation<ChineseCheckersState>> transaction) throws Exception {
         this.stateMachine.applyOperation(transaction.getValue());
+    }
+
+    @Override
+    public ChineseCheckersStateMachine getStateMachine() {
+        return stateMachine;
     }
 
     @Override

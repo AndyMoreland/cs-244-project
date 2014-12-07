@@ -30,7 +30,7 @@ public class BenchmarkingGameEngine extends ChineseCheckersGameEngine {
 
     // log should call this
     @Override
-    public void notifyOnCommit(Transaction<Operation<ChineseCheckersState>> transaction) throws InvalidStateMachineOperationException {
+    public void notifyOnCommit(Transaction<Operation<ChineseCheckersState>> transaction) throws Exception {
         super.notifyOnCommit(transaction);
         LOG.warn("Committed message on server: " + configProvider.getMe().getName());
         LOG.error("The transaction's replica ID is: " + transaction.getReplicaId());

@@ -3,7 +3,7 @@ package server;
 import PBFT.*;
 import com.google.common.collect.Maps;
 import common.CryptoUtil;
-import common.TransactionDigest;
+import common.Digest;
 import config.GroupConfigProvider;
 import config.GroupMember;
 import org.apache.log4j.*;
@@ -105,7 +105,7 @@ public class PBFTCohortRunner {
                     sendingReplicaID
             );
 
-            TransactionDigest transactionDigest = CryptoUtil.computeTransactionDigest(common.Transaction.getTransactionForPBFTTransaction(transaction));
+            Digest transactionDigest = CryptoUtil.computeDigest(common.Transaction.getTransactionForPBFTTransaction(transaction));
 
             PrePrepareMessage prePrepareMessage = new PrePrepareMessage(
                     viewstamp,
