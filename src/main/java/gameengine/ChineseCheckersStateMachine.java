@@ -46,6 +46,7 @@ public class ChineseCheckersStateMachine implements StateMachine<ChineseCheckers
         numOperationsApplied++;
         // checkpointing currently blocks application of moves
         if ((numOperationsApplied % CHECKPOINT_INTERVAL) == 0) {
+            LOG.info("Checkpointing after operation " + numOperationsApplied);
             checkpointDigest = Optional.of(CryptoUtil.computeDigest(this));
             lastCheckpointed = numOperationsApplied;
             for (StateMachineListener listener : listeners) {

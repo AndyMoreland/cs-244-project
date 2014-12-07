@@ -201,10 +201,6 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
         }
     }
 
-    private boolean shouldCheckpoint(int lastCommitted) {
-        return false && (lastCommitted % CHECKPOINT_INTERVAL == 0); // TODO (Susan) UN-KILL THIS
-    }
-
     @Override
     public void commit(CommitMessage message) throws TException {
         LOG.trace("Entering commit");
@@ -221,46 +217,14 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
             log.commitEntry(viewstamp);
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            int lastCommited = log.getLastApplied();
-            if (shouldCheckpoint(lastCommited)) {
-                // checkpoint and multicast a proof
-                Digest digest = null; // CryptoUtil.computeCheckpointDigest(); TODO (Susan) need access to state machine
-                final CheckpointMessage checkpointMessage = new CheckpointMessage();
-                checkpointMessage.setSequenceNumber(lastCommited);
-                checkpointMessage.setCheckpointDigest(digest.getBytes());
-                checkpointMessage.setReplicaId(replicaID);
-
-                for (final GroupMember<PBFTCohort.Client> target : configProvider.getGroupMembers()) {
-                    pool.execute(buildAsyncCheckpointMessage(checkpointMessage, target));
-                }
-            }
         }
     }
 
-    private Runnable buildAsyncCheckpointMessage(final CheckpointMessage checkpointMessage, final GroupMember<PBFTCohort.Client> target) {
-        return new Runnable() {
-            @Override
-            public void run() {
-                PBFTCohort.Client thriftConnection = null;
-                try {
-                    thriftConnection = target.getThriftConnection();
-                    thriftConnection.checkpoint(checkpointMessage);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                } finally {
-                    target.returnThriftConnection(thriftConnection);
-                }
-            }
-        };
-    }
 
     @Override
     public void checkpoint(CheckpointMessage message) throws TException {
-        LOG.trace("Entering checkpoint");
-
+        LOG.info("Got a checkpoint message");
     }
-
 
     private List<PrePrepareMessage> createPrePreparesToFillPreparedSeqnoHoles(
             int newViewID,
