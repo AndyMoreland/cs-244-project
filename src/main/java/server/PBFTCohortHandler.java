@@ -149,12 +149,12 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
     }
 
     private void multicastPrepare(Digest transactionDigest, Viewstamp viewstamp) throws TException {
+        final PrepareMessage prepareMessage = new PrepareMessage();
+        prepareMessage.viewstamp = viewstamp;
+        prepareMessage.replicaId = thisCohort.getReplicaID();
+        prepareMessage.transactionDigest = ByteBuffer.wrap(transactionDigest.getBytes());
+        prepareMessage.messageSignature = ByteBuffer.wrap(CryptoUtil.computeMessageSignature(prepareMessage, thisCohort.getPrivateKey()).getBytes());
         for (final GroupMember<PBFTCohort.Client> member : configProvider.getGroupMembers()) {
-            final PrepareMessage prepareMessage = new PrepareMessage();
-            prepareMessage.viewstamp = viewstamp;
-            prepareMessage.replicaId = thisCohort.getReplicaID();
-            prepareMessage.transactionDigest = ByteBuffer.wrap(transactionDigest.getBytes());
-            prepareMessage.messageSignature = ByteBuffer.wrap(CryptoUtil.computeMessageSignature(prepareMessage, thisCohort.getPrivateKey()).getBytes());
 
             PBFTCohort.Client thriftConnection = null;
             try {
@@ -187,14 +187,12 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
         if (!log.readyToPrepare(viewstamp, transactionDigest, configProvider.getQuorumSize())) return;
         log.markAsPrepared(viewstamp);
 
-
+        final CommitMessage commitMessage = new CommitMessage();
+        commitMessage.viewstamp = viewstamp;
+        commitMessage.replicaId = thisCohort.getReplicaID();
+        commitMessage.transactionDigest = ByteBuffer.wrap(transactionDigest.getBytes());
+        commitMessage.messageSignature = ByteBuffer.wrap(CryptoUtil.computeMessageSignature(commitMessage, thisCohort.getPrivateKey()).getBytes());
         for (final GroupMember<PBFTCohort.Client> member : configProvider.getGroupMembers()) {
-            final CommitMessage commitMessage = new CommitMessage();
-            commitMessage.viewstamp = viewstamp;
-            commitMessage.replicaId = thisCohort.getReplicaID();
-            commitMessage.transactionDigest = ByteBuffer.wrap(transactionDigest.getBytes());
-            commitMessage.messageSignature = ByteBuffer.wrap(CryptoUtil.computeMessageSignature(commitMessage, thisCohort.getPrivateKey()).getBytes());
-
             pool.execute(new Runnable() {
                 @Override
                 public void run() {
