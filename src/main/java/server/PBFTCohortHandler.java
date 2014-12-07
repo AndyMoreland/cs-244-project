@@ -40,7 +40,7 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
 
     private static final int POOL_SIZE = 10;
     private static final int MIN_SEQ_NO = 0;
-    private static final int MIN_VIEW_ID = 0;
+    private static final int MIN_VIEW_ID = 1;
     private static final byte[] NO_OP_TRANSACTION_DIGEST = CryptoUtil.computeDigest(
             new common.Transaction(null, -1, new NoOp(), 0)).getBytes();
 
@@ -394,8 +394,8 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
                 log.addViewChangeMessage(message);
 
                 // if primary, check if you have enough to send NewViewMessage
-                LOG.info("new primary should be " + message.getNewViewID() % (configProvider.getGroupMembers().size()));
-                if (message.getNewViewID() % (configProvider.getGroupMembers().size()) == replicaID
+                LOG.info("new primary should be " + ((message.getNewViewID() % (configProvider.getGroupMembers().size()) +1)));
+                if ((message.getNewViewID() % (configProvider.getGroupMembers().size()) + 1) == replicaID
                         && log.readyToSendNewView(message.getNewViewID(),configProvider.getQuorumSize())) {
                     LOG.info("Replica " + replicaID + " will be the new primary ");
                     // multicast NEW-VIEW message
@@ -498,8 +498,8 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
         LOG.info("replica " + replicaID + " is in view " + message.getNewViewID());
 
         // send prepares for everything in script O
+        LOG.info("Sending" + message.getPrePrepareMessages().size() + " hole-filling prepares.");
         for (PrePrepareMessage prePrepareMessage : message.getPrePrepareMessages()) {
-
             Digest transactionDigest = new Digest(prePrepareMessage.getTransactionDigest());
             Viewstamp viewstamp = prePrepareMessage.getViewstamp();
             multicastPrepare(transactionDigest, viewstamp);

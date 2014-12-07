@@ -19,7 +19,7 @@ public class StaticGroupConfigProvider<T extends org.apache.thrift.TServiceClien
         this.members = members;
         assert (this.members != null);
         this.viewID = viewID;
-        assert(getLeader() != null);
+        assert(getGroupMember((viewID % members.size()) + 1)!= null);
     }
 
     @Override
@@ -63,7 +63,7 @@ public class StaticGroupConfigProvider<T extends org.apache.thrift.TServiceClien
     }
 
     @Override
-    public synchronized GroupMember getLeader() { return getGroupMember(viewID % members.size()); }
+    public synchronized GroupMember getLeader() { return getGroupMember((viewID % members.size()) + 1); }
 
 
     @Override

@@ -59,6 +59,11 @@ public class PBFTCohortRunner {
 //        for (int i = 1; i < 3; i++) {
 //            testSystem(privateKeyMap, leaderConfigProvider, i);
 //        }
+
+        while (true) {
+            testViewChange(leaderConfigProvider);
+            Thread.sleep(3000);
+        }
     }
 
     private static void testViewChange(GroupConfigProvider<PBFTCohort.Client> leaderConfigProvider) {

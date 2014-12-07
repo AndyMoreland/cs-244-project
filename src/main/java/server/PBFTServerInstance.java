@@ -37,7 +37,7 @@ import java.util.Set;
 public class PBFTServerInstance implements Runnable {
     private static Logger LOG = LogManager.getLogger(PBFTServerInstance.class);
 
-    public static final int INITIAL_VIEW_ID = 0;
+    public static final int INITIAL_VIEW_ID = 1; // not 0 because replica IDs don't start at 0
     private static final int REPLICA_ID_ARG_POS = 0;
 
     public PBFTCohortHandler handler;

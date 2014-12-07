@@ -25,14 +25,21 @@ public class BenchmarkingGameEngine extends ChineseCheckersGameEngine {
     @Override
     public void requestCommit(Operation<ChineseCheckersState> transaction) {
         this.startTime = System.currentTimeMillis();
-        super.requestCommit(transaction);
+        while (true) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            super.requestCommit(transaction);
+        }
     }
 
     // log should call this
     @Override
     public void notifyOnCommit(Transaction<Operation<ChineseCheckersState>> transaction) throws Exception {
         super.notifyOnCommit(transaction);
-        LOG.warn("Committed message on server: " + configProvider.getMe().getName());
+      /*  LOG.warn("Committed message on server: " + configProvider.getMe().getName());
         LOG.error("The transaction's replica ID is: " + transaction.getReplicaId());
 
         if (transaction.getReplicaId() == configProvider.getMe().getReplicaID()) {
@@ -41,7 +48,7 @@ public class BenchmarkingGameEngine extends ChineseCheckersGameEngine {
 
         if ((transaction.getReplicaId() % configProvider.getGroupMembers().size()) + 1 == configProvider.getMe().getReplicaID()) {
             requestCommit(new NoOp());
-        }
+        } */
     }
 }
 
