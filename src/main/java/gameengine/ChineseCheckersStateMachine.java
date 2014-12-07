@@ -22,7 +22,7 @@ public class ChineseCheckersStateMachine implements StateMachine<ChineseCheckers
     private ChineseCheckersState state;
     private int numOperationsApplied;
 
-    private static final int CHECKPOINT_INTERVAL = 100;
+    private static final int CHECKPOINT_INTERVAL = 20;
     private int lastCheckpointed;
     private Optional<Digest> checkpointDigest;
     private List<StateMachineListener> listeners;

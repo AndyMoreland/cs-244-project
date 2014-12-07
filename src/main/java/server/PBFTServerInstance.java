@@ -2,6 +2,7 @@ package server;
 
 import PBFT.PBFTCohort;
 import com.google.common.base.Optional;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import config.*;
 import gameengine.BenchmarkingGameEngine;
@@ -25,6 +26,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -161,7 +163,7 @@ public class PBFTServerInstance implements Runnable {
             clients.add(client);
         }
 
-        return new StaticGroupConfigProvider<PBFTCohort.Client>(leader, me, clients, INITIAL_VIEW_ID);
+        return new StaticGroupConfigProvider<PBFTCohort.Client>(me, clients, INITIAL_VIEW_ID);
     }
 
     private GroupMember<PBFTCohort.Client> serverNodeToClient(JsonNode server) throws NoSuchMethodException, UnknownHostException {

@@ -255,7 +255,9 @@ public class Log<T> {
                 prePreparesAndProof.put(prePrepareMessageEntry.getValue(),prepareMessages.get(vdk));
             }
         }
-        checkPointProof.addAll(checkpointMessages.get(lastStableCheckpoint));
+        if (checkpointMessages.get(lastStableCheckpoint) != null) {
+            checkPointProof.addAll(checkpointMessages.get(lastStableCheckpoint));
+        }
         int checkpoint = lastStableCheckpoint;
         readLock.unlock();
         return checkpoint;

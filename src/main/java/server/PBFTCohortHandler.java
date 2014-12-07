@@ -6,6 +6,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.sun.istack.internal.Nullable;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import common.*;
 import config.GroupConfigProvider;
 import config.GroupMember;
@@ -32,20 +33,22 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
     private static Logger LOG = LogManager.getLogger(PBFTCohortHandler.class);
     private final Log<Operation<ChineseCheckersState>> log;
     private GroupConfigProvider<PBFTCohort.Client> configProvider;
-    private final GroupMember<PBFTCohort.Client> thisCohort;
+
 
     private int replicaID;
     private final ExecutorService pool;
 
     private static final int POOL_SIZE = 10;
-    private static final int LAST_STABLE_CHECKPOINT = 0; // set to 0 for now; no checkpointing
     private static final int MIN_SEQ_NO = 0;
     private static final int MIN_VIEW_ID = 0;
     private static final byte[] NO_OP_TRANSACTION_DIGEST = CryptoUtil.computeDigest(
             new common.Transaction(null, -1, new NoOp(), 0)).getBytes();
 
-    private int sequenceNumber = -1;
-    private StateMachine stateMachine; // we want to ask it for its most recent checkpoint for view change
+    // editable things, order they're listed here is order in which to synchronize on
+    // TODO (Susan)
+    private Boolean undergoingViewChange = false;
+    private final GroupMember<PBFTCohort.Client> thisCohort; // for this, synch on undergoingViewChange
+    private Integer sequenceNumber = -1;
 
     public PBFTCohortHandler(GroupConfigProvider<PBFTCohort.Client> configProvider, int replicaID, GroupMember<PBFTCohort.Client> thisCohort, GameEngine toNotify) {
         Thread.currentThread().setName("{SERVER ID: " + replicaID + "} " + Thread.currentThread().getName());
@@ -55,78 +58,90 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
         this.log = new Log<>();
         this.thisCohort = thisCohort;
         this.log.addListener(toNotify);
-        this.stateMachine = toNotify.getStateMachine();
-        this.stateMachine.addCheckpointListener(this);
+        toNotify.getStateMachine().addCheckpointListener(this);
 
         LOG.info("Starting handler!");
     }
 
     @Override
-    synchronized public void clientMessage(final ClientMessage message) throws TException {
-        LOG.info("Got client message");
-        if(this.configProvider.getLeader().getReplicaID() != this.replicaID) return;
-        LOG.info("I'm the leader");
-        if (!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) return;
-        LOG.info("validated signature! multicasting prePrepares...");
+    public void clientMessage(final ClientMessage message) throws TException {
+            final TTransaction transaction = new TTransaction();
+           // synchronized (undergoingViewChange) {
+           //     synchronized (sequenceNumber) {
+                    LOG.info("Got client message");
+                    if (this.configProvider.getLeader().getReplicaID() != this.replicaID) return;
+                    LOG.info("I'm the leader");
+                    if (!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature()))
+                        return;
+                    LOG.info("validated signature! multicasting prePrepares...");
+                    transaction.viewstamp = new Viewstamp(sequenceNumber + 1, configProvider.getViewID());
+                    transaction.replicaId = message.getReplicaId();
+                    transaction.operation = message.operation;
 
-        final TTransaction transaction = new TTransaction();
-        transaction.viewstamp = new Viewstamp(sequenceNumber + 1, configProvider.getViewID());
-        transaction.replicaId = message.getReplicaId();
-        transaction.operation = message.operation;
+                    LOG.info("Attempting to transmit with sequence number: " + (sequenceNumber + 1));
 
-        LOG.info("Attempting to transmit with sequence number: " + (sequenceNumber + 1));
+                    sequenceNumber++;
+               // }
+            //}
 
-        sequenceNumber++;
+            for (final GroupMember<PBFTCohort.Client> member : configProvider.getGroupMembers()) {
+                pool.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        final PrePrepareMessage prePrepareMessage = new PrePrepareMessage();
+                        prePrepareMessage.viewstamp = transaction.getViewstamp();
+                        prePrepareMessage.replicaId = thisCohort.getReplicaID();
+                        prePrepareMessage.transactionDigest = ByteBuffer.wrap(
+                                CryptoUtil.computeDigest(Transaction.getTransactionForPBFTTransaction(transaction)).getBytes()
+                        );
+                        prePrepareMessage.messageSignature = ByteBuffer.wrap(CryptoUtil.computeMessageSignature(prePrepareMessage, thisCohort.getPrivateKey()).getBytes());
 
-        for (final GroupMember<PBFTCohort.Client> member : configProvider.getGroupMembers()) {
-            pool.execute(new Runnable() {
-                @Override
-                public void run() {
-                    final PrePrepareMessage prePrepareMessage = new PrePrepareMessage();
-                    prePrepareMessage.viewstamp = transaction.getViewstamp();
-                    prePrepareMessage.replicaId = thisCohort.getReplicaID();
-                    prePrepareMessage.transactionDigest = ByteBuffer.wrap(
-                            CryptoUtil.computeDigest(Transaction.getTransactionForPBFTTransaction(transaction)).getBytes()
-                    );
-                    prePrepareMessage.messageSignature = ByteBuffer.wrap(CryptoUtil.computeMessageSignature(prePrepareMessage, thisCohort.getPrivateKey()).getBytes());
-
-                    PBFTCohort.Client thriftConnection = null;
-                    try {
-                        thriftConnection = member.getThriftConnection();
-                        thriftConnection.prePrepare(prePrepareMessage, message, transaction);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    } finally {
-                        member.returnThriftConnection(thriftConnection);
+                        PBFTCohort.Client thriftConnection = null;
+                        try {
+                            thriftConnection = member.getThriftConnection();
+                            thriftConnection.prePrepare(prePrepareMessage, message, transaction);
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        } finally {
+                            member.returnThriftConnection(thriftConnection);
+                        }
                     }
-                }
-            });
-        }
+                });
+            }
     }
 
     @Override
     public void prePrepare(PrePrepareMessage message, ClientMessage clientMessage, TTransaction transaction) throws TException {
-        LOG.trace("Entering prePrepare");
-        if (this.configProvider.getLeader().getReplicaID() != message.getReplicaId()) throw new TException("Replica ID check failed");
-        if (!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) throw new TException("Preprepare message signature validation failed");       // Validate signature
-        LOG.trace("Validated leader signature");
-        if(!this.configProvider.getGroupMember(clientMessage.getReplicaId()).verifySignature(clientMessage, clientMessage.getMessageSignature())) throw new TException("Client message signature validation failed");
-        LOG.trace("Validated client (sender) signature");
+        Transaction<Operation<ChineseCheckersState>> logTransaction;
+       // synchronized (undergoingViewChange) {
+            if (undergoingViewChange) return;
+            LOG.trace("Entering prePrepare");
+            if (this.configProvider.getLeader().getReplicaID() != message.getReplicaId())
+                throw new TException("Replica ID check failed");
+            if (!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature()))
+                throw new TException("Preprepare message signature validation failed");       // Validate signature
+            LOG.trace("Validated leader signature");
+            if (!this.configProvider.getGroupMember(clientMessage.getReplicaId()).verifySignature(clientMessage, clientMessage.getMessageSignature()))
+                throw new TException("Client message signature validation failed");
+            LOG.trace("Validated client (sender) signature");
 
-        if (transaction.getViewstamp().getViewId() != this.configProvider.getViewID()) throw new TException("View id validation failed"); // Check we're in view v
-        LOG.trace("Successfully passed view id validation");
+            if (transaction.getViewstamp().getViewId() != this.configProvider.getViewID())
+                throw new TException("View id validation failed"); // Check we're in view v
+            LOG.trace("Successfully passed view id validation");
 
-        Transaction<Operation<ChineseCheckersState>> logTransaction
-                = Transaction.getTransactionForPBFTTransaction(transaction);
+            logTransaction
+                    = Transaction.getTransactionForPBFTTransaction(transaction);
 
-        if(!transaction.getOperation().equals(clientMessage.getOperation())) throw new TException("Leader is not telling the truth about the client's intentions");
-        LOG.trace("Leader is telling the truth about client's intentions");
+            if (!transaction.getOperation().equals(clientMessage.getOperation()))
+                throw new TException("Leader is not telling the truth about the client's intentions");
+            LOG.trace("Leader is telling the truth about client's intentions");
 
-        try {
-            log.addEntry(logTransaction, message);                                                     // Check sequence number
-        } catch (IllegalLogEntryException e) {
-            e.printStackTrace();
-        }
+            try {
+                log.addEntry(logTransaction, message);                                                     // Check sequence number
+            } catch (IllegalLogEntryException e) {
+                e.printStackTrace();
+            }
+      //  }
 
         multicastPrepare(CryptoUtil.computeDigest(logTransaction), transaction.viewstamp);
         prepareIfReady(message.getViewstamp(), new Digest(message.getTransactionDigest()));
@@ -155,14 +170,17 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
 
     @Override
     public void prepare(PrepareMessage message) throws TException {
-        LOG.trace("Entering prepare");
-        if (!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature()))
-            throw new TException("Failed to validate signature.");       // Validate signature
-        LOG.trace("Validated signature");
-        if (message.getViewstamp().getViewId() != this.configProvider.getViewID())
-            throw new TException("Failed to validate view number"); // Check we're in view v
-        log.addPrepareMessage(message);
-        prepareIfReady(message.getViewstamp(), new Digest(message.getTransactionDigest()));
+    //    synchronized (undergoingViewChange) {
+            if (undergoingViewChange) return;
+            LOG.trace("Entering prepare");
+            if (!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature()))
+                throw new TException("Failed to validate signature.");       // Validate signature
+            LOG.trace("Validated signature");
+            if (message.getViewstamp().getViewId() != this.configProvider.getViewID())
+                return; // Check we're in view v
+            log.addPrepareMessage(message);
+            prepareIfReady(message.getViewstamp(), new Digest(message.getTransactionDigest()));
+    //    }
     }
 
     private void prepareIfReady(Viewstamp viewstamp, Digest transactionDigest) {
@@ -199,11 +217,15 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
 
     @Override
     public void commit(CommitMessage message) throws TException {
-        LOG.trace("Entering commit");
-        if (!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature())) return;       // Validate signature
-        if (message.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
-        log.addCommitMessage(message);
-        commitIfReady(message.getViewstamp(), new Digest(message.getTransactionDigest()));
+     //   synchronized (undergoingViewChange) {
+            if (undergoingViewChange) return;
+            LOG.trace("Entering commit");
+            if (!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature()))
+                return;       // Validate signature
+            if (message.getViewstamp().getViewId() != this.configProvider.getViewID()) return; // Check we're in view v
+            log.addCommitMessage(message);
+            commitIfReady(message.getViewstamp(), new Digest(message.getTransactionDigest()));
+      //  }
     }
 
     private void commitIfReady(Viewstamp viewstamp, Digest transactionDigest) throws TException {
@@ -216,13 +238,16 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
     }
 
     @Override
-    synchronized public void checkpoint(CheckpointMessage message) throws TException {
-        LOG.trace("Got a checkpoint message");
-        if (!thisCohort.verifySignature(message, message.getMessageSignature())) return;
-        LOG.trace("Verified checkpoint message");
-        // don't bother adding old checkpoint messages
-        if (log.getLastStableCheckpoint() >= message.getSequenceNumber()) return;
-        log.addCheckpointMessage(message, configProvider.getQuorumSize());
+    public void checkpoint(CheckpointMessage message) throws TException {
+     //   synchronized (undergoingViewChange) {
+            if (undergoingViewChange) return;
+            LOG.trace("Got a checkpoint message");
+            if (!thisCohort.verifySignature(message, message.getMessageSignature())) return;
+            LOG.trace("Verified checkpoint message");
+            // don't bother adding old checkpoint messages
+            if (log.getLastStableCheckpoint() >= message.getSequenceNumber()) return;
+            log.addCheckpointMessage(message, configProvider.getQuorumSize());
+     //   }
     }
 
     private List<PrePrepareMessage> createPrePreparesToFillPreparedSeqnoHoles(
@@ -305,10 +330,10 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
 
 
     @Override
-    synchronized public void initiateViewChange() throws TException {
-        //  TODO (Susan): once you do this, until you finish the view change you should ignore all other messages
-        // note that checkpoint proof may be for a later checkpoint than prePrepares and proof, but I think that's ok
-
+    public void initiateViewChange() throws TException {
+        synchronized (undergoingViewChange) {
+            undergoingViewChange = true; // its possible that you want to initiate a view change even when you're already doing one
+        }
         Map<PrePrepareMessage, Set<PrepareMessage>> prePreparesAndProof = Maps.newHashMap();
         Set<CheckpointMessage> checkPointProof = Sets.newHashSet();
         int lastStableCheckpoint = log.getPreparesCheckpointProofAndLastStableCheckpoint(prePreparesAndProof, checkPointProof);
@@ -317,8 +342,8 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
         viewChangeMessage.setSequenceNumber(lastStableCheckpoint).setReplicaID(replicaID)
                 .setCheckpointProof(checkPointProof)
                 .setNewViewID(configProvider.getViewID() + 1)
-                .setPreparedGreaterThanSequenceNumber(new ArrayList<>(prePreparesAndProof.keySet())) // TODO (Susan): fix this
-                .setPrepareMessages(new ArrayList<>(prePreparesAndProof.values())); // TODO (Susan) same as above
+                .setPreparedGreaterThanSequenceNumber(new ArrayList<>(prePreparesAndProof.keySet())) // TODO (Susan): change two lists to a map
+                .setPrepareMessages(new ArrayList<>(prePreparesAndProof.values()));
         viewChangeMessage.setMessageSignature(CryptoUtil.computeMessageSignature(viewChangeMessage, thisCohort.getPrivateKey()).getBytes());
 
         for (final GroupMember<PBFTCohort.Client> groupMember : configProvider.getOtherGroupMembers()) {
@@ -355,7 +380,7 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
     }
 
     @Override
-    public synchronized void startViewChange(ViewChangeMessage message) throws TException {
+    public void startViewChange(ViewChangeMessage message) throws TException {
         LOG.info("Replica " + replicaID + " received view-change message from " + message.getReplicaID() + " suggesting that we change to view " + message.getNewViewID());
         if (message.isSetNewViewID()) {
             int newViewID = message.getNewViewID();
@@ -443,7 +468,7 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
     }
 
     @Override
-    public synchronized void approveViewChange(NewViewMessage message) throws TException {
+    public void approveViewChange(NewViewMessage message) throws TException {
         LOG.info("Being told to approve to view change by " + message.getReplicaID() + " with message " + message);
         int senderReplicaID = message.getReplicaID();
         GroupMember<PBFTCohort.Client> sender = configProvider.getGroupMember(senderReplicaID);
@@ -480,8 +505,10 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
             multicastPrepare(transactionDigest, viewstamp);
             pool.execute(asyncEnsureTransactionInLog(prePrepareMessage));
         }
-
         log.markViewChangeCompleted(configProvider.getViewID());
+        synchronized (undergoingViewChange) {
+            undergoingViewChange = false;
+        }
     }
 
     private Runnable asyncEnsureTransactionInLog(final PrePrepareMessage prePrepareMessage) {
@@ -577,6 +604,5 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
                 }
             });
         }
-
     }
 }
