@@ -7,6 +7,7 @@ import config.*;
 import gameengine.BenchmarkingGameEngine;
 import gameengine.ChineseCheckersState;
 import gameengine.GameEngine;
+import gameengine.WebsocketChineseCheckersPlayer;
 import gameengine.operations.NoOp;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -89,8 +90,7 @@ public class PBFTServerInstance implements Runnable {
             };
 
             new Thread(simple).start();
-
-            executeNoOp();
+            executeNoOp(); // eventually replace with new Thread(new WebsocketChineseCheckersPlayer(new InetSocketAddress(portNum),decoder,gameEngine)).start();
         } catch (Exception x) {
             x.printStackTrace();
         }

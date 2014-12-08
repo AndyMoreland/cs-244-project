@@ -1,5 +1,5 @@
 package common;
 
-public interface StateMachineListener {
+public interface StateMachineCheckpointListener {
     public void notifyOnCheckpointed(int seqNo, Digest digest);
 }
