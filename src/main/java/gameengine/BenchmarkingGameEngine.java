@@ -28,6 +28,11 @@ public class BenchmarkingGameEngine extends ChineseCheckersGameEngine {
         super.requestCommit(transaction);
     }
 
+    @Override
+    public void addListener(GameEngineListener<ChineseCheckersState> listener) {
+
+    }
+
     // log should call this
     @Override
     public void notifyOnCommit(Transaction<Operation<ChineseCheckersState>> transaction) throws Exception {

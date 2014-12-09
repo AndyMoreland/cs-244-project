@@ -4,7 +4,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.Lists;
 import common.CryptoUtil;
 import common.Digest;
-import common.StateMachineListener;
+import common.StateMachineCheckpointListener;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import statemachine.InvalidStateMachineOperationException;
@@ -25,7 +25,7 @@ public class ChineseCheckersStateMachine implements StateMachine<ChineseCheckers
     private static final int CHECKPOINT_INTERVAL = 100;
     private int lastCheckpointed;
     private Optional<Digest> checkpointDigest;
-    private List<StateMachineListener> listeners;
+    private List<StateMachineCheckpointListener> listeners;
 
 
     public ChineseCheckersStateMachine(ChineseCheckersState state) {
@@ -49,7 +49,7 @@ public class ChineseCheckersStateMachine implements StateMachine<ChineseCheckers
             LOG.info("Checkpointing after operation " + numOperationsApplied);
             checkpointDigest = Optional.of(CryptoUtil.computeDigest(this));
             lastCheckpointed = numOperationsApplied;
-            for (StateMachineListener listener : listeners) {
+            for (StateMachineCheckpointListener listener : listeners) {
                 listener.notifyOnCheckpointed(lastCheckpointed, checkpointDigest.get());
             }
         }
@@ -64,7 +64,7 @@ public class ChineseCheckersStateMachine implements StateMachine<ChineseCheckers
     }
 
     @Override
-    public void addCheckpointListener(StateMachineListener listener) {
+    public void addCheckpointListener(StateMachineCheckpointListener listener) {
         listeners.add(listener);
     }
 }

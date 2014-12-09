@@ -17,7 +17,11 @@ public class ChineseCheckersOperationFactory {
 
         switch (type) {
             case MOVE_PIECE:
-                return new MovePiece(-1, 1,1,1,1);
+                String argString = op.getArguments();
+                String[] args = argString.split(",");
+                return new MovePiece(Integer.parseInt(args[4]),
+                        new HexPoint(Integer.parseInt(args[0]), Integer.parseInt(args[1])),
+                        new HexPoint(Integer.parseInt(args[2]), Integer.parseInt(args[3])));
             case KICK_PLAYER:
                 return new KickPlayer();
             case ADD_PLAYER:

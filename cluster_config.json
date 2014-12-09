@@ -6,6 +6,7 @@
       "name": "server1",
       "hostname": "corn01",
       "port": 9001,
+      "ws_port": 8001,
       "public_key": "keys/server1_public_key",
       "private_key": "keys/server1_private_key"
     },
@@ -14,6 +15,7 @@
       "name": "server2",
       "hostname": "corn02",
       "port": 9002,
+      "ws_port": 8002,
       "public_key": "keys/server2_public_key",
       "private_key": "keys/server2_private_key"
     },
@@ -22,6 +24,7 @@
       "name": "server3",
       "hostname": "corn03",
       "port": 9003,
+      "ws_port": 8003,
       "public_key": "keys/server3_public_key",
       "private_key": "keys/server3_private_key"
     },
@@ -30,6 +33,7 @@
       "name": "server4",
       "hostname": "corn04",
       "port": 9004,
+      "ws_port": 8004,
       "public_key": "keys/server4_public_key",
       "private_key": "keys/server4_private_key"
     },
@@ -38,6 +42,7 @@
       "name": "server5",
       "hostname": "corn05",
       "port": 9005,
+      "ws_port": 8005,
       "public_key": "keys/server5_public_key",
       "private_key": "keys/server5_private_key"
     },
@@ -46,6 +51,7 @@
       "name": "server6",
       "hostname": "corn06",
       "port": 9006,
+      "ws_port": 8006,
       "public_key": "keys/server6_public_key",
       "private_key": "keys/server6_private_key"
     }

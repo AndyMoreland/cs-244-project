@@ -19,4 +19,5 @@ public interface GroupMember<T extends org.apache.thrift.TServiceClient> {
     String getName();
 
     InetSocketAddress getAddress();
+    InetSocketAddress getWebsocketAddress();
 }

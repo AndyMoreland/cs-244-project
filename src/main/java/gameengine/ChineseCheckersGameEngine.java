@@ -2,6 +2,8 @@ package gameengine;
 
 import PBFT.ClientMessage;
 import PBFT.PBFTCohort;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Lists;
 import common.CryptoUtil;
 import common.Transaction;
 import config.GroupConfigProvider;
@@ -12,6 +14,7 @@ import statemachine.InvalidStateMachineOperationException;
 import statemachine.Operation;
 
 import java.nio.ByteBuffer;
+import java.util.Collection;
 
 /**
  * Created by leo on 12/3/14.
@@ -21,6 +24,7 @@ public class ChineseCheckersGameEngine implements GameEngine<ChineseCheckersStat
 
     protected final GroupConfigProvider configProvider;
     private ChineseCheckersStateMachine stateMachine;
+    private Collection<GameEngineListener<ChineseCheckersState>> listeners = Lists.newArrayList();
 
     public ChineseCheckersGameEngine(GroupConfigProvider<PBFTCohort.Client> configProvider){
         this.configProvider = configProvider;
@@ -29,11 +33,21 @@ public class ChineseCheckersGameEngine implements GameEngine<ChineseCheckersStat
     @Override
     synchronized public void notifyOnCommit(Transaction<Operation<ChineseCheckersState>> transaction) throws Exception {
         this.stateMachine.applyOperation(transaction.getValue());
+        // if the above does not throw an exception, then:
+        for (GameEngineListener<ChineseCheckersState> listener : listeners) {
+            listener.notifyOnSuccessfulApply(transaction.getValue());
+        }
     }
 
     @Override
     public ChineseCheckersStateMachine getStateMachine() {
         return stateMachine;
+    }
+
+    @Override
+    public void addListener(GameEngineListener<ChineseCheckersState> listener) {
+        Preconditions.checkNotNull(listener);
+        listeners.add(listener);
     }
 
     @Override

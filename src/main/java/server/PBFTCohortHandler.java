@@ -28,7 +28,7 @@ import static PBFT.PBFTCohort.Iface;
 /**
  * Created by andrew on 11/27/14.
  */
-public class PBFTCohortHandler implements Iface, StateMachineListener {
+public class PBFTCohortHandler implements Iface, StateMachineCheckpointListener {
     private static Logger LOG = LogManager.getLogger(PBFTCohortHandler.class);
     private final Log<Operation<ChineseCheckersState>> log;
     private GroupConfigProvider<PBFTCohort.Client> configProvider;

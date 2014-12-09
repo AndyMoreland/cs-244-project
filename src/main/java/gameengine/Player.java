@@ -3,7 +3,7 @@ package gameengine;
 /**
  * Created by andrew on 11/30/14.
  */
-public class Player {
+public class Player implements Comparable<Player> {
     private final int id;
     private String name;
     private boolean active;
@@ -37,5 +37,10 @@ public class Player {
 
     public static Player makeInactivePlayer(){
         return new Player("[Inactive]", -1, false);
+    }
+
+    @Override
+    public int compareTo(Player o) {
+        return getReplicaId()-o.getReplicaId();
     }
 }

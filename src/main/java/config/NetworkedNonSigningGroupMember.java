@@ -99,4 +99,9 @@ public class NetworkedNonSigningGroupMember<T extends PBFTCohort.Client> impleme
     public InetSocketAddress getAddress() {
         return address;
     }
+
+    @Override
+    public InetSocketAddress getWebsocketAddress() {
+        return null;
+    }
 }

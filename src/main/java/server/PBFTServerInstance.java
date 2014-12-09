@@ -4,10 +4,7 @@ import PBFT.PBFTCohort;
 import com.google.common.base.Optional;
 import com.google.common.collect.Sets;
 import config.*;
-import gameengine.BenchmarkingGameEngine;
-import gameengine.ChineseCheckersState;
-import gameengine.GameEngine;
-import gameengine.WebsocketChineseCheckersPlayer;
+import gameengine.*;
 import gameengine.operations.NoOp;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
@@ -78,7 +75,8 @@ public class PBFTServerInstance implements Runnable {
             LOG.info("Starting server on port: " + me.getAddress().getPort() + " with address: " + me.getAddress().getHostName());
 
             // GameEngine<ChineseCheckersState> engine = new ChineseCheckersGameEngine(configProvider);
-            this.gameEngine = new BenchmarkingGameEngine(configProvider);
+            //this.gameEngine = new BenchmarkingGameEngine(configProvider);
+            this.gameEngine = new ChineseCheckersGameEngine(configProvider);
 
             handler = new PBFTCohortHandler(configProvider, replicaID, me, gameEngine);
             processor = new PBFTCohort.Processor(handler);
@@ -90,7 +88,8 @@ public class PBFTServerInstance implements Runnable {
             };
 
             new Thread(simple).start();
-            executeNoOp(); // eventually replace with new Thread(new WebsocketChineseCheckersPlayer(new InetSocketAddress(portNum),decoder,gameEngine)).start();
+            //executeNoOp(); // eventually replace with new Thread(new WebsocketChineseCheckersPlayer(new InetSocketAddress(portNum),decoder,gameEngine)).start();
+            new Thread(new WebsocketChineseCheckersPlayer(me.getWebsocketAddress(),gameEngine,replicaID)).start();
         } catch (Exception x) {
             x.printStackTrace();
         }
@@ -171,18 +170,20 @@ public class PBFTServerInstance implements Runnable {
                 server.get("name").getTextValue(),
                 id,
                 new InetSocketAddress(server.get("hostname").getTextValue(), server.get("port").getIntValue()),
+                new InetSocketAddress(server.get("hostname").getTextValue(), server.get("ws_port").getIntValue()),
                 PBFTCohort.Client.class,
                 publicKeys.get(id),
                 Optional.fromNullable(id == this.replicaID ? this.privateKey : null)
             );
         else {
             return new StubbedGroupMember<PBFTCohort.Client>(
-                server.get("name").getTextValue(),
-                id,
-                new InetSocketAddress(server.get("hostname").getTextValue(), server.get("port").getIntValue()),
-                PBFTCohort.Client.class,
-                publicKeys.get(id),
-                Optional.fromNullable(id == this.replicaID ? this.privateKey : null)
+                    server.get("name").getTextValue(),
+                    id,
+                    new InetSocketAddress(server.get("hostname").getTextValue(), server.get("port").getIntValue()),
+                    new InetSocketAddress(server.get("hostname").getTextValue(), server.get("ws_port").getIntValue()),
+                    PBFTCohort.Client.class,
+                    publicKeys.get(id),
+                    Optional.fromNullable(id == this.replicaID ? this.privateKey : null)
             );
         }
     }

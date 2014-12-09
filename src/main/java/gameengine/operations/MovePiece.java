@@ -81,4 +81,9 @@ public class MovePiece implements statemachine.Operation<ChineseCheckersState> {
         tOperation.setOperationType(TChineseCheckersOperation.MOVE_PIECE.getValue());
         return tOperation;
     }
+
+    @Override
+    public String toString() {
+        return "MOVE," + start.toString() + "," + end.toString();
+    }
 }

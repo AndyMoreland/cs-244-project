@@ -16,12 +16,17 @@ public class StubbedGroupMember<T extends org.apache.thrift.TServiceClient> exte
 
     private static Logger LOG = LogManager.getLogger(StubbedGroupMember.class);
 
-    public StubbedGroupMember(String name, int id, InetSocketAddress address, Class<? extends T> impl, PublicKey publicKey, Optional<PrivateKey> privateKey) throws NoSuchMethodException {
-        super(name, id, address, impl, publicKey, privateKey);
+    public StubbedGroupMember(String name, int id, InetSocketAddress address,  InetSocketAddress websocketAddress, Class<? extends T> impl, PublicKey publicKey, Optional<PrivateKey> privateKey) throws NoSuchMethodException {
+        super(name, id, address, websocketAddress, impl, publicKey, privateKey);
     }
 
     @Override
     public T getThriftConnection() throws TTransportException {
+        return null;
+    }
+
+    @Override
+    public InetSocketAddress getWebsocketAddress() {
         return null;
     }
 }

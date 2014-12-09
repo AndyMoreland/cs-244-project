@@ -17,19 +17,29 @@ public class NetworkedGroupMember<T extends org.apache.thrift.TServiceClient> im
     public static final int TIMEOUT = 30000;
     private final Constructor<? extends T> clientCtor;
     private InetSocketAddress address;
+    private InetSocketAddress websocketAddress;
     private final PublicKey publicKey;
     private final Optional<PrivateKey> privateKey;
     private final int id;
     private final String name;
 //    private final GenericObjectPool<T> clientPool;
     
-    public NetworkedGroupMember(String name, int id, InetSocketAddress address, Class<? extends T> impl, PublicKey publicKey, Optional<PrivateKey> privateKey) throws NoSuchMethodException {
+    public NetworkedGroupMember(
+            String name,
+            int id,
+            InetSocketAddress address,
+            InetSocketAddress websocketAddress,
+            Class<? extends T> impl,
+            PublicKey publicKey,
+            Optional<PrivateKey> privateKey) throws NoSuchMethodException {
+
         this.name = name;
         this.publicKey = publicKey;
         this.id = id;
         this.privateKey = privateKey;
         this.clientCtor = impl.getConstructor(TProtocol.class);
         this.address = address;
+        this.websocketAddress = websocketAddress;
 
 //        GenericObjectPoolConfig genericObjectPoolConfig = new GenericObjectPoolConfig();
 //        genericObjectPoolConfig.setMinIdle(10);
@@ -95,5 +105,10 @@ public class NetworkedGroupMember<T extends org.apache.thrift.TServiceClient> im
     @Override
     public InetSocketAddress getAddress() {
         return address;
+    }
+
+    @Override
+    public InetSocketAddress getWebsocketAddress() {
+        return websocketAddress;
     }
 }

@@ -52,6 +52,6 @@ public class HexPoint {
 
     @Override
     public String toString() {
-        return "HexPoint(" + q + ")(" + r + ")";
+        return r + "," + q;
     }
 }

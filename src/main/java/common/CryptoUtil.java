@@ -2,6 +2,8 @@ package common;
 
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.codehaus.jackson.annotate.JsonAutoDetect;
+import org.codehaus.jackson.annotate.JsonMethod;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.ObjectWriter;
 import org.codehaus.jackson.map.ser.FilterProvider;
@@ -19,7 +21,7 @@ public final class CryptoUtil {
     private static final boolean NO_CRYPTO = false;
     private static Logger LOG = LogManager.getLogger(CryptoUtil.class.getName());
 
-    private static final ObjectMapper mapper = new ObjectMapper(); // thread-safe
+    private static final ObjectMapper mapper = new ObjectMapper().setVisibility(JsonMethod.FIELD, JsonAutoDetect.Visibility.ANY);; // thread-safe
     private static final String[] IGNORED_FIELD = {"messageSignature"};
     private static final FilterProvider FIELD_FILTER = new SimpleFilterProvider()
             .addFilter("pre-prepare filter",

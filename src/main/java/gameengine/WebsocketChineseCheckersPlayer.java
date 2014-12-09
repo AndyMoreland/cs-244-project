@@ -1,11 +1,6 @@
 package gameengine;
 
-import common.LogListener;
-import common.Transaction;
-import gameengine.operations.AddPlayer;
-import gameengine.operations.KickPlayer;
 import gameengine.operations.MovePiece;
-import gameengine.operations.PlayerLeave;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import org.java_websocket.WebSocket;
@@ -19,33 +14,35 @@ import java.util.Collection;
 /**
  * Created by sctu on 12/7/14.
  */
-public class WebsocketChineseCheckersPlayer extends WebSocketServer implements LogListener<Operation<ChineseCheckersState>> {
+public class WebsocketChineseCheckersPlayer extends WebSocketServer implements GameEngineListener<ChineseCheckersState> {
     private static Logger LOG = LogManager.getLogger(WebsocketChineseCheckersPlayer.class);
 
-    private ChineseCheckersGameEngine gameEngine;
-    public WebsocketChineseCheckersPlayer(InetSocketAddress address, ChineseCheckersGameEngine gameEngine) {
+    private GameEngine<ChineseCheckersState> gameEngine;
+    private int playerID;
+    public WebsocketChineseCheckersPlayer(InetSocketAddress address, GameEngine<ChineseCheckersState> gameEngine, int replicaID) {
         super(address);
         this.gameEngine = gameEngine;
+        this.playerID = replicaID;
+        this.gameEngine.addListener(this); // so we can be notified when moves are successfully applied
+        LOG.info("Ready for client connection at " + address);
     }
 
     @Override
     public void onOpen(WebSocket webSocket, ClientHandshake clientHandshake) {
-        // player join
-        gameEngine.requestCommit(new AddPlayer());
+
     }
 
     @Override
     public void onClose(WebSocket webSocket, int i, String s, boolean b) {
-        // player leave
-        gameEngine.requestCommit(new PlayerLeave());
+
     }
 
     /* We expect to get the moves as
      * MOVE,2,3,4,5
-     * KICK,1
      */
     @Override
     public void onMessage(WebSocket webSocket, String s) {
+        LOG.info("Got a message from frontend: " + s);
         String[] strParts = s.split(",");
         if (strParts.length == 5 && strParts[0].equals("MOVE")) {
             int startPointq, startPointr, endPointq, endPointr;
@@ -55,17 +52,11 @@ public class WebsocketChineseCheckersPlayer extends WebSocketServer implements L
                 endPointq = Integer.parseInt(strParts[3]);
                 endPointr = Integer.parseInt(strParts[4]);
                 gameEngine.requestCommit(new MovePiece(
-                        gameEngine.configProvider.getMe().getReplicaID(),
+                        playerID,
                         new HexPoint(startPointq, startPointr),
                         new HexPoint(endPointq, endPointr)));
             } catch (NumberFormatException e) {
                 LOG.error("Unrecognized MOVE coordinates: " + s);
-            }
-        } else if (strParts.length == 2 && strParts[0].equals("KICK")) {
-            try {
-                gameEngine.requestCommit(new KickPlayer());
-            } catch (NumberFormatException e) {
-                LOG.error("Cannot KICK " + strParts[0]);
             }
         } else {
             LOG.error("Unrecognized move: " + s);
@@ -77,12 +68,6 @@ public class WebsocketChineseCheckersPlayer extends WebSocketServer implements L
         LOG.error(e);
     }
 
-    @Override
-    public void notifyOnCommit(Transaction<Operation<ChineseCheckersState>> transaction) throws Exception {
-        // TODO: Make sure all Operations have a reasonable toString
-        this.sendToAll(transaction.getValue().toString());
-    }
-
     /* Taken from the websocket example code
      */
     public void sendToAll(String text) {
@@ -92,5 +77,11 @@ public class WebsocketChineseCheckersPlayer extends WebSocketServer implements L
                 c.send(text);
             }
         }
+    }
+
+    @Override
+    public void notifyOnSuccessfulApply(Operation<ChineseCheckersState> operation) {
+        // TODO: Make sure all Operations have a reasonable toString
+        this.sendToAll(operation.toString());
     }
 }

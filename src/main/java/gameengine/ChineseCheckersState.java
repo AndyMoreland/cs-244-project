@@ -4,6 +4,7 @@ import PBFT.PBFTCohort;
 import com.google.common.collect.Lists;
 import config.GroupMember;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -67,6 +68,7 @@ public class ChineseCheckersState {
             players.add(new Player(member.getName(), member.getReplicaID()));
         }
 
+        Collections.sort(players);
         return new ChineseCheckersState(players);
     }
 }

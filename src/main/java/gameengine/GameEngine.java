@@ -12,4 +12,5 @@ import statemachine.StateMachine;
 public interface GameEngine<T> extends LogListener<Operation<T>> {
     public void requestCommit(Operation<T> transaction);
     public StateMachine<T, Operation<T>> getStateMachine();
+    public void addListener(GameEngineListener<T> listener);
 }
