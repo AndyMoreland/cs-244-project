@@ -95,6 +95,17 @@ public class Log<T> {
         return t;
     }
 
+    @Nullable Transaction<T> getTransaction(int sequenceNo){
+        Lock readLock = logLock.readLock();
+        readLock.lock();
+        Transaction<T> bestTr = null;
+        for(Map.Entry<Viewstamp, Transaction<T>> entry : transactions.entrySet()){
+            if(entry.getKey().getSequenceNumber() != sequenceNo) continue;
+            if(bestTr == null || bestTr.getViewstamp().getViewId() < entry.getKey().getViewId()) bestTr = entry.getValue();
+        }
+        return bestTr;
+    }
+
     public Collection<Transaction<T>> getTentativeEntries(int index) {
         Lock readLock = logLock.readLock();
         readLock.lock();
