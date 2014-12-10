@@ -44,6 +44,8 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
     private static final byte[] NO_OP_TRANSACTION_DIGEST = CryptoUtil.computeDigest(
             new common.Transaction(null, -1, new NoOp(), 0)).getBytes();
 
+
+
     // editable things, order they're listed here is order in which to synchronize on
     // TODO (Susan)
     private Boolean undergoingViewChange = false;
@@ -170,8 +172,9 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
 
     @Override
     public void prepare(PrepareMessage message) throws TException {
+        LOG.info("in prepare!!!");
         synchronized (undergoingViewChange) {
-            if (undergoingViewChange) return;
+         //   if (undergoingViewChange) return;
             LOG.trace("Entering prepare");
             if (!this.configProvider.getGroupMember(message.getReplicaId()).verifySignature(message, message.getMessageSignature()))
                 throw new TException("Failed to validate signature.");       // Validate signature
@@ -267,7 +270,7 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
             }
         }
 
-        for (int n = lastCheckpointInViewChangeMessages; n < max_seqno; ++n) {
+        for (int n = lastCheckpointInViewChangeMessages+1; n < max_seqno; ++n) {
             prePrepareMessages.add(
                     createPrePrepareToFillHole(n, viewChangeMessages, newViewID, verify));
         }
@@ -281,20 +284,23 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
             boolean verify) {
         int highestViewID = MIN_VIEW_ID - 1;
         byte[] digest = null;
+        int replicaID = 0;
         for (ViewChangeMessage viewChangeMessage : viewChangeMessages) {
             for (PrePrepareMessage prePrepareMessage : viewChangeMessage.getPreparedGreaterThanSequenceNumber()) {
                 if (prePrepareMessage.getViewstamp().getSequenceNumber() == seqno) {
                     if (highestViewID < prePrepareMessage.getViewstamp().getViewId()) {
                         highestViewID = prePrepareMessage.getViewstamp().getViewId();
                         digest = prePrepareMessage.getTransactionDigest();
+                        replicaID = prePrepareMessage.getReplicaId();
                     }
                 }
             }
         }
 
-        PrePrepareMessage prePrepareMessage = new PrePrepareMessage();
+        PrePrepareMessage prePrepareMessage = new PrePrepareMessage().setViewstamp(new Viewstamp());
         prePrepareMessage.getViewstamp().setViewId(newViewID);
         prePrepareMessage.getViewstamp().setSequenceNumber(seqno);
+        prePrepareMessage.setReplicaId(replicaID);
         if (highestViewID >= MIN_VIEW_ID) {
             prePrepareMessage.setTransactionDigest(digest);
         } else {
@@ -344,13 +350,13 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
                 .setPrepareMessages(new ArrayList<>(prePreparesAndProof.values()));
         viewChangeMessage.setMessageSignature(CryptoUtil.computeMessageSignature(viewChangeMessage, thisCohort.getPrivateKey()).getBytes());
 
-        for (final GroupMember<PBFTCohort.Client> groupMember : configProvider.getOtherGroupMembers()) {
+        LOG.info("initiating a view change to view " + (configProvider.getViewID() + 1));
+        for (final GroupMember<PBFTCohort.Client> groupMember : configProvider.getGroupMembers()) {
             pool.execute(new Runnable() {
                 public void run() {
                     PBFTCohort.Client thriftConnection = null;
                     try {
                         thriftConnection = groupMember.getThriftConnection();
-                        LOG.info("initiating a view change to view " + (configProvider.getViewID() + 1));
                         thriftConnection.startViewChange(viewChangeMessage);
                     } catch (TException e) {
                         e.printStackTrace();
@@ -386,6 +392,7 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
 
                 if (!verifyCheckPointMessages(message.getSequenceNumber(), message.getCheckpointProof())
                         || !prePrepareSetValid(message.getPreparedGreaterThanSequenceNumber(), message.getPrepareMessages())) {
+                    LOG.info("Bad checkpoint or preprepare set");
                     return;
                 }
 
@@ -440,6 +447,7 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
                 message.getNewViewID(), true, message.getViewChangeMessages());
         // should be the same length
         if (recomputedPrePrepareMessages.size() != message.getPrePrepareMessages().size()) {
+            LOG.warn("wrong number of preprepare mesages");
             return false;
         }
 
@@ -449,19 +457,21 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
             sender = configProvider.getGroupMember(recomputed.getReplicaId());
 
             // check that recomputed contents are the same
-            if (!received.getTransactionDigest().equals(recomputed.getTransactionDigest())
+            if (!(new Digest(received.getTransactionDigest()).equals(new Digest(recomputed.getTransactionDigest())))
                     || !received.getViewstamp().equals(recomputed.getViewstamp())
                     || received.getReplicaId() != recomputed.getReplicaId()) {
+                LOG.warn("bad recomputed comtents");
                 return false;
             }
 
             // verify signatures
-            if (!sender.verifySignature(message.getPrePrepareMessages().get(i), message.getPrePrepareMessages().get(i).getMessageSignature())) {
+           if (!sender.verifySignature(message.getPrePrepareMessages().get(i), message.getPrePrepareMessages().get(i).getMessageSignature())) {
+                LOG.warn("bad signature in hole fillers");
                 return false;
             }
         }
 
-        LOG.trace("Hole filling preprepares verified");
+        LOG.info("Hole filling preprepares verified");
         return true;
     }
 
@@ -473,24 +483,29 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
 
         // verify the NewViewMessage
         if (!sender.verifySignature(message, message.getMessageSignature())) {
+            LOG.info("failed to verify NewViewMessage");
             return;
         }
+        LOG.info("verified NewViewMessage");
 
         // verify the ViewChangeMessages
         for (ViewChangeMessage viewChangeMessage : message.getViewChangeMessages()) {
             // actually for the right view
             if (viewChangeMessage.getNewViewID() != message.getNewViewID()) {
+                LOG.info("failed to verify ViewChangeMessage -- wrong view, expected " + message.getNewViewID() + " got " + viewChangeMessage.getNewViewID());
                 return;
             }
             sender = configProvider.getGroupMember(viewChangeMessage.getReplicaID());
             // signatures are right
             if (!sender.verifySignature(viewChangeMessage, viewChangeMessage.getMessageSignature())) {
+                LOG.info("failed to verify ViewChangeMessage -- wrong signature");
                 return;
             }
         }
+        LOG.info("verified ViewChangeMessages");
 
         if (!verifyHoleFillingPreprepares(message)) return;
-
+        LOG.info("verified hole fillers");
         // change to new view
         configProvider.setViewID(message.getNewViewID());
         LOG.info("replica " + replicaID + " is in view " + message.getNewViewID());
@@ -513,8 +528,9 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
         return new Runnable() {
             @Override
             public void run() {
+                // TODO: Susan (look up transactions properly)
                 common.Transaction<Operation<ChineseCheckersState>> logTransaction
-                        = log.getTransaction(prePrepareMessage.getViewstamp());
+                        = log.getTransaction(prePrepareMessage.getViewstamp().setViewId(configProvider.getViewID() - 1));
                 if (logTransaction == null) {
                     // if we don't have this in our log already, we need to ask someone else for it
                     // TODO (Susan) : may have to ask many people
@@ -526,7 +542,8 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
                         TTransaction thriftTransaction = thriftConnection.getTransaction(
                                 new AskForTransaction()
                                         .setReplicaID(replicaID)
-                                        .setViewstamp(prePrepareMessage.getViewstamp()));
+                                                // TODO
+                                        .setViewstamp(prePrepareMessage.getViewstamp().setViewId(configProvider.getViewID() - 1)));
                         logTransaction = common.Transaction.getTransactionForPBFTTransaction(
                                 thriftTransaction);
                         log.addEntry(logTransaction, prePrepareMessage);

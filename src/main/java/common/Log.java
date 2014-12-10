@@ -45,7 +45,7 @@ public class Log<T> {
     // TODO (Susan): is it possible that there are multiple preprepares for the same seqno? i.e. from different leaders,
     // where the first one is the one I'm actually interested in?
     private Map<Integer, PrePrepareMessage> prePrepareMessageMap = Maps.newConcurrentMap(); // for not committed seqnos
-    private int lastStableCheckpoint = 0;
+    private int lastStableCheckpoint = -1;
 
     public Log() {
 
@@ -76,6 +76,7 @@ public class Log<T> {
 
             transactions.put(value.getViewstamp(), value);
             prePrepareMessageMap.put(value.getViewstamp().getSequenceNumber(), message);
+            LOG.info("inserted into prePrepareMessageMap message with seqno" + value.getViewstamp().getSequenceNumber());
         } finally {
             writeLock.unlock();
         }
@@ -125,7 +126,6 @@ public class Log<T> {
 
         Transaction<T> entry = transactions.get(id);
         tentativeLogEntries.remove(id.getSequenceNumber());
-        prePrepareMessageMap.remove(id.getSequenceNumber());
         committedLogEntries.put(entry.getViewstamp().getSequenceNumber(), entry);
         unappliedLogEntries.put(entry.getViewstamp().getSequenceNumber(), entry);
         entry.commit();
@@ -250,6 +250,7 @@ public class Log<T> {
         for (Map.Entry<Integer, PrePrepareMessage> prePrepareMessageEntry : prePrepareMessageMap.entrySet()) {
             MultiKey<Viewstamp, Digest> vdk = MultiKey.newKey(
                     prePrepareMessageEntry.getValue().getViewstamp(), new Digest(prePrepareMessageEntry.getValue().getTransactionDigest()));
+            LOG.info("prePrepareMessageEntry.getKey(): " +prePrepareMessageEntry.getKey());
             if (prePrepareMessageEntry.getKey() > lastStableCheckpoint &&
                     prepareMessages.get(vdk) != null) {
                 prePreparesAndProof.put(prePrepareMessageEntry.getValue(),prepareMessages.get(vdk));
@@ -307,6 +308,7 @@ public class Log<T> {
         boolean ready;
         Lock readLock = logLock.readLock();
         readLock.lock();
+        LOG.info(viewChangeMessages.get(newViewID).size() + "view change messages found");
         ready = viewChangeMessages.get(newViewID).size() >= quorumSize;
         readLock.unlock();
         return ready;

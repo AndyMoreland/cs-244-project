@@ -25,7 +25,7 @@ public class BenchmarkingGameEngine extends ChineseCheckersGameEngine {
     @Override
     public void requestCommit(Operation<ChineseCheckersState> transaction) {
         this.startTime = System.currentTimeMillis();
-        while (true) {
+        for(int i=0; i<4; ++i) {
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {

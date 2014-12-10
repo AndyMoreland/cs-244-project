@@ -28,7 +28,7 @@ public class PBFTCohortRunner {
 
     public static void main(final String[] args) throws InterruptedException, IOException {
         ConsoleAppender appender = new ConsoleAppender(new PatternLayout("{ %X{server-name} } " + PatternLayout.TTCC_CONVERSION_PATTERN));
-        appender.setThreshold(Priority.INFO);
+        appender.setThreshold(Priority.DEBUG);
         BasicConfigurator.configure(appender);
 
         Map<Integer, PublicKey> publicKeyMap = Maps.newHashMap();
@@ -60,10 +60,8 @@ public class PBFTCohortRunner {
 //            testSystem(privateKeyMap, leaderConfigProvider, i);
 //        }
 
-        while (true) {
-            testViewChange(leaderConfigProvider);
-            Thread.sleep(3000);
-        }
+        Thread.sleep(6000);
+        testViewChange(leaderConfigProvider);
     }
 
     private static void testViewChange(GroupConfigProvider<PBFTCohort.Client> leaderConfigProvider) {
