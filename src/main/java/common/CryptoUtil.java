@@ -84,7 +84,6 @@ public final class CryptoUtil {
         } catch (InvalidKeyException e) {
             e.printStackTrace();
         }
-        ObjectWriter writer = mapper.writer(FIELD_FILTER);
         return new MessageSignature(computeSignature(convertToJsonByteArray(message), signature));
     }
 

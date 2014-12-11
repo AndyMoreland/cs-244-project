@@ -22,7 +22,7 @@ public class ChineseCheckersStateMachine implements StateMachine<ChineseCheckers
     private ChineseCheckersState state;
     private int numOperationsApplied;
 
-    private static final int CHECKPOINT_INTERVAL = 20;
+    private static final int CHECKPOINT_INTERVAL = 10;
     private int lastCheckpointed;
     private Optional<Digest> checkpointDigest;
     private List<StateMachineListener> listeners;
@@ -48,7 +48,7 @@ public class ChineseCheckersStateMachine implements StateMachine<ChineseCheckers
         if ((numOperationsApplied % CHECKPOINT_INTERVAL) == 0) {
             LOG.info("Checkpointing after operation " + numOperationsApplied);
             checkpointDigest = Optional.of(CryptoUtil.computeDigest(this));
-            lastCheckpointed = numOperationsApplied;
+            lastCheckpointed = numOperationsApplied - 1;
             for (StateMachineListener listener : listeners) {
                 listener.notifyOnCheckpointed(lastCheckpointed, checkpointDigest.get());
             }

@@ -24,7 +24,7 @@ public class BenchmarkingGameEngine extends ChineseCheckersGameEngine {
     // runner should call this
     @Override
     public void requestCommit(Operation<ChineseCheckersState> transaction) {
-        this.startTime = System.currentTimeMillis();
+    /*    this.startTime = System.currentTimeMillis();
         for(int i=0; i<4; ++i) {
             try {
                 Thread.sleep(100);
@@ -32,7 +32,7 @@ public class BenchmarkingGameEngine extends ChineseCheckersGameEngine {
                 e.printStackTrace();
             }
             super.requestCommit(transaction);
-        }
+        }*/
     }
 
     // log should call this

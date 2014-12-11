@@ -116,11 +116,6 @@ public class PBFTServerInstance implements Runnable {
         }).start();
     }
 
-    public void notifyOnNextTurn() {
-        LOG.info("next turn");
-        gameEngine.requestCommit(new NoOp());
-    }
-
     private void simple(PBFTCohort.Processor processor, InetSocketAddress address) {
         try {
             TServerTransport serverTransport = new TServerSocket(address);

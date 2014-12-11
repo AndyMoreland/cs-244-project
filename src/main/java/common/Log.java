@@ -10,6 +10,7 @@ import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import statemachine.InvalidStateMachineOperationException;
 
+import javax.swing.text.View;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -76,7 +77,6 @@ public class Log<T> {
 
             transactions.put(value.getViewstamp(), value);
             prePrepareMessageMap.put(value.getViewstamp().getSequenceNumber(), message);
-            LOG.info("inserted into prePrepareMessageMap message with seqno" + value.getViewstamp().getSequenceNumber());
         } finally {
             writeLock.unlock();
         }
@@ -95,6 +95,17 @@ public class Log<T> {
 
         return t;
     }
+
+    /* @Nullable Transaction<T> getTransaction(int sequenceNo){
+        Lock readLock = logLock.readLock();
+               readLock.lock();
+                Transaction<T> bestTr = null;
+               for(Map.Entry<Viewstamp, Transaction<T>> entry : transactions.entrySet()){
+                   if(entry.getKey().getSequenceNumber() != sequenceNo) continue;
+                   if(bestTr == null || bestTr.getViewstamp().getViewId() < entry.getKey().getViewId()) bestTr = entry.getValue();
+              }
+             return bestTr;
+    } */
 
     public Collection<Transaction<T>> getTentativeEntries(int index) {
         Lock readLock = logLock.readLock();
@@ -206,6 +217,7 @@ public class Log<T> {
         writeLock.lock();
         int newViewID = message.getNewViewID();
         if (viewChangeMessages.containsKey(newViewID)) {
+            // LOG.warn("from " + message.getReplicaID() + " adding " + message);
             viewChangeMessages.get(newViewID).add(message);
         } else {
             viewChangeMessages.put(newViewID, Sets.newHashSet(message));
@@ -244,15 +256,16 @@ public class Log<T> {
 
     public int getPreparesCheckpointProofAndLastStableCheckpoint(
             Map<PrePrepareMessage, Set<PrepareMessage>> prePreparesAndProof,
-            Set<CheckpointMessage> checkPointProof) {
+            Set<CheckpointMessage> checkPointProof,
+            int quorum) {
         Lock readLock = logLock.readLock();
         readLock.lock();
         for (Map.Entry<Integer, PrePrepareMessage> prePrepareMessageEntry : prePrepareMessageMap.entrySet()) {
             MultiKey<Viewstamp, Digest> vdk = MultiKey.newKey(
                     prePrepareMessageEntry.getValue().getViewstamp(), new Digest(prePrepareMessageEntry.getValue().getTransactionDigest()));
-            LOG.info("prePrepareMessageEntry.getKey(): " +prePrepareMessageEntry.getKey());
+           // LOG.info("prePrepareMessageEntry.getKey(): " +prePrepareMessageEntry.getKey());
             if (prePrepareMessageEntry.getKey() > lastStableCheckpoint &&
-                    prepareMessages.get(vdk) != null) {
+                    prepareMessages.get(vdk) != null && prepareMessages.get(vdk).size() >= quorum) {
                 prePreparesAndProof.put(prePrepareMessageEntry.getValue(),prepareMessages.get(vdk));
             }
         }
@@ -276,7 +289,7 @@ public class Log<T> {
         // possibly make this a new stable checkpoint and clear all the old checkpoint information
         if (checkpointMessages.get(message.getSequenceNumber()).size() >= quorumSize) {
             lastStableCheckpoint = message.getSequenceNumber();
-            LOG.trace("Last stable checkpoint is " + lastStableCheckpoint);
+            LOG.info("Last stable checkpoint is " + lastStableCheckpoint);
             for (Iterator<Map.Entry<Integer, Set<CheckpointMessage>>> it = checkpointMessages.entrySet().iterator(); it.hasNext(); ) {
                 Map.Entry<Integer, Set<CheckpointMessage>> entry = it.next();
                 if (entry.getKey() < lastStableCheckpoint) { // keep around the proof for the current checkpoint though
@@ -309,7 +322,7 @@ public class Log<T> {
         Lock readLock = logLock.readLock();
         readLock.lock();
         LOG.info(viewChangeMessages.get(newViewID).size() + "view change messages found");
-        ready = viewChangeMessages.get(newViewID).size() >= quorumSize;
+        ready = viewChangeMessages.get(newViewID).size() == quorumSize;
         readLock.unlock();
         return ready;
     }
@@ -318,7 +331,7 @@ public class Log<T> {
         Set<ViewChangeMessage> viewChangeMessages;
         Lock readLock = logLock.readLock();
         readLock.lock();
-        viewChangeMessages = this.viewChangeMessages.get(viewID);
+        viewChangeMessages = Sets.newHashSet(this.viewChangeMessages.get(viewID));
         readLock.unlock();
         return viewChangeMessages;
     }

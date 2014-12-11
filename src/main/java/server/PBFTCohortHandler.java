@@ -23,6 +23,9 @@ import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static PBFT.PBFTCohort.Iface;
 
@@ -48,9 +51,15 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
 
     // editable things, order they're listed here is order in which to synchronize on
     // TODO (Susan)
+    final Lock lock = new ReentrantLock();
+    final Condition endViewChange  = lock.newCondition();
     private Boolean undergoingViewChange = false;
     private final GroupMember<PBFTCohort.Client> thisCohort; // for this, synch on undergoingViewChange
     private Integer sequenceNumber = -1;
+
+    // for benchmarking
+    private long startedVC = 0;
+    // also print out size of script V, O, C, P
 
     public PBFTCohortHandler(GroupConfigProvider<PBFTCohort.Client> configProvider, int replicaID, GroupMember<PBFTCohort.Client> thisCohort, GameEngine toNotify) {
         Thread.currentThread().setName("{SERVER ID: " + replicaID + "} " + Thread.currentThread().getName());
@@ -172,7 +181,6 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
 
     @Override
     public void prepare(PrepareMessage message) throws TException {
-        LOG.info("in prepare!!!");
         synchronized (undergoingViewChange) {
          //   if (undergoingViewChange) return;
             LOG.trace("Entering prepare");
@@ -337,10 +345,11 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
     public void initiateViewChange() throws TException {
         synchronized (undergoingViewChange) {
             undergoingViewChange = true; // its possible that you want to initiate a view change even when you're already doing one
+            startedVC = System.currentTimeMillis();
         }
         Map<PrePrepareMessage, Set<PrepareMessage>> prePreparesAndProof = Maps.newHashMap();
         Set<CheckpointMessage> checkPointProof = Sets.newHashSet();
-        int lastStableCheckpoint = log.getPreparesCheckpointProofAndLastStableCheckpoint(prePreparesAndProof, checkPointProof);
+        int lastStableCheckpoint = log.getPreparesCheckpointProofAndLastStableCheckpoint(prePreparesAndProof, checkPointProof, this.configProvider.getQuorumSize());
 
         final ViewChangeMessage viewChangeMessage = new ViewChangeMessage();
         viewChangeMessage.setSequenceNumber(lastStableCheckpoint).setReplicaID(replicaID)
@@ -390,9 +399,12 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
             int newViewID = message.getNewViewID();
             if (newViewID > configProvider.getViewID()) { // can only move to a higher view
 
-                if (!verifyCheckPointMessages(message.getSequenceNumber(), message.getCheckpointProof())
-                        || !prePrepareSetValid(message.getPreparedGreaterThanSequenceNumber(), message.getPrepareMessages())) {
-                    LOG.info("Bad checkpoint or preprepare set");
+                if (!verifyCheckPointMessages(message.getSequenceNumber(), message.getCheckpointProof())) {
+                    LOG.info("Bad checkpoint");
+                    return;
+                }
+                if(!prePrepareSetValid(message.getPreparedGreaterThanSequenceNumber(), message.getPrepareMessages())) {
+                    LOG.info("Bad preprepare set");
                     return;
                 }
 
@@ -409,10 +421,10 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
                     newViewMessage.setReplicaID(replicaID);
                     newViewMessage.setNewViewID(newViewID);
                     newViewMessage.setViewChangeMessages(scriptV);
-                    newViewMessage.setPrePrepareMessages(
-                            createPrePreparesToFillPreparedSeqnoHoles(newViewID, false, scriptV));
-                    newViewMessage.setMessageSignature(
-                            CryptoUtil.computeMessageSignature(newViewMessage, thisCohort.getPrivateKey()).getBytes());
+                    List<PrePrepareMessage> prePrepareMessages = createPrePreparesToFillPreparedSeqnoHoles(newViewID, false, scriptV);
+                    newViewMessage.setPrePrepareMessages(prePrepareMessages);
+                    byte[] signature = CryptoUtil.computeMessageSignature(newViewMessage, thisCohort.getPrivateKey()).getBytes();
+                    newViewMessage.setMessageSignature(signature);
                     multicastNewView(newViewMessage);
                 }
             }
@@ -464,8 +476,8 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
                 return false;
             }
 
-            // verify signatures
-           if (!sender.verifySignature(message.getPrePrepareMessages().get(i), message.getPrePrepareMessages().get(i).getMessageSignature())) {
+            // verify signatures, although if this was a no-op hole filler it could be valid for the sender to be null
+           if (sender != null && !sender.verifySignature(message.getPrePrepareMessages().get(i), message.getPrePrepareMessages().get(i).getMessageSignature())) {
                 LOG.warn("bad signature in hole fillers");
                 return false;
             }
@@ -521,6 +533,7 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
         log.markViewChangeCompleted(configProvider.getViewID());
         synchronized (undergoingViewChange) {
             undergoingViewChange = false;
+            LOG.warn("Replica " + replicaID + " reports that view change to view " + configProvider.getViewID() + " took " + (System.currentTimeMillis() - startedVC));
         }
     }
 
@@ -534,7 +547,7 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
                 if (logTransaction == null) {
                     // if we don't have this in our log already, we need to ask someone else for it
                     // TODO (Susan) : may have to ask many people
-                    GroupMember<PBFTCohort.Client> target = configProvider.getGroupMember(prePrepareMessage.getReplicaId());
+                  /*  GroupMember<PBFTCohort.Client> target = configProvider.getGroupMember(prePrepareMessage.getReplicaId());
                     Preconditions.checkNotNull(target);
                     PBFTCohort.Client thriftConnection = null;
                     try {
@@ -551,14 +564,14 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
                         e.printStackTrace();
                     } finally {
                         target.returnThriftConnection(thriftConnection);
-                    }
+                    } */
                 }
 
-                try {
+                /*try {
                     log.addEntry(logTransaction, prePrepareMessage);
                 } catch (IllegalLogEntryException e) {
                     e.printStackTrace();
-                }
+                } */
             }
         };
     }
