@@ -47,6 +47,8 @@ public class Log<T> {
     // where the first one is the one I'm actually interested in?
     private Map<Integer, PrePrepareMessage> prePrepareMessageMap = Maps.newConcurrentMap(); // for not committed seqnos
     private int lastStableCheckpoint = -1;
+    // viewIDs
+    private Set<Integer> alreadySentNewViewMessages = Sets.newConcurrentHashSet();
 
     public Log() {
 
@@ -312,7 +314,7 @@ public class Log<T> {
         boolean quorum;
 
         // Haven't seen this viewstamp, or have already processed, or haven't prepared this request
-        if(transaction == null || transaction.isPrepared() || !CryptoUtil.computeDigest(transaction).equals(mtd)){
+        if (transaction == null || transaction.isPrepared() || !CryptoUtil.computeDigest(transaction).equals(mtd)) {
             quorum = false;
         } else {
             Set<PrepareMessage> previouslyReceivedPrepareMessages = prepareMessages.get(MultiKey.newKey(viewstamp, mtd));
@@ -322,12 +324,20 @@ public class Log<T> {
         return quorum;
     }
 
+    // make sure to return true exactly once
     public boolean readyToSendNewView(int newViewID, int quorumSize) {
         boolean ready;
         Lock readLock = logLock.readLock();
         readLock.lock();
         LOG.info(viewChangeMessages.get(newViewID).size() + "view change messages found");
-        ready = viewChangeMessages.get(newViewID).size() == quorumSize;
+        if (alreadySentNewViewMessages.contains(newViewID)) {
+            ready = false;
+        } else {
+            ready = viewChangeMessages.get(newViewID).size() >= quorumSize;
+            if (ready) {
+                alreadySentNewViewMessages.add(newViewID);
+            }
+        }
         readLock.unlock();
         return ready;
     }
