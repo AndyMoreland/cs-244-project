@@ -86,7 +86,7 @@ public class Log<T> {
 
     public int getNextSequenceNumber() { return lastApplied + 1; } // FIXME: (andy or leo) this is incorrect. It should return the last commited + 1 but we don't track that.
 
-    @Nullable
+   /* @Nullable
     public Transaction<T> getTransaction(Viewstamp viewstamp) {
         Lock readLock = logLock.readLock();
         readLock.lock();
@@ -94,18 +94,23 @@ public class Log<T> {
         readLock.unlock();
 
         return t;
-    }
+    } */
 
-    /* @Nullable Transaction<T> getTransaction(int sequenceNo){
+    @Nullable public Transaction<T> getTransaction(int sequenceNo){
         Lock readLock = logLock.readLock();
                readLock.lock();
-                Transaction<T> bestTr = null;
-               for(Map.Entry<Viewstamp, Transaction<T>> entry : transactions.entrySet()){
-                   if(entry.getKey().getSequenceNumber() != sequenceNo) continue;
-                   if(bestTr == null || bestTr.getViewstamp().getViewId() < entry.getKey().getViewId()) bestTr = entry.getValue();
-              }
-             return bestTr;
-    } */
+        try {
+            Transaction<T> bestTr = null;
+            for (Map.Entry<Viewstamp, Transaction<T>> entry : transactions.entrySet()) {
+                if (entry.getKey().getSequenceNumber() != sequenceNo) continue;
+                if (bestTr == null || bestTr.getViewstamp().getViewId() < entry.getKey().getViewId())
+                    bestTr = entry.getValue();
+            }
+            return bestTr;
+        } finally {
+            readLock.unlock();
+        }
+    }
 
     public Collection<Transaction<T>> getTentativeEntries(int index) {
         Lock readLock = logLock.readLock();

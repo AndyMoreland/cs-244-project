@@ -543,11 +543,11 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
             public void run() {
                 // TODO: Susan (look up transactions properly)
                 common.Transaction<Operation<ChineseCheckersState>> logTransaction
-                        = log.getTransaction(prePrepareMessage.getViewstamp().setViewId(configProvider.getViewID() - 1));
+                        = log.getTransaction(prePrepareMessage.getViewstamp().getSequenceNumber());
                 if (logTransaction == null) {
                     // if we don't have this in our log already, we need to ask someone else for it
                     // TODO (Susan) : may have to ask many people
-                  /*  GroupMember<PBFTCohort.Client> target = configProvider.getGroupMember(prePrepareMessage.getReplicaId());
+                    GroupMember<PBFTCohort.Client> target = configProvider.getGroupMember(prePrepareMessage.getReplicaId());
                     Preconditions.checkNotNull(target);
                     PBFTCohort.Client thriftConnection = null;
                     try {
@@ -564,40 +564,21 @@ public class PBFTCohortHandler implements Iface, StateMachineListener {
                         e.printStackTrace();
                     } finally {
                         target.returnThriftConnection(thriftConnection);
-                    } */
+                    }
                 }
 
-                /*try {
+                try {
                     log.addEntry(logTransaction, prePrepareMessage);
                 } catch (IllegalLogEntryException e) {
                     e.printStackTrace();
-                } */
+                }
             }
         };
     }
 
-    @Nullable
-    private GroupMember<PBFTCohort.Client> getReplicaThatPreparedSeqno(NewViewMessage newViewMessage, int sequenceNumber) {
-        // look through V
-        // look through P,
-        // find prepare with that seqno and look through corresponding prepares to find someone who sent one
-        for (ViewChangeMessage viewChangeMessage : newViewMessage.getViewChangeMessages()) {
-            List<PrePrepareMessage> prePrepareMessages = viewChangeMessage.getPreparedGreaterThanSequenceNumber();
-            List<Set<PrepareMessage>> prepareMessages = viewChangeMessage.getPrepareMessages();
-            for (int i = 0; i < prePrepareMessages.size(); ++i) {
-                if (prePrepareMessages.get(i).getViewstamp().getSequenceNumber() == sequenceNumber) {
-                    if (prepareMessages.get(i).iterator().hasNext()) {
-                        return configProvider.getGroupMember(prepareMessages.get(i).iterator().next().getReplicaId());
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
     @Override
     public TTransaction getTransaction(AskForTransaction message) throws TException {
-        return common.Transaction.serialize(log.getTransaction(message.getViewstamp()));
+        return common.Transaction.serialize(log.getTransaction(message.getViewstamp().getSequenceNumber()));
     }
 
     @Override
