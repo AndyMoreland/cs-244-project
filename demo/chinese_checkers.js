@@ -173,6 +173,7 @@ cc.Game = function(nPlayers, svgClass, announceClass){
                 firstMove = false;
                 selected = clicked;
                 listenFor(secondClick);
+                websocketConnection.send("MOVE," + selected.getLocation().x() + "," + selected.getLocation().y() + "," + clicked.getLocation().x() + "," + clicked.getLocation().y());
               }
             });
           } else {
@@ -199,6 +200,7 @@ cc.Game = function(nPlayers, svgClass, announceClass){
       active = (active + 1) % game.players.length;
       // TODO: listen on websocket until active player is me
       // When command received over websocket, use `board.get(x, y)` to get the two Hexagons then move the piece as above
+      announce(game.players[active].toString() + " player's turn!");
     }
 
     function victoryCheck(player){
