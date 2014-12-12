@@ -1,5 +1,8 @@
 package gameengine;
 
+import org.apache.log4j.LogManager;
+
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -30,6 +33,8 @@ public class ChineseCheckersBoard {
     private static final int[][] SOUTHEAST = ChineseCheckersBoard.reflect(NORTHWEST);
     private static final int[][] SOUTH = ChineseCheckersBoard.reflect(NORTH);
     private static final int[][] SOUTHWEST = ChineseCheckersBoard.reflect(NORTHEAST);
+    private static final org.apache.log4j.Logger LOG = LogManager.getLogger(ChineseCheckersBoard.class);
+
 
     // Reflect points across the origin
     private static int[][] reflect(int[][] source){
@@ -53,12 +58,19 @@ public class ChineseCheckersBoard {
         spots = new HashMap<HexPoint, ChineseCheckersSpot>();
 
         assert(players.size() == 6);
+        LOG.info(players.get(0));
         claim(players.get(0), NORTH);
         claim(players.get(1), NORTHEAST);
         claim(players.get(2), SOUTHEAST);
         claim(players.get(3), SOUTH);
         claim(players.get(4), SOUTHWEST);
         claim(players.get(5), NORTHWEST);
+
+        LOG.info("NORTH: ");
+
+        for (int[] pos : NORTH) {
+            LOG.info(Arrays.toString(pos));
+        }
 
         // Fill in middle of board
         for (int[] coords : BOARD_COORDS){
@@ -86,6 +98,7 @@ public class ChineseCheckersBoard {
     private void claim(Player player, int[][] corner){
         for(int[] coords : corner){
             HexPoint location = new HexPoint(coords);
+            LOG.info("Putting player: " + player.getReplicaId() + " in spot " + location);
             this.spots.put(location, new ChineseCheckersSpot(location, player));
         }
     }

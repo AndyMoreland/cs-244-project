@@ -3,11 +3,13 @@ package gameengine;
 import gameengine.operations.MovePiece;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 import statemachine.Operation;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collection;
 
@@ -17,6 +19,7 @@ import java.util.Collection;
 public class WebsocketChineseCheckersPlayer extends WebSocketServer implements GameEngineListener<ChineseCheckersState> {
     private static Logger LOG = LogManager.getLogger(WebsocketChineseCheckersPlayer.class);
 
+    private ObjectMapper mapper = new ObjectMapper();
     private GameEngine<ChineseCheckersState> gameEngine;
     private int playerID;
     public WebsocketChineseCheckersPlayer(InetSocketAddress address, GameEngine<ChineseCheckersState> gameEngine, int replicaID) {
@@ -29,7 +32,7 @@ public class WebsocketChineseCheckersPlayer extends WebSocketServer implements G
 
     @Override
     public void onOpen(WebSocket webSocket, ClientHandshake clientHandshake) {
-
+        LOG.info("Player " + playerID + " connected.");
     }
 
     @Override
@@ -82,6 +85,10 @@ public class WebsocketChineseCheckersPlayer extends WebSocketServer implements G
     @Override
     public void notifyOnSuccessfulApply(Operation<ChineseCheckersState> operation) {
         // TODO: Make sure all Operations have a reasonable toString
-        this.sendToAll(operation.toString());
+        try {
+            this.sendToAll(mapper.writeValueAsString(operation));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

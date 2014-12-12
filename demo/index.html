@@ -37,7 +37,8 @@
                 <input type="radio" name="players" value="3">3
                 <input type="radio" name="players" value="4">4
                 <input type="radio" name="players" value="6" checked="true">6
-                <input type="submit" value="Start Game" onclick="return cc.startGame(document.choose, 'players', 'chinese-checkers-svg', 'announce');"/>
+                <input type="text" name="playerId", id="playerId" size="1">
+                <input type="submit" value="Start Game" onclick="cc.startGame(document.choose, 'players', 'chinese-checkers-svg', 'announce', parseInt(document.getElementById('playerId').value)); return false;"/>
             </form>
         </h1>
         <svg width="960px" height="840px" class="chinese-checkers-svg"></svg>

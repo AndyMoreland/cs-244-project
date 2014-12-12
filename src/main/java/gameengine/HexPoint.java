@@ -7,6 +7,14 @@ public class HexPoint {
     private int q;
     private int r;
 
+    public int getQ() {
+        return q;
+    }
+
+    public int getR() {
+        return r;
+    }
+
     public HexPoint(int q, int r){
         this.q = q;
         this.r = r;
@@ -52,6 +60,6 @@ public class HexPoint {
 
     @Override
     public String toString() {
-        return r + "," + q;
+        return q + "," + r;
     }
 }

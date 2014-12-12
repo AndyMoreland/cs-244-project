@@ -10,6 +10,19 @@ import gameengine.*;
 public class MovePiece implements statemachine.Operation<ChineseCheckersState> {
 
     private final HexPoint start;
+
+    public HexPoint getStart() {
+        return start;
+    }
+
+    public HexPoint getEnd() {
+        return end;
+    }
+
+    public int getReplicaID() {
+        return replicaID;
+    }
+
     private final HexPoint end;
     private final int replicaID;
 
